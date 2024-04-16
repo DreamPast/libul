@@ -7,6 +7,17 @@ Date and time (like `Date` in Javascript)
   - Windows API => full support
   - POSIX API => full support
 
+# Config macro
+  - ULDATE_IGNORE_JULIAN_CALENDAR
+    Ignore julian Calendar.
+    If it's not defined, will use following rules:
+    - If year > 1582, use gregorian calendar.
+      In the calendar, a leap year is a year that is exactly divisible by 4,
+      except for years that are exactly divisible by 100 but not exactly divisible by 400.
+    - If year is 1582, 1582-10-5 ~ 1582-10-14 are removed.
+    - If year < 1582, use julian calendar.
+      In the calendar, a leap year is a year that is exactly divisible by 4.
+
 
 # License
   The MIT License (MIT)
@@ -134,8 +145,6 @@ Date and time (like `Date` in Javascript)
 #include <time.h>
 #include <ctype.h>
 
-#define ULDATE_HANDLE_JULIAN_CALENDAR
-
 typedef int64_t uldate_t;
 #define ULDATE_INVALID INT64_MIN
 
@@ -194,7 +203,40 @@ ul_hapi uldate_t uldate_now_utc() {
 }
 ul_hapi uldate_t uldate_now_locale() { return uldate_utc_to_locale(uldate_now_utc()); }
 
-#ifdef ULDATE_HANDLE_JULIAN_CALENDAR
+#ifdef ULDATE_IGNORE_JULIAN_CALENDAR
+  /* return days of the first day of the given year from '1970', negative value is accepted */
+  ul_hapi int64_t _uldate_days_from_year(int64_t y) {
+    if(ul_likely(y > 1970))
+      return 365 * (y - 1970) + (y - 1969) / 4 - (y - 1901) / 100 + (y - 1601) / 400;
+    else
+      return 365 * (y - 1970) + (y - 1972) / 4 - (y - 2000) / 100 + (y - 2000) / 400;
+  }
+  ul_hapi int _uldate_days_in_year(int64_t y) {
+    return 365 + !(y % 4) - !(y % 100) + !(y % 400);
+  }
+  ul_hapi int _uldate_days_in_month(int64_t y, int mi) {
+    static const int TABLE[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    return mi != 1 ? TABLE[mi] : TABLE[mi] + !(y % 4) - !(y % 100) + !(y % 400);
+  }
+  ul_hapi int _uldate_yday_from_mon_day(int64_t year, int mon, int day) {
+    int i;
+    int di = day;
+    for(i = 0; i < mon; ++i) di += _uldate_days_in_month(year, i);
+    return di;
+  }
+  ul_hapi int _uldate_mon_day_from_yday(int64_t year, int* yday) {
+    int i, md, yd = *yday;
+    for(i = 0; i < 12; ++i) {
+      md = _uldate_days_in_month(year, i);
+      if(yd < md) break;
+      yd -= md;
+    }
+    if(ul_unlikely(i == 12)) return -1;
+    *yday = yd;
+    return i;
+  }
+#else /* !defined(ULDATE_IGNORE_JULIAN_CALENDAR) */
+  /* return days of the first day of the given year from '1970', negative value is accepted */
   ul_hapi int64_t _uldate_days_from_year(int64_t y) {
     if(ul_likely(y > 1970))
       return 365 * (y - 1970) + (y - 1969) / 4 - (y - 1901) / 100 + (y - 1601) / 400;
@@ -235,37 +277,6 @@ ul_hapi uldate_t uldate_now_locale() { return uldate_utc_to_locale(uldate_now_ut
     if(ul_unlikely(i == 12)) return -1;
     /* 1582-10-5 ~ 1582-10-14 are removed */
     if(ul_unlikely(year == 1582 && i == 9 && yd >= 4)) yd += 10;
-    *yday = yd;
-    return i;
-  }
-#else /* !defined(ULDATE_HANDLE_JULIAN_CALENDAR) */
-  ul_hapi int64_t _uldate_days_from_year(int64_t y) {
-    if(ul_likely(y > 1970))
-      return 365 * (y - 1970) + (y - 1969) / 4 - (y - 1901) / 100 + (y - 1601) / 400;
-    else
-      return 365 * (y - 1970) + (y - 1972) / 4 - (y - 2000) / 100 + (y - 2000) / 400;
-  }
-  ul_hapi int _uldate_days_in_year(int64_t y) {
-    return 365 + !(y % 4) - !(y % 100) + !(y % 400);
-  }
-  ul_hapi int _uldate_days_in_month(int64_t y, int mi) {
-    static const int TABLE[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-    return mi != 1 ? TABLE[mi] : TABLE[mi] + !(y % 4) - !(y % 100) + !(y % 400);
-  }
-  ul_hapi int _uldate_yday_from_mon_day(int64_t year, int mon, int day) {
-    int i;
-    int di = day;
-    for(i = 0; i < mon; ++i) di += _uldate_days_in_month(year, i);
-    return di;
-  }
-  ul_hapi int _uldate_mon_day_from_yday(int64_t year, int* yday) {
-    int i, md, yd = *yday;
-    for(i = 0; i < 12; ++i) {
-      md = _uldate_days_in_month(year, i);
-      if(yd < md) break;
-      yd -= md;
-    }
-    if(ul_unlikely(i == 12)) return -1;
     *yday = yd;
     return i;
   }
@@ -429,6 +440,7 @@ static const int _uldate_wday_names_len[] = { 0, 6, 12, 19, 28, 36, 42, 50 };
 static const int _uldate_week_sun_fix[] = { 0, 1, 2, 3, 4, 5, 6 };
 static const int _uldate_week_mon_fix[] = { 6, 0, 1, 2, 3, 4, 5 };
 
+/* gets the length needed for the buffer (including tail '\0') to format `tm`. returns 0 if failed. */
 ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
   size_t len = 0;
   while(*fmt) {
@@ -522,6 +534,7 @@ ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
   }
   return len + 1;
 }
+/* format `tm` into `dest`. returns length (including tail '\0'), or 0 if failed. */
 ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const uldate_tm_t* tm) {
   const size_t len_raw = len;
   int x = 0;
@@ -924,6 +937,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
   *dest++ = 0; --len;
   return len_raw - len;
 }
+/* parse `src` to get `tm`. return the end position of `src`, or NULL if failed. */
 ul_hapi const char* uldate_tm_parse(const char* src, const char* fmt, uldate_tm_t* tm) {
   int i, j, x;
   int year = 0, mon = -1, mday = -1, yday = -1, wday = -1;
@@ -1131,10 +1145,9 @@ do_again:
   if(ul_unlikely(fmt_rec)) { fmt = fmt_rec; fmt_rec = NULL; goto do_again; }
 
   if(year == -1) goto fillback; /* don't need fix date part */
-  if(week != -1 && wday != -1) {
-    if(!week_start_sun) {
-
-    }
+  if(week != -1 && wday != -1 && !week_start_sun) {
+    if(_uldate_wday_from_days(_uldate_days_from_year(year)) == 0)
+      --week;
   }
 
   if(yday != -1) {
