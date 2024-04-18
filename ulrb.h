@@ -174,10 +174,13 @@ Red-Black Tree (fast but restricted version)
  * In C++, you can use inherit. For example(C++11 and above):
  * ```cpp
  * template<class Key, class Value>
- * class Node : ulrb_node_t {
- *   Node() : left(0), right(0) { }
+ * class Node : public ulrb_node_t {
+ * public:
+ *   Node() = default;
  *   Node(const Node&) = default;
  *   Node(Node&&) = default;
+ *   Node(Key&& k, Value&& v) : key(std::move(k)), value(std::move(v)) { }
+ *   Node(const Key& k, const Value& v) : key(k), value(v) { }
  *
  *   Node& operator=(const Node&) = default;
  *   Node& operator=(Node&&) = default;
@@ -192,6 +195,9 @@ Red-Black Tree (fast but restricted version)
  *   static void destructor(void* opaque, ulrb_node_t* p) {
  *     (void)opaque;
  *     delete reinterpret_cast<Node<Key, Value>*>(p);
+ *   }
+ *   static ulrb_node_t* copy(void* opaque, const ulrb_node_t* x) {
+ *     return new Node(*reinterpret_cast<const Node*>(x));
  *   }
  *
  *   Key key;
@@ -305,7 +311,7 @@ ul_hapi ulrb_node_t* ulrb_reverse_upper_bound(ulrb_node_t* root, const void* key
     else x = ulrb_node_get_left(x);
   return y;
 }
-ul_hapi ulrb_node_t* ulrb_equal_range(ulrb_node_t* root, ulrb_node_t** upper, const void* key, ulrb_comp_t comp, void* opaque) {
+ul_hapi ulrb_node_t* ulrb_equal_range(ulrb_node_t** upper, ulrb_node_t* root, const void* key, ulrb_comp_t comp, void* opaque) {
   ulrb_node_t* x = root;
   ulrb_node_t* y = NULL;
   int cmp;
@@ -358,7 +364,7 @@ ul_hapi ulrb_node_t* ulrb_find_prev(ulrb_node_t* root, const void* key, ulrb_com
   ulrb_node_t* y = NULL;
   while(x)
     if(comp(opaque, key, ulrb_node_get_key(x)) > 0) { y = x; x = ulrb_node_get_right(x); }
-    else x = ulrb_node_get_right(x);
+    else x = ulrb_node_get_left(x);
   return y;
 }
 
@@ -963,5 +969,88 @@ ul_hapi void ulrb_walk_postorder(const ulrb_node_t* x, ulrb_walk_func_t func, vo
   ulrb_walk_postorder_iteration(x, func, opaque);
 }
 
-#endif /* ULRB_H */
+typedef ulrb_node_t* (*ulrb_copy_func_t)(void* opaque, const ulrb_node_t* node);
+ul_hapi ulrb_node_t* ulrb_copy(const ulrb_node_t* x, ulrb_copy_func_t func, void* opaque) {
+  ulrb_node_t* ret;
+  ulrb_node_t* y;
+  if(!x) return NULL;
+  y = ret = func(opaque, x);
+  ret->right = ulrb_copy(ulrb_node_get_right(x), func, opaque);
+  ulrb_node_set_color(ret, ulrb_node_get_color(x));
+  while((x = ulrb_node_get_left(x))) {
+    y = (y->left = func(opaque, x));
+    y->right = ulrb_copy(ulrb_node_get_right(x), func, opaque);
+    ulrb_node_set_color(ret, ulrb_node_get_color(x));
+  }
+  return ret;
+}
 
+typedef struct ulrb_iter_t {
+  const ulrb_node_t* path[ULRB_MAX_DEPTH];
+  const ulrb_node_t** pathp;
+  const ulrb_node_t* todo;
+  const ulrb_node_t* root;
+} ulrb_iter_t;
+
+/* Note: iterator isn't safe when Red-Black tree is modified */
+ul_hapi void ulrb_iter_init(ulrb_iter_t* iter, const ulrb_node_t* x) {
+  iter->pathp = iter->path;
+  iter->root = iter->todo = x;
+}
+ul_hapi const ulrb_node_t* ulrb_iter_next(ulrb_iter_t* iter) {
+  const ulrb_node_t* x;
+  const ulrb_node_t* ret = NULL;
+  const ulrb_node_t** pathp = iter->pathp;
+
+  if(pathp == iter->path) {
+    if(iter->todo) {
+      x = iter->todo; iter->todo = NULL;
+      while(x) {
+        *pathp++ = x;
+        x = ulrb_node_get_left(x);
+      }
+    } else iter->todo = iter->root;
+  }
+  if(ul_likely(pathp != iter->path)) {
+    x = *--pathp;
+    ret = x;
+    x = ulrb_node_get_right(x);
+    while(x) {
+      *pathp++ = x;
+      x = ulrb_node_get_left(x);
+    }
+  }
+  iter->pathp = pathp;
+  return ret;
+}
+ul_hapi const ulrb_node_t* ulrb_iter_prev(ulrb_iter_t* iter) {
+  const ulrb_node_t* x;
+  const ulrb_node_t* ret = NULL;
+  const ulrb_node_t** pathp = iter->pathp;
+
+  if(pathp == iter->path) {
+    if(iter->todo) {
+      x = iter->todo; iter->todo = NULL;
+      while(x) {
+        *pathp++ = x;
+        x = ulrb_node_get_right(x);
+      }
+    } else iter->todo = iter->root;
+  }
+  if(ul_likely(pathp != iter->path)) {
+    x = *--pathp;
+    ret = x;
+    x = ulrb_node_get_left(x);
+    while(x) {
+      *pathp++ = x;
+      x = ulrb_node_get_right(x);
+    }
+  }
+  iter->pathp = pathp;
+  return ret;
+}
+ul_hapi int ulrb_iter_isend(const ulrb_iter_t* iter) {
+  return iter->pathp == iter->path && iter->todo != NULL;
+}
+
+#endif /* ULRB_H */
