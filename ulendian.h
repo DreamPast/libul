@@ -200,6 +200,8 @@ Endian order
   #endif
 #endif /* ul_static_cast */
 
+#include <assert.h>
+
 ul_hapi uint16_t (ul_bswap16)(uint16_t v) {
   return ul_static_cast(uint16_t, (v >> 8) | (v << 8));
 }
@@ -237,17 +239,23 @@ ul_hapi uint32_t (ul_bswap32)(uint32_t v) {
 ul_hapi void ul_bswap16_multi(void* dest, const void* src, size_t num) {
   uint16_t* rp = ul_reinterpret_cast(uint16_t*, dest);
   const uint16_t* sp = ul_reinterpret_cast(const uint16_t*, src);
+  assert((ul_reinterpret_cast(intptr_t, dest) & 0x1) == 0);
+  assert((ul_reinterpret_cast(intptr_t, src) & 0x1) == 0);
   while(num--) { *rp++ = ul_bswap16(*sp); ++sp; }
 }
 ul_hapi void ul_bswap32_multi(void* dest, const void* src, size_t num) {
   uint32_t* rp = ul_reinterpret_cast(uint32_t*, dest);
   const uint32_t* sp = ul_reinterpret_cast(const uint32_t*, src);
+  assert((ul_reinterpret_cast(intptr_t, dest) & 0x3) == 0);
+  assert((ul_reinterpret_cast(intptr_t, src) & 0x3) == 0);
   while(num--) { *rp++ = ul_bswap32(*sp); ++sp; }
 }
 #ifdef UINT64_MAX
   ul_hapi void ul_bswap64_multi(void* dest, const void* src, size_t num) {
     uint64_t* rp = ul_reinterpret_cast(uint64_t*, dest);
     const uint64_t* sp = ul_reinterpret_cast(const uint64_t*, src);
+    assert((ul_reinterpret_cast(intptr_t, dest) & 0x7) == 0);
+    assert((ul_reinterpret_cast(intptr_t, src) & 0x7) == 0);
     while(num--) { *rp++ = ul_bswap64(*sp); ++sp; }
   }
 #endif

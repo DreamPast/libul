@@ -134,7 +134,7 @@ Polyfill for C99 <stdint.h>
   #if !defined(UINT64_MAX) && defined(_WIN32)
     typedef __int64 int64_t;
     typedef unsigned __int64 uint64_t;
-    #define UINT64_MAX 0xFFFFFFFFFFFFFFFFu64
+    #define UINT64_MAX 0xFFFFFFFFFFFFFFFFui64
     #define INT64_MAX  0x7FFFFFFFFFFFFFFFi64
     #define INT64_MIN  0x8000000000000000i64
   #endif
@@ -247,11 +247,11 @@ Polyfill for C99 <stdint.h>
   #if !defined(UINT_LEAST64_MAX) && defined(_WIN32)
     typedef __int64 int_least64_t;
     typedef unsigned __int64 uint_least64_t;
-    #define UINT_LEAST64_MAX 0xFFFFFFFFFFFFFFFFu64
+    #define UINT_LEAST64_MAX 0xFFFFFFFFFFFFFFFFui64
     #define INT_LEAST64_MAX  0x7FFFFFFFFFFFFFFFi64
     #define INT_LEAST64_MIN  0x8000000000000000i64
     #define INT64_C(v)       (v ## i64)
-    #define UINT64_C(v)      (v ## u64)
+    #define UINT64_C(v)      (v ## ui64)
   #endif
 #endif
 
@@ -347,7 +347,7 @@ Polyfill for C99 <stdint.h>
   #if !defined(UINT_FAST64_MAX) && defined(_WIN32)
     typedef __int64 int_fast64_t;
     typedef unsigned __int64 uint_fast64_t;
-    #define UINT_FAST64_MAX 0xFFFFFFFFFFFFFFFFu64
+    #define UINT_FAST64_MAX 0xFFFFFFFFFFFFFFFFui64
     #define INT_FAST64_MAX  0x7FFFFFFFFFFFFFFFi64
     #define INT_FAST64_MIN  0x8000000000000000i64
   #endif
@@ -367,11 +367,11 @@ Polyfill for C99 <stdint.h>
   #elif defined(_WIN32)
     typedef __int64 intmax_t;
     typedef unsigned __int64 uintmax_t;
-    #define UINTMAX_MAX 0xFFFFFFFFFFFFFFFFu64
+    #define UINTMAX_MAX 0xFFFFFFFFFFFFFFFFui64
     #define INTMAX_MAX  0x7FFFFFFFFFFFFFFFi64
     #define INTMAX_MIN  0x8000000000000000i64
     #define INTMAX_C(v)  (v ## i64)
-    #define UINTMAX_C(v) (v ## u64)
+    #define UINTMAX_C(v) (v ## ui64)
   #else
     typedef signed long intmax_t;
     typedef unsigned long uintmax_t;
@@ -395,7 +395,7 @@ Polyfill for C99 <stdint.h>
       #ifndef _UINTPTR_T_DEFINED
         typedef unsigned __int64 uintptr_t;
       #endif
-      #define UINTPTR_MAX 0xFFFFFFFFFFFFFFFFu64
+      #define UINTPTR_MAX 0xFFFFFFFFFFFFFFFFui64
       #define INTPTR_MAX  0x7FFFFFFFFFFFFFFFi64
       #define INTPTR_MIN  0x8000000000000000i64
       #define __ULSTDINT_PTRMAX 0

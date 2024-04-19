@@ -575,16 +575,26 @@ Atomic (32-bit, and optional 64-bit)
       }
     }
   #else /* !(defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)) */
-    ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
-      (void)ord; return ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), 0, 0));
-    }
     ul_hapi int ulatomic_exchange_explicit_32(int* obj, int val, int ord) {
       (void)ord; return ul_static_cast(int, InterlockedExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
     }
-    ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
-      int old = *expected; (void)ord;
-      return (*expected = ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val), ul_static_cast(long, old))) == old);
-    }
+    #if _MSC_VER >= 1300
+      ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
+        (void)ord; return ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), 0, 0));
+      }
+      ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
+        int old = *expected; (void)ord;
+        return (*expected = ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val), ul_static_cast(long, old))) == old);
+      }
+    #else
+      ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
+        (void)ord; return ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), 0, 0));
+      }
+      ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
+        int old = *expected; (void)ord;
+        return (*expected = ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, val), ul_reinterpret_cast(void*, old))) == old);
+      }
+    #endif
     ul_hapi int ulatomic_fetch_add_explicit_32(int* obj, int val, int ord) {
       (void)ord; return ul_static_cast(int, InterlockedExchangeAdd(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
     }
@@ -605,30 +615,57 @@ Atomic (32-bit, and optional 64-bit)
       #define ulatomic_fetch_xor_32(obj, val) ulatomic_fetch_xor_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
       #define ulatomic_fetch_and_32(obj, val) ulatomic_fetch_and_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
     #else
-      ul_hapi int ulatomic_fetch_or_32(int* obj, int val) {
-        long ov, nv;
-        do {
-          ov = ul_static_cast(long, *obj);
-          nv = ul_static_cast(long, ov | val);
-        } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
-        return ov;
-      }
-      ul_hapi int ulatomic_fetch_xor_32(int* obj, int val) {
-        long ov, nv;
-        do {
-          ov = ul_static_cast(long, *obj);
-          nv = ul_static_cast(long, ov ^ val);
-        } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
-        return ov;
-      }
-      ul_hapi int ulatomic_fetch_and_32(int* obj, int val) {
-        long ov, nv;
-        do {
-          ov = ul_static_cast(long, *obj);
-          nv = ul_static_cast(long, ov & val);
-        } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
-        return ov;
-      }
+      #if _MSC_VER >= 1300
+        ul_hapi int ulatomic_fetch_or_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov | val);
+          } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
+          return ov;
+        }
+        ul_hapi int ulatomic_fetch_xor_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov ^ val);
+          } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
+          return ov;
+        }
+        ul_hapi int ulatomic_fetch_and_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov & val);
+          } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
+          return ov;
+        }
+      #else
+        ul_hapi int ulatomic_fetch_or_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov | val);
+          } while(ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, nv), ul_reinterpret_cast(void*, ov))) != ov);
+          return ov;
+        }
+        ul_hapi int ulatomic_fetch_xor_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov ^ val);
+          } while(ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, nv), ul_reinterpret_cast(void*, ov))) != ov);
+          return ov;
+        }
+        ul_hapi int ulatomic_fetch_and_32(int* obj, int val) {
+          long ov, nv;
+          do {
+            ov = ul_static_cast(long, *obj);
+            nv = ul_static_cast(long, ov & val);
+          } while(ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, nv), ul_reinterpret_cast(void*, ov))) != ov);
+          return ov;
+        }
+      #endif
       #define ulatomic_fetch_or_explicit_32(obj, val, ord)  ulatomic_fetch_or_32(obj, val)
       #define ulatomic_fetch_xor_explicit_32(obj, val, ord) ulatomic_fetch_xor_32(obj, val)
       #define ulatomic_fetch_and_explicit_32(obj, val, ord) ulatomic_fetch_and_32(obj, val)

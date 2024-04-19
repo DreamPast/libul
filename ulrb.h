@@ -510,13 +510,14 @@ ul_nodiscard ul_hapi ulrb_node_t* ulrb_remove(ulrb_node_t** proot, const void* k
           pathp->cmp = -1;
           pathp[1].node = ulrb_node_get_left(pathp->node);
         }
-        break;
+        goto node_exists;
       }
     }
   }
-  if(ul_unlikely(!nodep)) return NULL; /* cannot find node */
-  del = nodep->node;
+  return NULL; /* cannot find node */
 
+node_exists:
+  del = nodep->node;
   --pathp;
   if(pathp->node != del) {
     /* swap node with it's successor */

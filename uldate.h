@@ -141,6 +141,17 @@ Date and time (like `Date` in Javascript)
   #define ULDATE_API_C89
 #endif
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */
+  #define _uldate_trunc(v) trunc(v)
+#elif defined(__cplusplus) && __cplusplus >= 201103L /* C++11 */
+  #include <cmath>
+  #define _uldate_trunc(v) std::trunc(v)
+#elif defined(_MSC_VER) && _MSC_VER >= 1800 /* Visual Studio 2013 */
+  #define _uldate_trunc(v) trunc(v)
+#else
+  #define _uldate_trunc(v) ((v) > 0 ? floor(v) : ceil(v))
+#endif
+
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
@@ -149,7 +160,7 @@ typedef int64_t uldate_t;
 #define ULDATE_INVALID INT64_MIN
 
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
-ul_hapi int uldate_get_gmtoff() {
+ul_hapi int uldate_get_gmtoff(void) {
 #if defined(ULDATE_API_WIN32)
   TIME_ZONE_INFORMATION info;
   GetTimeZoneInformation(&info);
@@ -177,7 +188,7 @@ ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc) {
   return loc - uldate_get_gmtoff() * 60000;
 }
 
-ul_hapi uldate_t uldate_now_utc() {
+ul_hapi uldate_t uldate_now_utc(void) {
 #if defined(ULDATE_API_POSIX)
   struct timeval tv;
   if(gettimeofday(&tv, NULL) == -1) return ULDATE_INVALID;
@@ -201,7 +212,7 @@ ul_hapi uldate_t uldate_now_utc() {
   return ul_static_cast(int64_t, sec) * 1000;
 #endif
 }
-ul_hapi uldate_t uldate_now_locale() { return uldate_utc_to_locale(uldate_now_utc()); }
+ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_now_utc()); }
 
 #ifdef ULDATE_IGNORE_JULIAN_CALENDAR
   /* return days of the first day of the given year from '1970', negative value is accepted */
@@ -346,7 +357,7 @@ ul_hapi uldate_t uldate_from_mday_time_double(
   int m;
   double di, x;
   volatile double ret;
-  
+
   m = ul_static_cast(int, fmod(mon, 12));
   if(ul_unlikely(m < 0)) m += 12;
   di = ul_static_cast(double,
@@ -354,7 +365,7 @@ ul_hapi uldate_t uldate_from_mday_time_double(
   x = hour * 3600000 + min * 6000 + sec * 1000 + msec;
   ret = di * 86400000;
   ret += x;
-  return ul_static_cast(int64_t, trunc(ret));
+  return ul_static_cast(int64_t, _uldate_trunc(ret));
 }
 ul_hapi uldate_t uldate_from_yday_time_double(
   double year, double yday,
@@ -366,7 +377,7 @@ ul_hapi uldate_t uldate_from_yday_time_double(
   x = hour * 3600000 + min * 6000 + sec * 1000 + msec;
   ret = di * 86400000;
   ret += x;
-  return ul_static_cast(int64_t, trunc(ret));
+  return ul_static_cast(int64_t, _uldate_trunc(ret));
 }
 
 /*
@@ -375,7 +386,7 @@ ul_hapi uldate_t uldate_from_yday_time_double(
   - `year` is different from `tm_year`, it's since year zero.
   - `mday` is different from `tm_mday`, it counts from 0.
 */
-struct uldate_tm_t {
+typedef struct uldate_tm_t {
   int64_t year; /* years since year zero */
   int mon; /* months since January, range [0, 11] */
   int mday; /* day of the month, range [0, 30] */
@@ -386,7 +397,7 @@ struct uldate_tm_t {
 
   int wday; /* days since Sunday, range [0, 6] */
   int yday; /* days since January 1, range [0, 365] */
-};
+} uldate_tm_t;
 
 ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   int64_t h, days, y;
@@ -468,7 +479,7 @@ ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
     case 'b': case 'h': /* abbreviated month name */
       len += 3; break;
     case 'B': /* full month name */
-      len += ul_static_cast(size_t, 
+      len += ul_static_cast(size_t,
         _uldate_month_names_len[tm->mon + 1] - _uldate_month_names_len[tm->mon]);
       break;
     case 'm': /* month as a decimal number, range [01, 12] */
@@ -486,7 +497,7 @@ ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
     case 'd': /* day of the month as a decimal number, range [01, 31] */
     case 'e': /* day of the month as a decimal number, range [ 1, 31] */
       len += 2; break;
-    
+
     /* Day of the week */
     case 'a': /* abbreviated weekday name */
       len += 3; break;
@@ -791,7 +802,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       dest[2] = _uldate_abbr_month_names[x + 2];
       dest[3] = ' ';
       dest += 4;
-    
+
       x = tm->mday + 1;
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest[1] = ul_static_cast(char, x % 10 + '0');
@@ -958,7 +969,7 @@ do_again:
       break;
     case 't': case 'n':
       while(isspace(*src)) { ++src; } break;
-    
+
     /* Extension */
     case '.': /* match all letter */
       ++src; break;
@@ -974,7 +985,7 @@ do_again:
     case 'F': /* equivalent to "%Y-%m-%d" */
       fmt_rec = fmt; fmt = "%Y-%m-%d"; break;
 
-    
+
     /* Year */
     case 'Y':
       /* full year as 4 digit decimal number, leading zeroes permitted but not required */
@@ -992,7 +1003,7 @@ do_again:
         x = x * 10 + *src - '0';
       if(i == 0) return NULL;
       year = year % 100 + x * 100; break;
-    
+
     /* Month */
     case 'b': case 'h': case 'B': /* full or abbreviated month name */
       for(i = 0; i < 12; ++i) {
@@ -1018,7 +1029,7 @@ do_again:
       if(i == 0) return NULL;
       if(x == 0 || x > 12) return NULL;
       mon = x - 1; break;
-    
+
     /* Week */
     case 'U':
       /* the week of the year (a week starts on Sunday) as a decimal number, range [00, 53],
@@ -1036,7 +1047,7 @@ do_again:
       if(i == 0) return NULL;
       if(x < 0 || x > 53) return NULL;
       week = x; week_start_sun = 0; break;
-    
+
     /* Day of the year/month */
     case 'j':
       /* day of the year as a decimal number, range [001, 365],
@@ -1138,7 +1149,7 @@ do_again:
       else return NULL;
       if(src[1] != 'M' && src[1] != 'm') return NULL;
       src += 2; break;
-    
+
     default: return NULL;
     }
   }

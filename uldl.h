@@ -283,7 +283,7 @@ Dynamic library
     #endif
 
     ul_hapi int _ul_win32_toerrno(DWORD error) {
-      int i;
+      size_t i;
       static const unsigned short map[][2] = {
         { ERROR_SUCCESS,                   0 },            /*    0 */
         { ERROR_INVALID_FUNCTION,          EINVAL },       /*    1 */ /* EBADRQC */
@@ -434,8 +434,10 @@ Dynamic library
         { ERROR_OPEN_FILES,                EAGAIN },       /* 2401 */
         { ERROR_ACTIVE_CONNECTIONS,        EACCES },       /* 2402 */
         { ERROR_DEVICE_IN_USE,             EAGAIN },       /* 2404 */
+      #ifdef UL_WIN32_ERRNO_MODERN
         { ERROR_DS_GENERIC_ERROR,          EIO },          /* 8341 */
-      
+      #endif
+
       #ifdef UL_WIN32_ERRNO_MODERN
         /* WinSock error codes */
         { WSAEINTR,                        EINTR },           /* 10004 */
@@ -488,7 +490,7 @@ Dynamic library
       };
 
       for(i = 0; i < (sizeof(map) / sizeof(map[0])); ++i)
-        if(map[i][0] == error) return (int)map[i][1];
+        if(map[i][0] == error) return ul_static_cast(int, map[i][1]);
 
       if(error >= ERROR_WRITE_PROTECT && error <= ERROR_SHARING_BUFFER_EXCEEDED)
         return EACCES; /* 19 - 36 */

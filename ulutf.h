@@ -3,7 +3,7 @@ UTF support
 
 
 # Dependences:
-  <stdint.h>/"ulstdint.h" 
+  <stdint.h>/"ulstdint.h"
 
 
 # License
@@ -91,6 +91,23 @@ UTF support
   #endif
 #endif /* ul_nodiscard */
 
+#if !defined(ul_fallthrough) && defined(__has_attribute)
+  #if __has_attribute(fallthrough)
+    #define ul_fallthrough __attribute__((__fallthrough__))
+  #endif
+#endif
+#if !defined(ul_fallthrough) && defined(__GNUC__) && __GNUC__ >= 7
+  #define ul_fallthrough __attribute__((__fallthrough__))
+#endif
+#if !defined(ul_fallthrough) && defined(__has_cpp_attribute)
+  #if __has_attribute(fallthrough)
+    #define ul_fallthrough [[fallthrough]]
+  #endif
+#endif
+#ifndef ul_fallthrough
+  #define ul_fallthrough ((void)0)
+#endif /* ul_fallthrough */
+
 #ifndef UL_HAS_STDINT_H
   #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
     #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
@@ -126,6 +143,14 @@ UTF support
   #include "ulstdint.h" /* polyfill */
 #endif
 
+#ifndef ul_static_cast
+  #ifdef __cplusplus
+    #define ul_static_cast(T, val) static_cast<T>(val)
+  #else
+    #define ul_static_cast(T, val) ((T)(val))
+  #endif
+#endif /* ul_static_cast */
+
 ul_hapi int ulutf16_is_first_surrogate(uint16_t c) {
 	return 0xD800u <= c && c <= 0xDBFFu;
 }
@@ -133,7 +158,7 @@ ul_hapi int ulutf16_is_second_surrogate(uint16_t c) {
 	return 0xDC00u <= c && c <= 0xDFFFu;
 }
 ul_hapi uint32_t ulutf16_combine_surrogate(uint16_t c0, uint16_t c1) {
-	return ((uint32_t)(c0 & 0x3FFu) << 10 | (c1 & 0x3FFu)) + 0x10000u;
+	return (ul_static_cast(uint32_t, c0 & 0x3FFu) << 10 | (c1 & 0x3FFu)) + 0x10000u;
 }
 ul_hapi int ulutf32_is_valid(uint32_t u) {
 	return !(u > 0x10FFFFu || (0xD800 <= u && u <= 0xDFFFu));
@@ -145,10 +170,10 @@ ul_hapi int ulutf16_width(uint32_t c) {
   return -1;
 }
 ul_hapi uint16_t ulutf16_make_first_surrogate(uint32_t u) {
-  return (uint16_t)(0xD800 | ((u - 0x10000u) >> 10));
+  return ul_static_cast(uint16_t, 0xD800 | ((u - 0x10000u) >> 10));
 }
 ul_hapi uint16_t ulutf16_make_second_surrogate(uint32_t u) {
-  return (uint16_t)(0xDC00 | (u & 0x3FFu));
+  return ul_static_cast(uint16_t, 0xDC00 | (u & 0x3FFu));
 }
 
 ul_hapi int ulutf8_is_trail(uint8_t c) { return (c & 0xC0u) == 0x80u; }
@@ -196,38 +221,38 @@ ul_hapi int ulutf8_width(uint32_t u) {
 ul_hapi int ulutf8_encode(uint8_t* p, uint32_t u) {
   uint8_t* q = p;
   if(u <= 0x7Fu) {
-    *q++ = u;
+    *q++ = ul_static_cast(uint8_t, u);
   } else {
     if(u <= 0x7FFu) {
-      *q++ = (u >> 6) | 0xC0;
+      *q++ = ul_static_cast(uint8_t, (u >> 6) | 0xC0);
     } else {
       if(u <= 0xFFFFu) {
-        *q++ = (u >> 12) | 0xE0;
+        *q++ = ul_static_cast(uint8_t, (u >> 12) | 0xE0);
       } else {
         if(ul_likely(u <= 0x1FFFFF)) {
-          *q++ = (u >> 18) | 0xF0;
+          *q++ = ul_static_cast(uint8_t, (u >> 18) | 0xF0);
         } else {
           if(u <= 0x3FFFFFFu) {
-            *q++ = (u >> 24) | 0xF8;
+            *q++ = ul_static_cast(uint8_t, (u >> 24) | 0xF8);
           } else if(u <= 0x7FFFFFFFu) {
-            *q++ = (u >> 30) | 0xFC;
-            *q++ = ((u >> 24) & 0x3F) | 0x80;
+            *q++ = ul_static_cast(uint8_t, (u >> 30) | 0xFC);
+            *q++ = ul_static_cast(uint8_t, ((u >> 24) & 0x3F) | 0x80);
           } else {
             return 0;
           }
-          *q++ = ((u >> 18) & 0x3F) | 0x80;
+          *q++ = ul_static_cast(uint8_t, ((u >> 18) & 0x3F) | 0x80);
         }
-        *q++ = ((u >> 12) & 0x3F) | 0x80;
+        *q++ = ul_static_cast(uint8_t, ((u >> 12) & 0x3F) | 0x80);
       }
-      *q++ = ((u >> 6) & 0x3F) | 0x80;
+      *q++ = ul_static_cast(uint8_t, ((u >> 6) & 0x3F) | 0x80);
     }
-    *q++ = (u & 0x3F) | 0x80;
+    *q++ = ul_static_cast(uint8_t, (u & 0x3F) | 0x80);
   }
-  return q - p;
+  return ul_static_cast(int, q - p);
 }
 ul_hapi uint32_t ulutf8_decode(const uint8_t* p, size_t n, const uint8_t** pp) {
   uint32_t u, umin;
-  int l, i;
+  int l;
   uint8_t c;
 
   u = *p++;
@@ -244,53 +269,57 @@ ul_hapi uint32_t ulutf8_decode(const uint8_t* p, size_t n, const uint8_t** pp) {
   case 0xD4: case 0xD5: case 0xD6: case 0xD7:
   case 0xD8: case 0xD9: case 0xDA: case 0xDB:
   case 0xDC: case 0xDD: case 0xDE: case 0xDF:
-    l = 0; umin = 0x80u; u &= 0x1F;
+    l = 0; umin = 0x80u; u &= 0x1F; break;
   case 0xE0: case 0xE1: case 0xE2: case 0xE3:
   case 0xE4: case 0xE5: case 0xE6: case 0xE7:
   case 0xE8: case 0xE9: case 0xEA: case 0xEB:
   case 0xEC: case 0xED: case 0xEE: case 0xEF:
-    l = 1; umin = 0x800u; u &= 0xF;
+    l = 1; umin = 0x800u; u &= 0xF; break;
   case 0xF0: case 0xF1: case 0xF2: case 0xF3:
   case 0xF4: case 0xF5: case 0xF6: case 0xF7:
-	  l = 2; umin = 0x10000u; u &= 0x7;
+	  l = 2; umin = 0x10000u; u &= 0x7; break;
   case 0xF8: case 0xF9: case 0xFA: case 0xFB:
-	  l = 3; umin = 0x200000u; u &= 0x3;
+	  l = 3; umin = 0x200000u; u &= 0x3; break;
   case 0xFC: case 0xFD:
-	  l = 4; umin = 0x4000000u; u &= 0x1;
-  default: return (uint32_t)-1;
+	  l = 4; umin = 0x4000000u; u &= 0x1; break;
+  default: return ul_static_cast(uint32_t, -1);
 	}
 
-  if(ul_unlikely((size_t)l >= n)) return (uint32_t)-1;
+  if(ul_unlikely(ul_static_cast(size_t, l) >= n)) return ul_static_cast(uint32_t, -1);
   switch(l) {
   case 4:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return (uint32_t)-1;
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
     u = (u << 6) | (c & 0x3F);
+    ul_fallthrough;
   case 3:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return (uint32_t)-1;
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
     u = (u << 6) | (c & 0x3F);
+    ul_fallthrough;
   case 2:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return (uint32_t)-1;
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
     u = (u << 6) | (c & 0x3F);
+    ul_fallthrough;
   case 1:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return (uint32_t)-1;
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
     u = (u << 6) | (c & 0x3F);
+    ul_fallthrough;
   case 0:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return (uint32_t)-1;
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
     u = (u << 6) | (c & 0x3F);
   }
 
-  if(u < umin) return (uint32_t)-1;
+  if(u < umin) return ul_static_cast(uint32_t, -1);
   *pp = p;
   return u;
 }
 
 ul_hapi int ulutf_is_ascii(const char* str, size_t n) {
-  while(n--) if(!((unsigned char)*str <= 0x7Fu)) return 0;
+  while(n--) if(!(ul_static_cast(unsigned char, *str) <= 0x7Fu)) return 0;
   return 1;
 }
 

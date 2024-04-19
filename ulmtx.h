@@ -217,7 +217,7 @@ Mutex
 
 
   typedef struct ultmtx_t { std::timed_mutex* m; } ultmtx_t;
-  #define ULMTX_INIT { new std::timed_mutex{} }
+  #define ULTMTX_INIT { new std::timed_mutex{} }
   ul_hapi int ultmtx_init(ultmtx_t* mtx) noexcept {
     try {
       mtx->m = new std::timed_mutex{}; return 0;
@@ -266,7 +266,7 @@ Mutex
 
 
   typedef struct ulrtmtx_t { std::recursive_timed_mutex* m; } ulrtmtx_t;
-  #define ULMTX_INIT { new std::recursive_timed_mutex{} }
+  #define ULRTMTX_INIT { new std::recursive_timed_mutex{} }
   ul_hapi int ulrtmtx_init(ulrtmtx_t* mtx) noexcept {
     try {
       mtx->m = new std::recursive_timed_mutex{}; return 0;
@@ -437,30 +437,6 @@ Mutex
 #elif defined(ULMTX_API_WIN32)
   #include <Windows.h>
 
-  #ifdef _WIN64
-    typedef __int64 __ulmtx_iptr_t;
-    #define __ulmtx_InterlockedExchange InterlockedExchange64
-    #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange64
-    #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet64
-    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd64
-  #else
-    typedef LONG __ulmtx_iptr_t;
-    #define __ulmtx_InterlockedExchange InterlockedExchange
-    #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange
-    #if _MSC_VER >= 1300
-      #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet
-    #else
-      BOOLEAN __ulmtx_InterlockedBitTestAndSet(LONG volatile* obj, LONG off) {
-        LONG ov, nv;
-        do {
-          ov = (LONG)*obj; nv = (LONG)(ov | (LONG)(1 << off));
-        } while(InterlockedCompareExchange((LONG*)obj, nv, ov) != ov);
-        return !!(ov >> off);
-      }
-    #endif
-    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd
-  #endif
-
   #ifndef ul_static_cast
     #ifdef __cplusplus
       #define ul_static_cast(T, val) static_cast<T>(val)
@@ -477,6 +453,36 @@ Mutex
     #endif
   #endif /* ul_reinterpret_cast */
 
+  #ifdef _WIN64
+    typedef __int64 __ulmtx_iptr_t;
+    #define __ulmtx_InterlockedExchange InterlockedExchange64
+    #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange64
+    #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet64
+    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd64
+  #else
+    typedef LONG __ulmtx_iptr_t;
+    #define __ulmtx_InterlockedExchange InterlockedExchange
+    #if _MSC_VER >= 1300
+      #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet
+      #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange
+    #else
+      #define __ulmtx_InterlockedCompareExchange(ptr, nv, ov) \
+        ul_reinterpret_cast(LONG, InterlockedCompareExchange( \
+          ul_reinterpret_cast(void**, ptr), \
+          ul_reinterpret_cast(void*, nv), \
+          ul_reinterpret_cast(void*, ov) \
+        ))
+      BOOLEAN __ulmtx_InterlockedBitTestAndSet(LONG volatile* obj, LONG off) {
+        LONG ov, nv;
+        do {
+          ov = (LONG)*obj; nv = (LONG)(ov | (LONG)(1 << off));
+        } while(__ulmtx_InterlockedCompareExchange((LONG*)obj, nv, ov) != ov);
+        return !!(ov >> off);
+      }
+    #endif
+    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd
+  #endif
+
   typedef struct ultmtx_t {
     __ulmtx_iptr_t event;
     __ulmtx_iptr_t count;
@@ -492,7 +498,7 @@ Mutex
     mtx->count = 0; mtx->event = 0; return 0;
   }
   ul_hapi void ultmtx_destroy(ultmtx_t* mtx) {
-    const HANDLE old_event = ULongToPtr(ul_static_cast(ULONG, __ulmtx_InterlockedExchange(&mtx->event, 0)));
+    const HANDLE old_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedExchange(&mtx->event, 0));
     if(old_event) CloseHandle(old_event);
   }
 
@@ -525,10 +531,10 @@ Mutex
     }
   }
   ul_hapi HANDLE __ultmtx_get_event(ultmtx_t* mtx) {
-    const HANDLE current_event = ULongToPtr(ul_static_cast(ULONG, __ulmtx_InterlockedCompareExchange(&mtx->event, 0, 0)));
+    const HANDLE current_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedCompareExchange(&mtx->event, 0, 0));
     if(!current_event) {
       const HANDLE new_event = CreateEvent(0, FALSE, FALSE, NULL);
-      const HANDLE old_event = ULongToPtr(ul_static_cast(ULONG, __ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0)));
+      const HANDLE old_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0));
       if(!old_event) {
         CloseHandle(new_event);
         return old_event;
@@ -649,10 +655,15 @@ Mutex
   ul_hapi int ulrtmtx_trylock(ulrtmtx_t* mtx) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) {
-      ++mtx->count;
-      return 0;
+  #if _MSC_VER >= 1300L
+    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
+  #else
+    if(ul_reinterpret_cast(LONG,
+        InterlockedCompareExchange(ul_reinterpret_cast(void**, &mtx->thread_id), 0, 0)) == thread_id
+    ) {
+      ++mtx->count; return 0;
     }
+  #endif
     ret = ultmtx_trylock(&mtx->mtx);
     if(ret == 0) {
       InterlockedExchange(&mtx->thread_id, thread_id);
@@ -663,10 +674,15 @@ Mutex
   ul_hapi int ulrtmtx_lock(ulrtmtx_t* mtx) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) {
-      ++mtx->count;
-      return 0;
+  #if _MSC_VER >= 1300L
+    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
+  #else
+    if(ul_reinterpret_cast(LONG,
+        InterlockedCompareExchange(ul_reinterpret_cast(void**, &mtx->thread_id), 0, 0)) == thread_id
+    ) {
+      ++mtx->count; return 0;
     }
+  #endif
     ret = ultmtx_lock(&mtx->mtx);
     if(ret != 0) return ret;
     InterlockedExchange(&mtx->thread_id, thread_id);
@@ -677,10 +693,15 @@ Mutex
   ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) {
-      ++mtx->count;
-      return 0;
+  #if _MSC_VER >= 1300L
+    if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
+  #else
+    if(ul_reinterpret_cast(LONG,
+        InterlockedCompareExchange(ul_reinterpret_cast(void**, &mtx->thread_id), 0, 0)) == thread_id
+    ) {
+      ++mtx->count; return 0;
     }
+  #endif
     ret = ultmtx_timedlock(&mtx->mtx, ms);
     if(ret != 0) return ret;
     InterlockedExchange(&mtx->thread_id, thread_id);
@@ -1034,7 +1055,7 @@ Mutex
       pthread_mutex_unlock(&mtx->m);
       return 0;
     }
-    /* return 1 if timedout */ 
+    /* return 1 if timedout */
     ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) {
       struct timespec tp;
       int ret;
