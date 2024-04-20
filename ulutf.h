@@ -100,7 +100,7 @@ UTF support
   #define ul_fallthrough __attribute__((__fallthrough__))
 #endif
 #if !defined(ul_fallthrough) && defined(__has_cpp_attribute)
-  #if __has_attribute(fallthrough)
+  #if __has_cpp_attribute(fallthrough)
     #define ul_fallthrough [[fallthrough]]
   #endif
 #endif

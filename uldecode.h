@@ -116,6 +116,14 @@ Text decoder and encoder. (encoder is slow)
   #endif
 #endif /* ul_unused */
 
+#ifndef ul_inline
+  #if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
+    #define ul_inline inline
+  #else
+    #define ul_inline
+  #endif
+#endif /* ul_inline */
+
 #ifndef ul_restrict
   #if defined(_MSC_VER)
     #define ul_restrict __restrict
@@ -326,7 +334,7 @@ uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
   #endif
 #endif /* ul_assume */
 
-ul_unused static int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static ul_inline int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   uldecode_u32_t u;
   if(ul_unlikely(c == ULDECODE_EOF)) return 0;
   if(ul_unlikely(c < 0 || c > 0xFF)) return -1;
@@ -335,7 +343,7 @@ ul_unused static int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, cons
   if(ul_unlikely(u == 0)) return -1;
   p[0] = u; return 1;
 }
-ul_unused static int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF)) return 0;
   if(u <= 0x7F) { p[0] = ul_static_cast(uldecode_u8_t, u); return 1; }
