@@ -272,7 +272,7 @@ typedef int (*ulencode_func_t)(uldecode_u8_t* p, uldecode_u32_t u, void* _state)
 
 typedef struct uldecode_t {
   /* Names, ended with `NULL`. */
-  const char* const* const names;
+  const char* const* names;
 
   size_t decode_state_size;
   uldecode_func_t decode;
@@ -286,15 +286,15 @@ uldecode_api const uldecode_t* ul_get_decode(const char* name);
 /**
  * Convert text encoding.
  *
- * This function will return 0 if following situationsn happen：
+ * This function will return 0 if following situationsn happen:
  * - text encoding is not supported;
  * - length of `dest` is not enough;
  * - illegal character in `src`.
  *
  * \return Bytes writen. If any errors occur, this will return 0.
 */
-uldecode_api size_t ul_decode_between(void* dest, size_t dest_len, const char* dest_encoding,
-  const void* src, size_t src_len, const char* src_encoding);
+uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
 
 #ifndef ULDECODE_NO_IMPLE
 
@@ -316,7 +316,7 @@ uldecode_api size_t ul_decode_between(void* dest, size_t dest_len, const char* d
   #endif
 #endif /* ul_assume */
 
-static ul_unused int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   uldecode_u32_t u;
   if(ul_unlikely(c == ULDECODE_EOF)) return 0;
   if(ul_unlikely(c < 0 || c > 0xFF)) return -1;
@@ -325,7 +325,7 @@ static ul_unused int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, cons
   if(ul_unlikely(u == 0)) return -1;
   p[0] = u; return 1;
 }
-static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF)) return 0;
   if(u <= 0x7F) { p[0] = ul_static_cast(uldecode_u8_t, u); return 1; }
@@ -344,8 +344,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u32_t code;
     uldecode_u16_t rest, total;
   };
-  static const size_t uldecode_utf_8_state_size = sizeof(struct _uldecode_utf_8_state_t);
-  uldecode_each_api int uldecode_utf_8(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_utf_8_state_size sizeof(struct _uldecode_utf_8_state_t)
+  uldecode_each_api int uldecode_utf_8(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_utf_8_state_t* ul_restrict state;
     state = ul_reinterpret_cast(struct _uldecode_utf_8_state_t*, _state);
     if(state->rest == 0) {
@@ -398,7 +398,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     *p = state->code; return 1;
   }
 
-  static const size_t ulencode_utf_8_state_size = 0;
+  #define ulencode_utf_8_state_size 0
   uldecode_each_api int ulencode_utf_8(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(ul_unlikely(u == ULENCODE_EOF)) return 0;
@@ -436,7 +436,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u16_t byte;
     uldecode_u16_t prev;
   };
-  static const size_t uldecode_utf_16be_state_size = sizeof(struct _uldecode_utf_16be_state_t);
+  #define uldecode_utf_16be_state_size sizeof(struct _uldecode_utf_16be_state_t)
   uldecode_each_api int uldecode_utf_16be(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_utf_16be_state_t* state;
     uldecode_u16_t nc;
@@ -476,7 +476,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     }
   }
 
-  static const size_t ulencode_utf_16be_state_size = 0;
+  #define ulencode_utf_16be_state_size 0
   uldecode_each_api int ulencode_utf_16be(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(ul_unlikely(u == ULENCODE_EOF)) return 0;
@@ -507,8 +507,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u16_t byte;
     uldecode_u16_t prev;
   };
-  static const size_t uldecode_utf_16le_state_size = sizeof(struct _uldecode_utf_16le_state_t);
-  uldecode_each_api int uldecode_utf_16le(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_utf_16le_state_size sizeof(struct _uldecode_utf_16le_state_t)
+  uldecode_each_api int uldecode_utf_16le(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_utf_16le_state_t* ul_restrict state;
     uldecode_u16_t nc;
 
@@ -547,7 +547,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     }
   }
 
-  static const size_t ulencode_utf_16le_state_size = 0;
+  #define ulencode_utf_16le_state_size 0
   uldecode_each_api int ulencode_utf_16le(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(ul_unlikely(u == ULENCODE_EOF)) return 0;
@@ -578,8 +578,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u32_t u;
     uldecode_u32_t cnt;
   };
-  static const size_t uldecode_utf_32be_state_size = sizeof(struct _uldecode_utf_32be_state_t);
-  uldecode_each_api int uldecode_utf_32be(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_utf_32be_state_size sizeof(struct _uldecode_utf_32be_state_t)
+  uldecode_each_api int uldecode_utf_32be(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_utf_32be_state_t* state;
     uldecode_u32_t u;
 
@@ -611,7 +611,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     }
   }
 
-  static const size_t ulencode_utf_32be_state_size = 0;
+  #define ulencode_utf_32be_state_size 0
   uldecode_each_api int ulencode_utf_32be(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(u == ULENCODE_EOF) return 0;
@@ -635,8 +635,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u32_t u;
     uldecode_u32_t cnt;
   };
-  static const size_t uldecode_utf_32le_state_size = sizeof(struct _uldecode_utf_32le_state_t);
-  uldecode_each_api int uldecode_utf_32le(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_utf_32le_state_size sizeof(struct _uldecode_utf_32le_state_t)
+  uldecode_each_api int uldecode_utf_32le(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_utf_32le_state_t* state;
     uldecode_u32_t u;
 
@@ -667,7 +667,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     }
   }
 
-  static const size_t ulencode_utf_32le_state_size = 0;
+  #define ulencode_utf_32le_state_size 0
   uldecode_each_api int ulencode_utf_32le(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(u == ULENCODE_EOF) return 0;
@@ -687,7 +687,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     NULL
   };
 
-  static const size_t uldecode_x_user_defined_state_size = 0;
+  #define uldecode_x_user_defined_state_size 0
   uldecode_each_api int uldecode_x_user_defined(uldecode_u32_t* p, int c, void* _state) {
     (void)_state;
     if(ul_unlikely(c == ULDECODE_EOF)) return 0;
@@ -696,7 +696,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     return 1;
   }
 
-  static const size_t ulencode_x_user_defined_state_size = 0;
+  #define ulencode_x_user_defined_state_size 0
   uldecode_each_api int ulencode_x_user_defined(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state;
     if(u <= 0x7F) {
@@ -727,11 +727,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "ibm866",
     "866", "cp866", "csibm866", NULL
   };
-  static const size_t uldecode_ibm866_state_size = 0;
+  #define uldecode_ibm866_state_size 0
   uldecode_each_api int uldecode_ibm866(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_ibm866_table);
   }
-  static const size_t ulencode_ibm866_state_size = 0;
+  #define ulencode_ibm866_state_size 0
   uldecode_each_api int ulencode_ibm866(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_ibm866_table);
   }
@@ -754,11 +754,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "csisolatin2", "iso-ir-101", "iso8859-2", "iso88592", "iso_8859-2",
     "iso_8859-2:1987", "l2", "latin2", NULL
   };
-  static const size_t uldecode_iso_8859_2_state_size = 0;
+  #define uldecode_iso_8859_2_state_size 0
   uldecode_each_api int uldecode_iso_8859_2(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_2_table);
   }
-  static const size_t ulencode_iso_8859_2_state_size = 0;
+  #define ulencode_iso_8859_2_state_size 0
   uldecode_each_api int ulencode_iso_8859_2(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_2_table);
   }
@@ -781,11 +781,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "csisolatin3", "iso-ir-109", "iso8859-3", "iso88593", "iso_8859-3",
     "iso_8859-3:1988", "l3", "latin3", NULL
   };
-  static const size_t uldecode_iso_8859_3_state_size = 0;
+  #define uldecode_iso_8859_3_state_size 0
   uldecode_each_api int uldecode_iso_8859_3(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_3_table);
   }
-  static const size_t ulencode_iso_8859_3_state_size = 0;
+  #define ulencode_iso_8859_3_state_size 0
   uldecode_each_api int ulencode_iso_8859_3(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_3_table);
   }
@@ -808,11 +808,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "csisolatin4", "iso-ir-110", "iso8859-4", "iso88594", "iso_8859-4",
     "iso_8859-4:1988", "l4", "latin4", NULL
   };
-  static const size_t uldecode_iso_8859_4_state_size = 0;
+  #define uldecode_iso_8859_4_state_size 0
   uldecode_each_api int uldecode_iso_8859_4(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_4_table);
   }
-  static const size_t ulencode_iso_8859_4_state_size = 0;
+  #define ulencode_iso_8859_4_state_size 0
   uldecode_each_api int ulencode_iso_8859_4(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_4_table);
   }
@@ -835,11 +835,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "csisolatincyrillic", "cyrillic", "iso-ir-144", "iso88595", "iso_8859-5",
     "iso_8859-5:1988", NULL
   };
-  static const size_t uldecode_iso_8859_5_state_size = 0;
+  #define uldecode_iso_8859_5_state_size 0
   uldecode_each_api int uldecode_iso_8859_5(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_5_table);
   }
-  static const size_t ulencode_iso_8859_5_state_size = 0;
+  #define ulencode_iso_8859_5_state_size 0
   uldecode_each_api int ulencode_iso_8859_5(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_5_table);
   }
@@ -863,11 +863,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "ecma-114", "iso-8859-6-e", "iso-8859-6-i", "iso-ir-127", "iso8859-6",
     "iso88596", "iso_8859-6", "iso_8859-6:1987", NULL
   };
-  static const size_t uldecode_iso_8859_6_state_size = 0;
+  #define uldecode_iso_8859_6_state_size 0
   uldecode_each_api int uldecode_iso_8859_6(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_6_table);
   }
-  static const size_t ulencode_iso_8859_6_state_size = 0;
+  #define ulencode_iso_8859_6_state_size 0
   uldecode_each_api int ulencode_iso_8859_6(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_6_table);
   }
@@ -891,11 +891,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso-ir-126", "iso8859-7", "iso88597", "iso_8859-7", "iso_8859-7:1987",
     "sun_eu_greek", NULL
   };
-  static const size_t uldecode_iso_8859_7_state_size = 0;
+  #define uldecode_iso_8859_7_state_size 0
   uldecode_each_api int uldecode_iso_8859_7(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_7_table);
   }
-  static const size_t ulencode_iso_8859_7_state_size = 0;
+  #define ulencode_iso_8859_7_state_size 0
   uldecode_each_api int ulencode_iso_8859_7(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_7_table);
   }
@@ -920,11 +920,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
       "iso-ir-126", "iso8859-7", "iso88597", "iso_8859-7", "iso_8859-7:1987",
       "sun_eu_greek", NULL
     };
-    static const size_t uldecode_iso_8859_8_state_size = 0;
+    #define uldecode_iso_8859_8_state_size 0
     uldecode_each_api int uldecode_iso_8859_8(uldecode_u32_t* p, int c, void* _state) {
       (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_8_table);
     }
-    static const size_t ulencode_iso_8859_8_state_size = 0;
+    #define ulencode_iso_8859_8_state_size 0
     uldecode_each_api int ulencode_iso_8859_8(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
       (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_8_table);
     }
@@ -935,11 +935,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
       "iso-8859-8-i",
       "csiso88598i", "logical", NULL
     };
-    static const size_t uldecode_iso_8859_8i_state_size = 0;
+    #define uldecode_iso_8859_8i_state_size 0
     uldecode_each_api int uldecode_iso_8859_8i(uldecode_u32_t* p, int c, void* _state) {
       (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_8_table);
     }
-    static const size_t ulencode_iso_8859_8i_state_size = 0;
+    #define ulencode_iso_8859_8i_state_size 0
     uldecode_each_api int ulencode_iso_8859_8i(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
       (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_8_table);
     }
@@ -963,11 +963,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "csisolatin6", "iso-ir-157", "iso8859-10", "iso885910", "l6",
     "latin6", NULL
   };
-  static const size_t uldecode_iso_8859_10_state_size = 0;
+  #define uldecode_iso_8859_10_state_size 0
   uldecode_each_api int uldecode_iso_8859_10(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_10_table);
   }
-  static const size_t ulencode_iso_8859_10_state_size = 0;
+  #define ulencode_iso_8859_10_state_size 0
   uldecode_each_api int ulencode_iso_8859_10(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_10_table);
   }
@@ -989,11 +989,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso-8859-13",
     "iso8859-13", "iso885913", NULL
   };
-  static const size_t uldecode_iso_8859_13_state_size = 0;
+  #define uldecode_iso_8859_13_state_size 0
   uldecode_each_api int uldecode_iso_8859_13(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_13_table);
   }
-  static const size_t ulencode_iso_8859_13_state_size = 0;
+  #define ulencode_iso_8859_13_state_size 0
   uldecode_each_api int ulencode_iso_8859_13(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_13_table);
   }
@@ -1015,11 +1015,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso-8859-14",
     "iso8859-14", "iso885914", NULL
   };
-  static const size_t uldecode_iso_8859_14_state_size = 0;
+  #define uldecode_iso_8859_14_state_size 0
   uldecode_each_api int uldecode_iso_8859_14(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_14_table);
   }
-  static const size_t ulencode_iso_8859_14_state_size = 0;
+  #define ulencode_iso_8859_14_state_size 0
   uldecode_each_api int ulencode_iso_8859_14(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_14_table);
   }
@@ -1041,11 +1041,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso-8859-15",
     "csisolatin9", "iso8859-15", "iso885915", "l9", "latin9", NULL
   };
-  static const size_t uldecode_iso_8859_15_state_size = 0;
+  #define uldecode_iso_8859_15_state_size 0
   uldecode_each_api int uldecode_iso_8859_15(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_15_table);
   }
-  static const size_t ulencode_iso_8859_15_state_size = 0;
+  #define ulencode_iso_8859_15_state_size 0
   uldecode_each_api int ulencode_iso_8859_15(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_15_table);
   }
@@ -1066,11 +1066,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   static const char* uldecode_iso_8859_16_name[] = {
     "iso-8859-16", NULL
   };
-  static const size_t uldecode_iso_8859_16_state_size = 0;
+  #define uldecode_iso_8859_16_state_size 0
   uldecode_each_api int uldecode_iso_8859_16(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_iso_8859_16_table);
   }
-  static const size_t ulencode_iso_8859_16_state_size = 0;
+  #define ulencode_iso_8859_16_state_size 0
   uldecode_each_api int ulencode_iso_8859_16(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_iso_8859_16_table);
   }
@@ -1092,11 +1092,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "koi8-r",
     "cskoi8r", "koi", "koi8", "koi8_r", NULL
   };
-  static const size_t uldecode_koi8_r_state_size = 0;
+  #define uldecode_koi8_r_state_size 0
   uldecode_each_api int uldecode_koi8_r(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_koi8_r_table);
   }
-  static const size_t ulencode_koi8_r_state_size = 0;
+  #define ulencode_koi8_r_state_size 0
   uldecode_each_api int ulencode_koi8_r(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_koi8_r_table);
   }
@@ -1117,11 +1117,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   static const char* uldecode_koi8_u_name[] = {
     "koi8-u", NULL
   };
-  static const size_t uldecode_koi8_u_state_size = 0;
+  #define uldecode_koi8_u_state_size 0
   uldecode_each_api int uldecode_koi8_u(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_koi8_u_table);
   }
-  static const size_t ulencode_koi8_u_state_size = 0;
+  #define ulencode_koi8_u_state_size 0
   uldecode_each_api int ulencode_koi8_u(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_koi8_u_table);
   }
@@ -1143,11 +1143,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "macintosh",
     "csmacintosh", "mac", "x-mac-roman", NULL
   };
-  static const size_t uldecode_macintosh_state_size = 0;
+  #define uldecode_macintosh_state_size 0
   uldecode_each_api int uldecode_macintosh(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_macintosh_table);
   }
-  static const size_t ulencode_macintosh_state_size = 0;
+  #define ulencode_macintosh_state_size 0
   uldecode_each_api int ulencode_macintosh(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_macintosh_table);
   }
@@ -1169,11 +1169,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-874",
     "dos-874", "iso-8859-11", "iso8859-11", "iso885911", "tis-620", NULL
   };
-  static const size_t uldecode_windows_874_state_size = 0;
+  #define uldecode_windows_874_state_size 0
   uldecode_each_api int uldecode_windows_874(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_874_table);
   }
-  static const size_t ulencode_windows_874_state_size = 0;
+  #define ulencode_windows_874_state_size 0
   uldecode_each_api int ulencode_windows_874(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_874_table);
   }
@@ -1195,11 +1195,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1250",
     "cp1250", "x-cp1250", NULL
   };
-  static const size_t uldecode_windows_1250_state_size = 0;
+  #define uldecode_windows_1250_state_size 0
   uldecode_each_api int uldecode_windows_1250(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1250_table);
   }
-  static const size_t ulencode_windows_1250_state_size = 0;
+  #define ulencode_windows_1250_state_size 0
   uldecode_each_api int ulencode_windows_1250(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1250_table);
   }
@@ -1221,11 +1221,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1251",
     "cp1251", "x-cp1251", NULL
   };
-  static const size_t uldecode_windows_1251_state_size = 0;
+  #define uldecode_windows_1251_state_size 0
   uldecode_each_api int uldecode_windows_1251(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1251_table);
   }
-  static const size_t ulencode_windows_1251_state_size = 0;
+  #define ulencode_windows_1251_state_size 0
   uldecode_each_api int ulencode_windows_1251(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1251_table);
   }
@@ -1250,11 +1250,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso_8859-1", "iso_8859-1:1987", "l1", "latin1", "us-ascii",
     "x-cp1252", NULL
   };
-  static const size_t uldecode_windows_1252_state_size = 0;
+  #define uldecode_windows_1252_state_size 0
   uldecode_each_api int uldecode_windows_1252(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1252_table);
   }
-  static const size_t ulencode_windows_1252_state_size = 0;
+  #define ulencode_windows_1252_state_size 0
   uldecode_each_api int ulencode_windows_1252(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1252_table);
   }
@@ -1276,11 +1276,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1253",
     "cp1253", "x-cp1253", NULL
   };
-  static const size_t uldecode_windows_1253_state_size = 0;
+  #define uldecode_windows_1253_state_size 0
   uldecode_each_api int uldecode_windows_1253(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1253_table);
   }
-  static const size_t ulencode_windows_1253_state_size = 0;
+  #define ulencode_windows_1253_state_size 0
   uldecode_each_api int ulencode_windows_1253(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1253_table);
   }
@@ -1304,11 +1304,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "iso88599", "iso_8859-9", "iso_8859-9:1989", "l5", "latin5",
     "x-cp1254", NULL
   };
-  static const size_t uldecode_windows_1254_state_size = 0;
+  #define uldecode_windows_1254_state_size 0
   uldecode_each_api int uldecode_windows_1254(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1254_table);
   }
-  static const size_t ulencode_windows_1254_state_size = 0;
+  #define ulencode_windows_1254_state_size 0
   uldecode_each_api int ulencode_windows_1254(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1254_table);
   }
@@ -1330,11 +1330,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1255",
     "cp1255", "x-cp1255", NULL
   };
-  static const size_t uldecode_windows_1255_state_size = 0;
+  #define uldecode_windows_1255_state_size 0
   uldecode_each_api int uldecode_windows_1255(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1255_table);
   }
-  static const size_t ulencode_windows_1255_state_size = 0;
+  #define ulencode_windows_1255_state_size 0
   uldecode_each_api int ulencode_windows_1255(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1255_table);
   }
@@ -1356,11 +1356,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1256",
     "cp1256", "x-cp1256", NULL
   };
-  static const size_t uldecode_windows_1256_state_size = 0;
+  #define uldecode_windows_1256_state_size 0
   uldecode_each_api int uldecode_windows_1256(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1256_table);
   }
-  static const size_t ulencode_windows_1256_state_size = 0;
+  #define ulencode_windows_1256_state_size 0
   uldecode_each_api int ulencode_windows_1256(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1256_table);
   }
@@ -1382,11 +1382,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1257",
     "cp1257", "x-cp1257", NULL
   };
-  static const size_t uldecode_windows_1257_state_size = 0;
+  #define uldecode_windows_1257_state_size 0
   uldecode_each_api int uldecode_windows_1257(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1257_table);
   }
-  static const size_t ulencode_windows_1257_state_size = 0;
+  #define ulencode_windows_1257_state_size 0
   uldecode_each_api int ulencode_windows_1257(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1257_table);
   }
@@ -1408,11 +1408,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "windows-1258",
     "cp1258", "x-cp1258", NULL
   };
-  static const size_t uldecode_windows_1258_state_size = 0;
+  #define uldecode_windows_1258_state_size 0
   uldecode_each_api int uldecode_windows_1258(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_windows_1258_table);
   }
-  static const size_t ulencode_windows_1258_state_size = 0;
+  #define ulencode_windows_1258_state_size 0
   uldecode_each_api int ulencode_windows_1258(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_windows_1258_table);
   }
@@ -1434,11 +1434,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     "x-mac-cyrillic",
     "x-mac-ukrainian", NULL
   };
-  static const size_t uldecode_x_mac_cyrillic_state_size = 0;
+  #define uldecode_x_mac_cyrillic_state_size 0
   uldecode_each_api int uldecode_x_mac_cyrillic(uldecode_u32_t* p, int c, void* _state) {
     (void)_state; return _uldecode_single(p, c, _uldecode_x_mac_cyrillic_table);
   }
-  static const size_t ulencode_x_mac_cyrillic_state_size = 0;
+  #define ulencode_x_mac_cyrillic_state_size 0
   uldecode_each_api int ulencode_x_mac_cyrillic(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return _ulencode_single(p, u, _uldecode_x_mac_cyrillic_table);
   }
@@ -2978,7 +2978,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   struct _uldecode_gb18030_state_t {
     uldecode_u8_t c[3];
   };
-  uldecode_each_api int uldecode_gb18030(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  uldecode_each_api int uldecode_gb18030(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_gb18030_state_t* ul_restrict state;
     uldecode_u32_t u;
 
@@ -3099,11 +3099,11 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
       "chinese", "csgb2312", "csiso58gb231280", "gb2312", "gb_2312",
       "gb_2312-80", "iso-ir-58", "x-gbk", NULL
     };
-    static const size_t uldecode_gbk_state_size = sizeof(struct _uldecode_gb18030_state_t);
+    #define uldecode_gbk_state_size sizeof(struct _uldecode_gb18030_state_t)
     uldecode_each_api int uldecode_gbk(uldecode_u32_t* p, int c, void* _state) {
       return uldecode_gb18030(p, c, _state);
     }
-    static const size_t ulencode_gbk_state_size = 0;
+    #define ulencode_gbk_state_size 0
     uldecode_each_api int ulencode_gbk(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
       (void)_state; return ulencode_gb18030_ex(p, u, 0);
     }
@@ -3113,8 +3113,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     static const char* uldecode_gb18030_name[] = {
       "gb18030", NULL
     };
-    static const size_t uldecode_gb18030_state_size = sizeof(struct _uldecode_gb18030_state_t);
-    static const size_t ulencode_gb18030_state_size = 0;
+    #define uldecode_gb18030_state_size sizeof(struct _uldecode_gb18030_state_t)
+    #define ulencode_gb18030_state_size 0
     uldecode_each_api int ulencode_gb18030(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
       (void)_state; return ulencode_gb18030_ex(p, u, 0);
     }
@@ -4392,8 +4392,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   struct _uldecode_big5_state_t {
     uldecode_u16_t c;
   };
-  static const size_t uldecode_big5_state_size = sizeof(struct _uldecode_big5_state_t);
-  uldecode_each_api int uldecode_big5(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_big5_state_size sizeof(struct _uldecode_big5_state_t)
+  uldecode_each_api int uldecode_big5(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_big5_state_t* ul_restrict state;
 
     state = ul_reinterpret_cast(struct _uldecode_big5_state_t*, _state);
@@ -4406,7 +4406,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     if(state->c != 0) {
       uldecode_u32_t u;
       if((0x40 <= c && c <= 0x7E) || (0xA1 <= c && c <= 0xFE)) {
-        u = (state->c - 0x81) * 157 + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40 : 0x62);
+        u = (state->c - 0x81) * 157 + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40u : 0x62u);
         switch(u) {
         case 1133: state->c = 0; p[0] = 0xCA; p[1] = 0x304; return 2;
         case 1135: state->c = 0; p[0] = 0xCA; p[1] = 0x30C; return 2;
@@ -4424,7 +4424,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     if(0x81 <= c && c <= 0xFE) { state->c = ul_static_cast(uldecode_u16_t, c); return 0; }
     return -1;
   }
-  static const size_t ulencode_big5_state_size = 0;
+  #define ulencode_big5_state_size 0
   uldecode_each_api int ulencode_big5(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     (void)_state; return ulencode_big5_ex(p, u, 0);
   }
@@ -5707,8 +5707,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u8_t lead;
     uldecode_u8_t jis0212_flag;
   };
-  static const size_t uldecode_euc_jp_state_size = sizeof(struct _uldecode_euc_jp_state_t);
-  uldecode_each_api int uldecode_euc_jp(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_euc_jp_state_size sizeof(struct _uldecode_euc_jp_state_t)
+  uldecode_each_api int uldecode_euc_jp(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_euc_jp_state_t* ul_restrict state;
 
     state = ul_reinterpret_cast(struct _uldecode_euc_jp_state_t*, _state);
@@ -5749,7 +5749,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     if(c == 0x8E || c == 0x8F || (0xA1 <= c && c <= 0xFE)) { state->lead = ul_static_cast(uldecode_u8_t, c); return 0; }
     return -1;
   }
-  static const size_t ulencode_euc_jp_state_size = 0;
+  #define ulencode_euc_jp_state_size 0
   uldecode_each_api int ulencode_euc_jp(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     unsigned i;
 
@@ -5784,8 +5784,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     uldecode_u8_t state;
     uldecode_u8_t output_state;
   };
-  static const size_t uldecode_iso_2022_jp_state_size = sizeof(struct _uldecode_iso_2022_jp_state_t);
-  uldecode_each_api int uldecode_iso_2022_jp(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_iso_2022_jp_state_size sizeof(struct _uldecode_iso_2022_jp_state_t)
+  uldecode_each_api int uldecode_iso_2022_jp(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_iso_2022_jp_state_t* ul_restrict state;
 
     enum {
@@ -5886,8 +5886,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   struct _ulencode_iso_2022_jp_state_t {
     int state;
   };
-  static const size_t ulencode_iso_2022_jp_state_size = sizeof(struct _ulencode_iso_2022_jp_state_t);
-  uldecode_each_api int ulencode_iso_2022_jp(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, void* _state) {
+  #define ulencode_iso_2022_jp_state_size sizeof(struct _ulencode_iso_2022_jp_state_t)
+  uldecode_each_api int ulencode_iso_2022_jp(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     struct _ulencode_iso_2022_jp_state_t* ul_restrict state;
     uldecode_u32_t x;
 
@@ -5962,8 +5962,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   struct _uldecode_shift_jis_state_t {
     uldecode_u8_t lead;
   };
-  static const size_t uldecode_shift_jis_state_size = sizeof(struct _uldecode_shift_jis_state_t);
-  uldecode_each_api int uldecode_shift_jis(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_shift_jis_state_size sizeof(struct _uldecode_shift_jis_state_t)
+  uldecode_each_api int uldecode_shift_jis(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_shift_jis_state_t* ul_restrict state;
 
     state = ul_reinterpret_cast(struct _uldecode_shift_jis_state_t*, _state);
@@ -5976,7 +5976,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
       uldecode_u32_t u;
 
       if((0x40 <= c && c <= 0x7E) || (0x80 <= c && c <= 0xFC)) {
-        u = (state->lead - (state->lead < 0xA0 ? 0x81 : 0xC1)) * 188 + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40 : 0x41);
+        u = (state->lead - (state->lead < 0xA0 ? 0x81 : 0xC1)) * 188 + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40u : 0x41u);
         if(8836 <= u && u <= 10715) u = 0xE000 - 8835 + u;
         else u = _uldecode_jis0208_table[u];
       } else u = 0;
@@ -5996,7 +5996,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     }
     return -1;
   }
-  static const size_t ulencode_shift_jis_state_size = 0;
+  #define ulencode_shift_jis_state_size 0
   uldecode_each_api int ulencode_shift_jis(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     uldecode_u32_t i;
 
@@ -7529,8 +7529,8 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
   struct _uldecode_euc_kr_state_t {
     uldecode_u8_t lead;
   };
-  static const size_t uldecode_euc_kr_state_size = sizeof(struct _uldecode_euc_kr_state_t);
-  uldecode_each_api int uldecode_euc_kr(uldecode_u32_t* ul_restrict p, int c, void* _state) {
+  #define uldecode_euc_kr_state_size sizeof(struct _uldecode_euc_kr_state_t)
+  uldecode_each_api int uldecode_euc_kr(uldecode_u32_t* p, int c, void* _state) {
     struct _uldecode_euc_kr_state_t* ul_restrict state;
 
     state = ul_reinterpret_cast(struct _uldecode_euc_kr_state_t*, _state);
@@ -7554,7 +7554,7 @@ static ul_unused int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32
     if(0x81 <= c && c <= 0xFE) { state->lead = ul_static_cast(uldecode_u8_t, c); return 0; }
     return -1;
   }
-  static const size_t ulencode_euc_kr_state_size = 0;
+  #define ulencode_euc_kr_state_size 0
   uldecode_each_api int ulencode_euc_kr(uldecode_u8_t* p, uldecode_u32_t u, void* _state) {
     uldecode_u32_t i;
 
@@ -7706,7 +7706,7 @@ static const uldecode_t uldecoder_list[] = {
 #endif
 */
 };
-static const size_t uldecoder_list_len = sizeof(uldecoder_list) / sizeof(uldecoder_list[0]);
+#define uldecoder_list_len (sizeof(uldecoder_list) / sizeof(uldecoder_list[0]))
 
 static int uldecode_iequal(const char* ul_restrict lhs, const char* ul_restrict rhs) {
   int lc, rc;
