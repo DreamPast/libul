@@ -296,6 +296,16 @@ uldecode_api const uldecode_t* ul_get_decode(const char* name);
 uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
   const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
 
+/**
+ * Get length needed to convert text encoding.
+ * 
+ * This function will return 0 if following situationsn happen:
+ * - text encoding is not supported;
+ * - illegal character in `src`.
+*/
+uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
+
 #ifndef ULDECODE_NO_IMPLE
 
 
@@ -7735,8 +7745,10 @@ uldecode_api const uldecode_t* ul_get_decode(const char* name) {
 }
 
 #include <string.h>
-uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_name,
-    const void* ul_restrict src, size_t src_len, const char* ul_restrict src_name) {
+uldecode_api size_t ul_decode_between(
+  void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
+) {
   uldecode_u32_t _encoder_state[(ULENCODE_STATE_MAX + 3) / 4];
   uldecode_u32_t _decoder_state[(ULDECODE_STATE_MAX + 3) / 4];
   ulencode_func_t _encoder;
@@ -7755,10 +7767,10 @@ uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, c
   memset(_decoder_state, 0, sizeof(_decoder_state));
   do {
     const uldecode_t* _tmp;
-    _tmp = ul_get_decode(src_name);
+    _tmp = ul_get_decode(src_encoding);
     if(_tmp == NULL) return 0;
     _decoder = _tmp->decode;
-    _tmp = ul_get_decode(dest_name);
+    _tmp = ul_get_decode(dest_encoding);
     if(_tmp == NULL) return 0;
     _encoder = _tmp->encode;
   } while(0);
@@ -7794,6 +7806,62 @@ uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, c
   dest_len -= ul_static_cast(size_t, _er);
 
   return _dest_len_raw - dest_len;
+}
+
+uldecode_api size_t ul_decode_between_len(
+  const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
+) {
+  uldecode_u32_t _encoder_state[(ULENCODE_STATE_MAX + 3) / 4];
+  uldecode_u32_t _decoder_state[(ULDECODE_STATE_MAX + 3) / 4];
+  ulencode_func_t _encoder;
+  uldecode_func_t _decoder;
+  uldecode_u32_t _ucode[ULDECODE_RETURN_MAX];
+  uldecode_u8_t _dest_cache[ULENCODE_RETURN_MAX];
+  const uldecode_u8_t* ul_restrict _src;
+  int _di;
+  int _dr, _er;
+  size_t ret;
+
+  _src = ul_reinterpret_cast(const uldecode_u8_t*, src);
+  memset(_encoder_state, 0, sizeof(_encoder_state));
+  memset(_decoder_state, 0, sizeof(_decoder_state));
+  ret = 0;
+  do {
+    const uldecode_t* _tmp;
+    _tmp = ul_get_decode(src_encoding);
+    if(_tmp == NULL) return 0;
+    _decoder = _tmp->decode;
+    _tmp = ul_get_decode(dest_encoding);
+    if(_tmp == NULL) return 0;
+    _encoder = _tmp->encode;
+  } while(0);
+
+  while(src_len-- > 0) {
+    _dr = _decoder(_ucode, *_src++, _decoder_state);
+    if(_dr < 0) return 0;
+    ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
+    for(_di = 0; _di < _dr; ++_di) {
+      _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
+      if(_er < 0) return 0;
+      ret += ul_static_cast(size_t, _er);
+    }
+  }
+
+  _dr = _decoder(_ucode, ULDECODE_EOF, _decoder_state);
+  if(_dr < 0) return 0;
+  ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
+  for(_di = 0; _di < _dr; ++_di) {
+    _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
+    if(_er < 0) return 0;
+    ret += ul_static_cast(size_t, _er);
+  }
+
+  _er = _encoder(_dest_cache, ULENCODE_EOF, _encoder_state);
+  if(_er < 0) return 0;
+  ret += ul_static_cast(size_t, _er);
+
+  return ret;
 }
 
 #endif /* ULDECODE_NO_IMPLE */
