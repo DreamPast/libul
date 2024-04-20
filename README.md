@@ -15,6 +15,7 @@ Most of the header files can be used under C89/C++98, some features require some
 | ulendian.h   | Endianness                                                   |
 | ullist.h     | Double linked list                                           |
 | ulmtx.h      | Mutex                                                        |
+| ulrand.h     | Random number generator (uses [PCG Random Number Generators](https://www.pcg-random.org/)) |
 | ulrb.h       | Red-black tree (quick but restricted version)                |
 | ulsarr.h     | Read-only shared array (speeding up slicing, concatenating, etc.) |
 | ulstdint.h   | Compatibility header file for <stdint.h> (for some older compilers) |
