@@ -145,7 +145,7 @@ ul_hapi uint8_t ulrand8_boundage(ulrand8_t* rng, uint8_t bound) {
   uint8_t threshold = (~bound + 1u) % bound;
   for (;;) {
     uint8_t r = ulrand8_gen(rng);
-    if(r >= threshold) return r % bound;
+    if(r >= threshold) return ul_static_cast(uint8_t, r % bound);
   }
 }
 ul_hapi void ulrand8_advance(ulrand8_t* rng, uint16_t delta) {
@@ -157,13 +157,13 @@ ul_hapi void ulrand8_advance(ulrand8_t* rng, uint16_t delta) {
   while(delta > 0) {
     if(delta & 1) {
       acc_mult *= cur_mult;
-      acc_plus = acc_plus * cur_mult + cur_plus;
+      acc_plus = ul_static_cast(uint16_t, acc_plus * cur_mult + cur_plus);
     }
-    cur_plus = (cur_mult + 1) * cur_plus;
+    cur_plus = ul_static_cast(uint16_t, (cur_mult + 1) * cur_plus);
     cur_mult *= cur_mult;
     delta >>= 1;
   }
-  rng->state = acc_mult * state + acc_plus;
+  rng->state = ul_static_cast(uint16_t, acc_mult * state + acc_plus);
 }
 
 
@@ -207,7 +207,7 @@ ul_hapi uint16_t ulrand16_boundage(ulrand16_t* rng, uint16_t bound) {
   uint16_t threshold = (~bound + 1u) % bound;
   for (;;) {
     uint16_t r = ulrand16_gen(rng);
-    if(r >= threshold) return r % bound;
+    if(r >= threshold) return ul_static_cast(uint16_t, r % bound);
   }
 }
 ul_hapi void ulrand16_advance(ulrand16_t* rng, uint32_t delta) {
