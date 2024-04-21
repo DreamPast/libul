@@ -113,6 +113,19 @@ File descriptor
   #endif
 #endif /* ul_static_cast */
 
+#ifndef ul_const_cast
+  #ifdef __cplusplus
+    #define ul_const_cast(T, val) const_cast<T>(val)
+  #else
+    #define ul_const_cast(T, val) ((T)(val))
+  #endif
+#endif /* ul_const_cast */
+
+/* enable LFS in POSIX */
+#ifndef _LARGEFILE64_SOURCE
+  #define _LARGEFILE64_SOURCE 1
+#endif
+
 #include <stddef.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -123,10 +136,8 @@ File descriptor
 #elif defined(_WIN32)
   typedef __int64 ulfd_int64_t;
 #else
-  typedef double ulfd_int64_t;
+  #error "ulfd.h: need 64-bit integer"
 #endif
-
-typedef int ulfd_int32_t;
 
 #ifdef _WIN32
   #include <Windows.h>
@@ -137,10 +148,8 @@ typedef int ulfd_int32_t;
   #define ulfd_stdout (GetStdHandle(STD_OUTPUT_HANDLE))
   #define ulfd_stderr (GetStdHandle(STD_ERROR_HANDLE))
 #else
-  #ifndef _LARGEFILE64_SOURCE
-    #define _LARGEFILE64_SOURCE 1
-  #endif
   #include <unistd.h>
+
   typedef int ulfd_t;
   #define ulfd_invalid_value -1
 
@@ -206,10 +215,10 @@ ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, int mode);
 ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, int mode);
 ul_hapi int ulfd_close(ulfd_t fd);
 
-ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* preaded);
-ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten);
-ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* preaded);
-ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten);
+ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes);
+ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten_bytes);
+ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes);
+ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes);
 
 #define ULFD_SEEK_SET 0 /* seek to an absolute position */
 #define ULFD_SEEK_CUR 1 /* seek relative to current position */
@@ -228,6 +237,28 @@ ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 ul_hapi int ulfd_sync(ulfd_t fd);
 ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
+
+#define ULFD_MAP_PROT_NONE  (0)      /* pages may not be accessed */
+#define ULFD_MAP_PROT_READ  (1 << 0) /* pages may be read */
+#define ULFD_MAP_PROT_WRITE (1 << 1) /* pages may be writen_bytes */
+#define ULFD_MAP_PROT_EXEC  (1 << 2) /* pages may be executed */
+
+#define ULFD_MAP_ANONYMOUS (1 << 3) /* the mapping isn't backed by any file */
+#define ULFD_MAP_ANON      ULFD_MAP_ANONYMOUS
+#define ULFD_MAP_FIXED     (1 << 4) /* place the mapping at exactly that address */
+
+#define ULFD_MAP_SHARED    (1 << 5) /* POSIX: share this mapping */
+#define ULFD_MAP_PRIVATE   (1 << 6) /* POSIX: create a private copy-on-write mapping */
+
+ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags);
+ul_hapi int ulfd_munmap(void* addr, size_t len);
+ul_hapi int ulfd_mprotect(void* addr, size_t len, int prot);
+#define ULFD_MS_ASYNC      1 /* POSIX: specifiy that an update be scheduled, but the call returns immediately */
+#define ULFD_MS_SYNC       2 /* POSIX: request an update and waits for it to complete. */
+#define ULFD_MS_INVALIDATE 4 /* POSIX: ask to invalidate other mappings of the same file */
+ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags);
+ul_hapi int ulfd_mlock(const void* addr, size_t len);
+ul_hapi int ulfd_munlock(const void* addr, size_t len);
 
 #ifndef ULOS_STR_TO_WSTR_DEFINED
   #if UINT_MAX >= 0xFFFFFFFF
@@ -665,58 +696,58 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     return CloseHandle(fd) ? 0 : _ul_win32_toerrno(GetLastError());
   }
 
-  ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* preaded) {
-    size_t sum_readed = 0;
-    DWORD readed;
+  ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes) {
+    size_t sum_read_bytes = 0;
+    DWORD read_bytes;
     DWORD error = 0;
     BOOL call_ret;
 
   #ifdef _WIN64
     while(ul_unlikely(count > 0xFFFFFFFFu)) {
-      call_ret = ReadFile(fd, buf, 0xFFFFFFFFu, &readed, NULL);
+      call_ret = ReadFile(fd, buf, 0xFFFFFFFFu, &read_bytes, NULL);
       if(!call_ret) { error = GetLastError(); goto do_return; }
-      if(readed < 0xFFFFFFFFu) goto do_return;
+      if(read_bytes < 0xFFFFFFFFu) goto do_return;
       buf = ul_reinterpret_cast(char*, buf) + count;
-      count -= 0xFFFFFFFFu; sum_readed += 0xFFFFFFFFu;
+      count -= 0xFFFFFFFFu; sum_read_bytes += 0xFFFFFFFFu;
     }
   #endif
-    call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &readed, NULL);
+    call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &read_bytes, NULL);
     if(!call_ret) error = GetLastError();
 
   do_return:
-    *preaded = sum_readed + readed;
+    *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
     else return _ul_win32_toerrno(error);
   }
-  ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten) {
-    size_t sum_writen = 0;
-    DWORD writen;
+  ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten_bytes) {
+    size_t sum_writen_bytes = 0;
+    DWORD writen_bytes;
     DWORD error = 0;
     BOOL call_ret;
 
   #ifdef _WIN64
     while(ul_unlikely(count > 0xFFFFFFFFu)) {
-      call_ret = WriteFile(fd, buf, 0xFFFFFFFFu, &writen, NULL);
+      call_ret = WriteFile(fd, buf, 0xFFFFFFFFu, &writen_bytes, NULL);
       if(!call_ret) { error = GetLastError(); goto do_return; }
-      if(writen < 0xFFFFFFFFu) goto do_return;
+      if(writen_bytes < 0xFFFFFFFFu) goto do_return;
       buf = ul_reinterpret_cast(const char*, buf) + count;
-      count -= 0xFFFFFFFFu; sum_writen += 0xFFFFFFFFu;
+      count -= 0xFFFFFFFFu; sum_writen_bytes += 0xFFFFFFFFu;
     }
   #endif
-    call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen, NULL);
+    call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen_bytes, NULL);
     if(!call_ret) error = GetLastError();
 
   do_return:
-    if((*pwriten = sum_writen + writen) == 0 && error == 0) return ENOSPC;
+    if((*pwriten_bytes = sum_writen_bytes + writen_bytes) == 0 && error == 0) return ENOSPC;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else return _ul_win32_toerrno(error);
   }
 
-  ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* preaded) {
+  ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
     OVERLAPPED overlapped = { 0 };
-    size_t sum_readed = 0;
-    DWORD readed;
+    size_t sum_read_bytes = 0;
+    DWORD read_bytes;
     DWORD error = 0;
     BOOL call_ret;
 
@@ -725,27 +756,27 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     overlapped.OffsetHigh = ul_static_cast(DWORD, off >> 32);
   #ifdef _WIN64
     while(ul_unlikely(count > 0xFFFFFFFFu)) {
-      call_ret = ReadFile(fd, buf, 0xFFFFFFFFu, &readed, &overlapped);
+      call_ret = ReadFile(fd, buf, 0xFFFFFFFFu, &read_bytes, &overlapped);
       if(!call_ret) { error = GetLastError(); goto do_return; }
-      if(readed < 0xFFFFFFFFu) goto do_return;
+      if(read_bytes < 0xFFFFFFFFu) goto do_return;
       buf = ul_reinterpret_cast(char*, buf) + count;
-      count -= 0xFFFFFFFFu; sum_readed += 0xFFFFFFFFu;
+      count -= 0xFFFFFFFFu; sum_read_bytes += 0xFFFFFFFFu;
       if(overlapped.Offset-- == 0) ++overlapped.OffsetHigh;
     }
   #endif
-    call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &readed, &overlapped);
+    call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &read_bytes, &overlapped);
     if(!call_ret) error = GetLastError();
 
   do_return:
-    *preaded = sum_readed + readed;
+    *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
     else return _ul_win32_toerrno(error);
   }
-  ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten) {
+  ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
     OVERLAPPED overlapped = { 0 };
-    size_t sum_writen = 0;
-    DWORD writen;
+    size_t sum_writen_bytes = 0;
+    DWORD writen_bytes;
     DWORD error = 0;
     BOOL call_ret;
 
@@ -754,19 +785,19 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     overlapped.OffsetHigh = ul_static_cast(DWORD, off >> 32);
   #ifdef _WIN64
     while(ul_unlikely(count > 0xFFFFFFFFu)) {
-      call_ret = WriteFile(fd, buf, 0xFFFFFFFFu, &writen, &overlapped);
+      call_ret = WriteFile(fd, buf, 0xFFFFFFFFu, &writen_bytes, &overlapped);
       if(!call_ret) { error = GetLastError(); goto do_return; }
-      if(writen < 0xFFFFFFFFu) goto do_return;
+      if(writen_bytes < 0xFFFFFFFFu) goto do_return;
       buf = ul_reinterpret_cast(const char*, buf) + count;
-      count -= 0xFFFFFFFFu; sum_writen += 0xFFFFFFFFu;
+      count -= 0xFFFFFFFFu; sum_writen_bytes += 0xFFFFFFFFu;
       if(overlapped.Offset-- == 0) ++overlapped.OffsetHigh;
     }
   #endif
-    call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen, &overlapped);
+    call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen_bytes, &overlapped);
     if(!call_ret) error = GetLastError();
 
   do_return:
-    if((*pwriten = sum_writen + writen) == 0 && error == 0) return ENOSPC;
+    if((*pwriten_bytes = sum_writen_bytes + writen_bytes) == 0 && error == 0) return ENOSPC;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else return _ul_win32_toerrno(error);
   }
@@ -839,6 +870,74 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     LARGE_INTEGER length;
     if(!GetFileSizeEx(fd, &length)) return _ul_win32_toerrno(GetLastError());
     *plength = length.QuadPart; return 0;
+  }
+
+  ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags) {
+    DWORD off_low, off_high;
+    DWORD maxsize_low, maxsize_high;
+    DWORD protect, access = 0;
+    HANDLE fm, map;
+
+    if(off < 0) return EINVAL;
+    off_low = ul_static_cast(DWORD, off);
+    off_high = ul_static_cast(DWORD, off >> 32);
+    off += len;
+    maxsize_low = ul_static_cast(DWORD, off);
+    maxsize_high = ul_static_cast(DWORD, off >> 32);
+
+    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == ULFD_MAP_PROT_NONE)
+      protect = 0;
+    else
+      if(flags & ULFD_MAP_PROT_EXEC)
+        protect = (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+      else
+        protect = (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY;
+
+    if(flags != ULFD_MAP_PROT_NONE) {
+      if(flags & ULFD_MAP_PROT_READ) access |= FILE_MAP_READ;
+      if(flags & ULFD_MAP_PROT_WRITE) access |= FILE_MAP_WRITE;
+      if(flags & ULFD_MAP_PROT_EXEC) access |= FILE_MAP_EXECUTE;
+    }
+
+    if(len == 0 && (flags & ~ULFD_MAP_PROT_EXEC) == ULFD_MAP_PROT_EXEC) return EINVAL;
+    if(flags & ULFD_MAP_ANONYMOUS) fd = INVALID_HANDLE_VALUE;
+
+    fm = CreateFileMapping(fd, NULL, protect, maxsize_high, maxsize_low, NULL);
+    if(fm == NULL) return _ul_win32_toerrno(GetLastError());
+
+    if(flags & ULFD_MAP_FIXED) map = MapViewOfFile(fm, access, off_high, off_low, len);
+    else map = MapViewOfFileEx(fm, access, off_high, off_low, len, addr);
+
+    CloseHandle(fm);
+    if(map == NULL) return _ul_win32_toerrno(GetLastError());
+    *pmap = map; return 0;
+  }
+  ul_hapi int ulfd_munmap(void* addr, size_t len) {
+    (void)len; return UnmapViewOfFile(addr) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_mprotect(void* addr, size_t len, int prot) {
+    DWORD new_protect;
+    DWORD old_protect = 0;
+
+    if((prot & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == ULFD_MAP_PROT_NONE)
+      new_protect = 0;
+    else
+      if(prot & ULFD_MAP_PROT_EXEC)
+        new_protect = (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+      else
+        new_protect = (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY;
+
+    return VirtualProtect(addr, len, new_protect, &old_protect) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags) {
+    (void)ms_flags;
+    return FlushViewOfFile(addr, len) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_mlock(const void* addr, size_t len) {
+    return VirtualLock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_munlock(const void* addr, size_t len) {
+    return VirtualUnlock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
 #else
   #include <fcntl.h>
@@ -914,32 +1013,32 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     return close(fd) < 0 ? errno : 0;
   }
 
-  ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* preaded) {
+  ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes) {
     ssize_t ret;
     ret = read(fd, buf, count);
     if(ret < 0) return errno;
-    *preaded = ul_static_cast(size_t, ret);
+    *pread_bytes = ul_static_cast(size_t, ret);
     return 0;
   }
-  ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten) {
+  ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten_bytes) {
     ssize_t ret;
     ret = write(fd, buf, count);
     if(ret < 0) return errno;
-    *pwriten = ul_static_cast(size_t, ret);
+    *pwriten_bytes = ul_static_cast(size_t, ret);
     return 0;
   }
-  ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* preaded) {
+  ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
     ssize_t ret;
     ret = pread64(fd, buf, count, off);
     if(ret < 0) return errno;
-    *preaded = ul_static_cast(size_t, ret);
+    *pread_bytes = ul_static_cast(size_t, ret);
     return 0;
   }
-  ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten) {
+  ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
     ssize_t ret;
     ret = pwrite64(fd, buf, count, off);
     if(ret < 0) return errno;
-    *pwriten = ul_static_cast(size_t, ret);
+    *pwriten_bytes = ul_static_cast(size_t, ret);
     return 0;
   }
 
@@ -997,6 +1096,58 @@ ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
     if(fstat64(fd, &stat) < 0) return errno;
     *plength = stat.st_size;
     return 0;
+  }
+
+  #include <sys/mman.h>
+  ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags) {
+    int prot, flag = 0;
+    void* map;
+
+    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == 0) {
+      prot = PROT_NONE;
+    } else {
+      prot = 0;
+      if(flags & ULFD_MAP_PROT_READ) prot |= PROT_READ;
+      if(flags & ULFD_MAP_PROT_WRITE) prot |= PROT_WRITE;
+      if(flags & ULFD_MAP_PROT_EXEC) prot |= PROT_EXEC;
+    }
+
+    if(flags & ULFD_MAP_ANONYMOUS) flag |= MAP_ANONYMOUS;
+    if(flags & ULFD_MAP_FIXED) flag |= MAP_FIXED;
+    if(flags & ULFD_MAP_SHARED) flag |= MAP_SHARED;
+    if(flags & ULFD_MAP_PRIVATE) flag |= MAP_PRIVATE;
+
+    map = mmap64(addr, len, prot, flag, fd, off);
+    if(map == MAP_FAILED) return errno;
+    *pmap = map; return 0;
+  }
+  ul_hapi int ulfd_munmap(void* addr, size_t len) {
+    return munmap(addr, len) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_mprotect(void* addr, size_t len, int flags) {
+    int prot;
+    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == 0) {
+      prot = PROT_NONE;
+    } else {
+      prot = 0;
+      if(flags & ULFD_MAP_PROT_READ) prot |= PROT_READ;
+      if(flags & ULFD_MAP_PROT_WRITE) prot |= PROT_WRITE;
+      if(flags & ULFD_MAP_PROT_EXEC) prot |= PROT_EXEC;
+    }
+    return mprotect(addr, len, prot) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags) {
+    int flag = 0;
+    if(ms_flags & ULFD_MS_ASYNC) flag |= MS_ASYNC;
+    if(ms_flags & ULFD_MS_SYNC) flag |= MS_SYNC;
+    if(ms_flags & ULFD_MS_INVALIDATE) flag |= MS_INVALIDATE;
+    return msync(addr, len, flag) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_mlock(const void* addr, size_t len) {
+    return mlock(addr, len) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_munlock(const void* addr, size_t len) {
+    return munlock(addr, len) < 0 ? errno : 0;
   }
 #endif
 
