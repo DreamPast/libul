@@ -10,6 +10,7 @@ Most of the header files can be used under C89/C++98, some features require some
 | ------------ | ------------------------------------------------------------ |
 | ulatomic.h   | Atomic operations                                            |
 | uldate.h     | Date and time (like `Date` in Javascript)                    |
+| uldbuf.h     | Dynamic buffer                                               |
 | uldecode.h   | Text encoding                                                |
 | uldl.h       | Dynamic shared library                                       |
 | ulendian.h   | Endianness                                                   |
