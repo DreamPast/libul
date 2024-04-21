@@ -214,6 +214,7 @@ ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode)
 ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, int mode);
 ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, int mode);
 ul_hapi int ulfd_close(ulfd_t fd);
+ul_hapi int ulfd_pipe(ulfd_t pfds[2]);
 
 ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes);
 ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten_bytes);
@@ -628,7 +629,7 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
       else create = OPEN_EXISTING;
     }
 
-    if(oflag & ULFD_O_SECURE) share = (access == GENERIC_READ ? FILE_SHARE_READ : 0);
+    if(oflag & ULFD_O_SECURE) share = ul_static_cast(DWORD, access == GENERIC_READ ? FILE_SHARE_READ : 0);
     else if(oflag & ULFD_O_DENYRW) share = 0;
     else if(oflag & ULFD_O_DENYRD) share = FILE_SHARE_WRITE;
     else if(oflag & ULFD_O_DENYWR) share = FILE_SHARE_READ;
@@ -694,6 +695,10 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
 
   ul_hapi int ulfd_close(ulfd_t fd) {
     return CloseHandle(fd) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+
+  ul_hapi int ulfd_pipe(ulfd_t pfds[2]) {
+    return CreatePipe(pfds + 0, pfds + 1, NULL, 0) ? 0 : _ul_win32_toerrno(GetLastError());
   }
 
   ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes) {
@@ -889,9 +894,9 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
       protect = 0;
     else
       if(flags & ULFD_MAP_PROT_EXEC)
-        protect = (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+        protect = ul_static_cast(DWORD, (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
       else
-        protect = (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY;
+        protect = ul_static_cast(DWORD, (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
 
     if(flags != ULFD_MAP_PROT_NONE) {
       if(flags & ULFD_MAP_PROT_READ) access |= FILE_MAP_READ;
@@ -923,9 +928,9 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
       new_protect = 0;
     else
       if(prot & ULFD_MAP_PROT_EXEC)
-        new_protect = (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
       else
-        new_protect = (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY;
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
 
     return VirtualProtect(addr, len, new_protect, &old_protect) ? 0 : _ul_win32_toerrno(GetLastError());
   }
@@ -1011,6 +1016,10 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
   }
   ul_hapi int ulfd_close(ulfd_t fd) {
     return close(fd) < 0 ? errno : 0;
+  }
+
+  ul_hapi int ulfd_pipe(ulfd_t pfds[2]) {
+    return pipe(pfds) < 0 ? errno : 0;
   }
 
   ul_hapi int ulfd_read(ulfd_t fd, void* buf, size_t count, size_t* pread_bytes) {
