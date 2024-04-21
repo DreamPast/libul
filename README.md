@@ -13,6 +13,7 @@ Most of the header files can be used under C89/C++98, some features require some
 | uldecode.h   | Text encoding                                                |
 | uldl.h       | Dynamic shared library                                       |
 | ulendian.h   | Endianness                                                   |
+| ulfd.h       | File descriptor                                              |
 | ullist.h     | Double linked list                                           |
 | ulmtx.h      | Mutex                                                        |
 | ulrand.h     | Random number generator (uses [PCG Random Number Generators](https://www.pcg-random.org/)) |

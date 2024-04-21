@@ -13,6 +13,7 @@
 | uldecode.h | 文本编码                                                     |
 | uldl.h     | 动态链接库                                                   |
 | ulendian.h | 字节序                                                       |
+| ulfd.h     | 文件描述符                                                   |
 | ullist.h   | 双向链表                                                     |
 | ulmtx.h    | 互斥锁                                                       |
 | ulrand.h   | 随机数生成器（使用[PCG随机数生成器](https://www.pcg-random.org/)） |
