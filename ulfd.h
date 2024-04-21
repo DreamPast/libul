@@ -239,10 +239,11 @@ ul_hapi int ulfd_sync(ulfd_t fd);
 ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
 
-#define ULFD_MAP_PROT_NONE  (0)      /* pages may not be accessed */
-#define ULFD_MAP_PROT_READ  (1 << 0) /* pages may be read */
-#define ULFD_MAP_PROT_WRITE (1 << 1) /* pages may be writen_bytes */
-#define ULFD_MAP_PROT_EXEC  (1 << 2) /* pages may be executed */
+#define ULFD_MAP_PROT_NONE      (0)      /* pages may not be accessed */
+#define ULFD_MAP_PROT_READ      (1 << 0) /* pages may be read */
+#define ULFD_MAP_PROT_WRITE     (1 << 1) /* pages may be write */
+#define ULFD_MAP_PROT_EXEC      (1 << 2) /* pages may be executed */
+#define ULFD_MAP_PROT_READWRITE (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE) /* pages may be read or write */
 
 #define ULFD_MAP_ANONYMOUS (1 << 3) /* the mapping isn't backed by any file */
 #define ULFD_MAP_ANON      ULFD_MAP_ANONYMOUS
@@ -258,8 +259,11 @@ ul_hapi int ulfd_mprotect(void* addr, size_t len, int prot);
 #define ULFD_MS_SYNC       2 /* POSIX: request an update and waits for it to complete. */
 #define ULFD_MS_INVALIDATE 4 /* POSIX: ask to invalidate other mappings of the same file */
 ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags);
+/* note: some platforms may need `len` to be multiple of the page size */
 ul_hapi int ulfd_mlock(const void* addr, size_t len);
 ul_hapi int ulfd_munlock(const void* addr, size_t len);
+
+ul_hapi size_t ulfd_pagesize(void);
 
 #ifndef ULOS_STR_TO_WSTR_DEFINED
   #if UINT_MAX >= 0xFFFFFFFF
@@ -944,6 +948,12 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
     return VirtualUnlock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
+
+  ul_hapi size_t ulfd_pagesize(void) {
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwPageSize;
+  }
 #else
   #include <fcntl.h>
   #include <sys/stat.h>
@@ -1157,6 +1167,10 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
   }
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
     return munlock(addr, len) < 0 ? errno : 0;
+  }
+
+  ul_hapi size_t ulfd_pagesize(void) {
+    return ul_static_cast(size_t, sysconf(_SC_PAGESIZE));
   }
 #endif
 
