@@ -42,7 +42,7 @@ int main() {
     do {
         ulfd_t rfd, wfd;
         int err;
-        size_t readed, writen;
+        size_t read, writen;
         ulfd_int64_t length;
         char* buf = 0;
 
@@ -55,7 +55,7 @@ int main() {
             fprintf(stderr, "[ERROR] open \"%s\" for writing: %s\n", "example_ulfd.c.out", strerror(err)); exit(1);
         }
 
-        err = ulfd_write(&rfd, &buf, 4, &readed);
+        err = ulfd_write(rfd, &buf, 4, &read);
         if(err != EBADF) {
             fprintf(stderr, "[ERROR] write read-only file: %s\n", strerror(err)); goto failed2;
         }
@@ -65,36 +65,36 @@ int main() {
         }
         buf = (char*)malloc(length);
         if(!buf) { fprintf(stderr, "[ERROR] allocate memmory\n"); goto failed2; }
-        err = ulfd_read(rfd, buf, length, &readed);
+        err = ulfd_read(rfd, buf, length, &read);
         if(err != 0) {
             fprintf(stderr, "[ERROR] ulfd_read(): %s\n", strerror(err)); goto failed2;
         }
-        if((size_t)(length) != readed) {
-            fprintf(stderr, "[ERROR] ulfd_read() reads some: %d / %d", (int)readed, (int)length); goto failed2;
+        if((size_t)(length) != read) {
+            fprintf(stderr, "[ERROR] ulfd_read() reads some: %d / %d", (int)read, (int)length); goto failed2;
         }
 
-        err = ulfd_pread(rfd, buf, length, 0, &readed);
+        err = ulfd_pread(rfd, buf, length, 0, &read);
         if(err != 0) {
             fprintf(stderr, "[ERROR] ulfd_pread(): %s\n", strerror(err)); goto failed2;
         }
-        if((size_t)(length) != readed) {
-            fprintf(stderr, "[ERROR] ulfd_pread() reads some: %d / %d", (int)readed, (int)length); goto failed2;
+        if((size_t)(length) != read) {
+            fprintf(stderr, "[ERROR] ulfd_pread() reads some: %d / %d", (int)read, (int)length); goto failed2;
         }
 
         err = ulfd_write(wfd, buf, length, &writen);
         if(err != 0) {
             fprintf(stderr, "[ERROR] ulfd_write(): %s\n", strerror(err)); goto failed2;
         }
-        if(readed != writen) {
-            fprintf(stderr, "[ERROR] ulfd_write() writes some: %d / %d", (int)writen, (int)readed); goto failed2;
+        if(read != writen) {
+            fprintf(stderr, "[ERROR] ulfd_write() writes some: %d / %d", (int)writen, (int)read); goto failed2;
         }
 
         err = ulfd_pwrite(wfd, buf, length, 0, &writen);
         if(err != 0) {
             fprintf(stderr, "[ERROR] ulfd_pwrite(): %s\n", strerror(err)); goto failed2;
         }
-        if(readed != writen) {
-            fprintf(stderr, "[ERROR] ulfd_pwrite() writes some: %d / %d", (int)writen, (int)readed); goto failed2;
+        if(read != writen) {
+            fprintf(stderr, "[ERROR] ulfd_pwrite() writes some: %d / %d", (int)writen, (int)read); goto failed2;
         }
         
         free(buf);
