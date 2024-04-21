@@ -15,6 +15,9 @@ Endian order
   - void ul_bswap16_multi(void* dest, const void* src, size_t num);
   - void ul_bswap32_multi(void* dest, const void* src, size_t num);
   - void ul_bswap64_multi(void* dest, const void* src, size_t num);
+  - T ul_bswap_*(T val);
+  - T ul_trans_*_le(T val);
+  - T ul_trans_*_be(T val);
 
 
 # License
@@ -200,6 +203,7 @@ Endian order
   #endif
 #endif /* ul_static_cast */
 
+#include <limits.h>
 #include <assert.h>
 
 ul_hapi uint16_t (ul_bswap16)(uint16_t v) {
@@ -258,6 +262,257 @@ ul_hapi void ul_bswap32_multi(void* dest, const void* src, size_t num) {
     assert((ul_reinterpret_cast(intptr_t, src) & 0x7) == 0);
     while(num--) { *rp++ = ul_bswap64(*sp); ++sp; }
   }
+#endif
+
+ul_hapi char ul_bswap_char(char c) { return c; }
+ul_hapi signed char ul_bswap_schar(signed char c) { return c; }
+ul_hapi unsigned char ul_bswap_uchar(unsigned char c) { return c; }
+
+#if SHRT_MAX == INT16_MAX
+  ul_hapi signed short ul_bswap_short(signed short val) {
+    return ul_static_cast(signed short, ul_bswap16(ul_static_cast(uint16_t, val)));
+  }
+  ul_hapi unsigned short ul_bswap_ushort(unsigned short val) {
+    return ul_static_cast(unsigned short, ul_bswap16(ul_static_cast(uint16_t, val)));
+  }
+#elif SHRT_MAX == INT32_MAX
+  ul_hapi signed short ul_bswap_short(signed short val) {
+    return ul_static_cast(signed short, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+  ul_hapi unsigned short ul_bswap_ushort(unsigned short val) {
+    return ul_static_cast(unsigned short, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+#elif SHRT_MAX == INT64_MAX
+  ul_hapi signed short ul_bswap_short(signed short val) {
+    return ul_static_cast(signed short, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+  ul_hapi unsigned short ul_bswap_ushort(unsigned short val) {
+    return ul_static_cast(unsigned short, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+#else
+  #error "ulendian.h: `short` should be 16-bit, 32-bit or 64-bit"
+#endif
+
+#if INT_MAX == INT16_MAX
+  ul_hapi signed int ul_bswap_int(signed int val) {
+    return ul_static_cast(signed int, ul_bswap16(ul_static_cast(uint16_t, val)));
+  }
+  ul_hapi unsigned int ul_bswap_uint(unsigned int val) {
+    return ul_static_cast(unsigned int, ul_bswap16(ul_static_cast(uint16_t, val)));
+  }
+#elif INT_MAX == INT32_MAX
+  ul_hapi signed int ul_bswap_int(signed int val) {
+    return ul_static_cast(signed int, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+  ul_hapi unsigned int ul_bswap_uint(unsigned int val) {
+    return ul_static_cast(unsigned int, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+#elif INT_MAX == INT64_MAX
+  ul_hapi signed int ul_bswap_int(signed int val) {
+    return ul_static_cast(signed int, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+  ul_hapi unsigned int ul_bswap_uint(unsigned int val) {
+    return ul_static_cast(unsigned int, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+#else
+  #error "ulendian.h: `int` should be 16-bit, 32-bit or 64-bit"
+#endif
+
+#if LONG_MAX == INT32_MAX
+  ul_hapi signed long ul_bswap_long(signed long val) {
+    return ul_static_cast(signed long, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+  ul_hapi unsigned long ul_bswap_ulong(unsigned long val) {
+    return ul_static_cast(unsigned long, ul_bswap32(ul_static_cast(uint32_t, val)));
+  }
+#elif LONG_MAX == long64_MAX
+  ul_hapi signed long ul_bswap_long(signed long val) {
+    return ul_static_cast(signed long, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+  ul_hapi unsigned long ul_bswap_ulong(unsigned long val) {
+    return ul_static_cast(unsigned long, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+#else
+  #error "ulendian.h: `long` should be 32-bit or 64-bit"
+#endif
+
+#if !defined(LLONG_MAX)
+  /* define nothing */
+#elif defined(INT64_MAX) && LLONG_MAX == INT64_MAX
+  ul_hapi signed long long ul_bswap_llong(signed long long val) {
+    return ul_static_cast(signed long long, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+  ul_hapi unsigned long long ul_bswap_ullong(unsigned long long val) {
+    return ul_static_cast(unsigned long long, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+#else
+  #error "ulendian.h: `long long` should be 64-bit"
+#endif
+
+ul_hapi int8_t ul_bswap_i8(int8_t val) { return val; }
+ul_hapi int16_t ul_bswap_i16(int16_t val) {
+  return ul_static_cast(int16_t, ul_bswap16(ul_static_cast(uint16_t, val)));
+}
+ul_hapi int32_t ul_bswap_i32(int32_t val) {
+  return ul_static_cast(int32_t, ul_bswap32(ul_static_cast(uint32_t, val)));
+}
+
+ul_hapi uint8_t ul_bswap_u8(uint8_t val) { return val; }
+ul_hapi uint16_t ul_bswap_u16(uint16_t val) { return ul_bswap16(val); }
+ul_hapi uint32_t ul_bswap_u32(uint32_t val) { return ul_bswap32(val); }
+
+#ifdef INT64_MAX
+  ul_hapi int64_t ul_bswap_i64(int64_t val) {
+    return ul_static_cast(int64_t, ul_bswap64(ul_static_cast(uint64_t, val)));
+  }
+  ul_hapi uint64_t ul_bswap_u64(uint64_t val) { return ul_bswap64(val); }
+#endif
+
+ul_hapi float ul_bswap_float(float val) {
+  union { float f; uint32_t i; } x;
+  x.f = val;
+  x.i = ul_bswap32(x.i);
+  return x.f;
+}
+ul_hapi double ul_bswap_double(double val) {
+#ifdef UINT64_MAX
+  union { double f; uint64_t i; } x;
+  x.f = val;
+  x.i = ul_bswap64(x.i);
+  return x.f;
+#else
+  union { double f; uint32_t i[2]; } x;
+  uint32_t t;
+  x.f = val;
+  t = ul_bswap32(x.i[0]);
+  x.i[0] = ul_bswap32(x.i[1]);
+  x.i[1] = t;
+  return x.f;
+#endif
+}
+
+#define ul_trans_char_le(c)  (c)
+#define ul_trans_schar_le(c) (c)
+#define ul_trans_uchar_le(c) (c)
+#define ul_trans_i8_le(c)    (c)
+#define ul_trans_u8_le(c)    (c)
+
+#define ul_trans_char_be(c)  (c)
+#define ul_trans_schar_be(c) (c)
+#define ul_trans_uchar_be(c) (c)
+#define ul_trans_i8_be(c)    (c)
+#define ul_trans_u8_be(c)    (c)
+
+#ifdef UL_ENDIAN_LITTLE
+  #define ul_trans_short_le(val) (val)
+  #define ul_trans_int_le(val)   (val)
+  #define ul_trans_long_le(val)  (val)
+
+  #define ul_trans_ushort_le(val) (val)
+  #define ul_trans_uint_le(val)   (val)
+  #define ul_trans_ulong_le(val)  (val)
+
+  #define ul_trans_float_le(val)  (val)
+  #define ul_trans_double_le(val) (val)
+
+  #define ul_trans_i16_le(val) (val)
+  #define ul_trans_i32_le(val) (val)
+
+  #define ul_trans_u16_le(val) (val)
+  #define ul_trans_u32_le(val) (val)
+
+  #ifdef INT64_MAX
+    #define ul_trans_i64_le(val) (val)
+    #define ul_trans_u64_le(val) (val)
+  #endif
+
+  #ifdef LLONG_MAX
+    #define ul_trans_llong_le(val)  (val)
+    #define ul_trans_ullong_le(val) (val)
+  #endif
+
+
+  #define ul_trans_short_be(val) ul_bswap_short(val)
+  #define ul_trans_int_be(val)   ul_bswap_int(val)
+  #define ul_trans_long_be(val)  ul_bswap_long(val)
+
+  #define ul_trans_ushort_be(val) ul_bswap_ushort(val)
+  #define ul_trans_uint_be(val)   ul_bswap_uint(val)
+  #define ul_trans_ulong_be(val)  ul_bswap_ulong(val)
+
+  #define ul_trans_float_be(val)  ul_bswap_float(val)
+  #define ul_trans_double_be(val) ul_bswap_double(val)
+
+  #define ul_trans_i16_be(val) ul_bswap_i16(val)
+  #define ul_trans_i32_be(val) ul_bswap_i32(val)
+
+  #define ul_trans_u16_be(val) ul_bswap_u16(val)
+  #define ul_trans_u32_be(val) ul_bswap_u32(val)
+
+  #ifdef INT64_MAX
+    #define ul_trans_i64_be(val) ul_bswap_i64(val)
+    #define ul_trans_u64_be(val) ul_bswap_u64(val)
+  #endif
+
+  #ifdef LLONG_MAX
+    #define ul_trans_llong_be(val)  ul_bswap_llong(val)
+    #define ul_trans_ullong_be(val) ul_bswap_ullong(val)
+  #endif
+#else
+  #define ul_trans_short_be(val) (val)
+  #define ul_trans_int_be(val)   (val)
+  #define ul_trans_long_be(val)  (val)
+
+  #define ul_trans_ushort_be(val) (val)
+  #define ul_trans_uint_be(val)   (val)
+  #define ul_trans_ulong_be(val)  (val)
+
+  #define ul_trans_float_be(val)  (val)
+  #define ul_trans_double_be(val) (val)
+
+  #define ul_trans_i16_be(val) (val)
+  #define ul_trans_i32_be(val) (val)
+
+  #define ul_trans_u16_be(val) (val)
+  #define ul_trans_u32_be(val) (val)
+
+  #ifdef INT64_MAX
+    #define ul_trans_i64_be(val) (val)
+    #define ul_trans_u64_be(val) (val)
+  #endif
+
+  #ifdef LLONG_MAX
+    #define ul_trans_llong_be(val)  (val)
+    #define ul_trans_ullong_be(val) (val)
+  #endif
+
+
+  #define ul_trans_short_le(val) ul_bswap_short(val)
+  #define ul_trans_int_le(val)   ul_bswap_int(val)
+  #define ul_trans_long_le(val)  ul_bswap_long(val)
+
+  #define ul_trans_ushort_le(val) ul_bswap_ushort(val)
+  #define ul_trans_uint_le(val)   ul_bswap_uint(val)
+  #define ul_trans_ulong_le(val)  ul_bswap_ulong(val)
+
+  #define ul_trans_float_le(val)  ul_bswap_float(val)
+  #define ul_trans_double_le(val) ul_bswap_double(val)
+
+  #define ul_trans_i16_le(val) ul_bswap_i16(val)
+  #define ul_trans_i32_le(val) ul_bswap_i32(val)
+
+  #define ul_trans_u16_le(val) ul_bswap_u16(val)
+  #define ul_trans_u32_le(val) ul_bswap_u32(val)
+
+  #ifdef INT64_MAX
+    #define ul_trans_i64_le(val) ul_bswap_i64(val)
+    #define ul_trans_u64_le(val) ul_bswap_u64(val)
+  #endif
+
+  #ifdef LLONG_MAX
+    #define ul_trans_llong_le(val)  ul_bswap_llong(val)
+    #define ul_trans_ullong_le(val) ul_bswap_ullong(val)
+  #endif
 #endif
 
 #endif /* ULENDIAN_H */
