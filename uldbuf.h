@@ -327,7 +327,7 @@ ul_hapi int uldbuf_put_ldouble(uldbuf_t* b, long double val) {
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
     || (defined(__cplusplus) && __cplusplus >= 201103L) \
-    || (defined(_MSC_VER) && _MSC_VER >= _MSC_VER)
+    || (defined(_MSC_VER) && _MSC_VER >= 1800)
   /* TODO: for C89, maybe write it in file, and then read it out? */
   #include <stdarg.h>
   #include <stdio.h>
