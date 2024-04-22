@@ -239,29 +239,38 @@ ul_hapi int ulfd_sync(ulfd_t fd);
 ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
 
-#define ULFD_MAP_PROT_NONE      (0)      /* pages may not be accessed */
-#define ULFD_MAP_PROT_READ      (1 << 0) /* pages may be read */
-#define ULFD_MAP_PROT_WRITE     (1 << 1) /* pages may be write */
-#define ULFD_MAP_PROT_EXEC      (1 << 2) /* pages may be executed */
-#define ULFD_MAP_PROT_READWRITE (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE) /* pages may be read or write */
+#define ULFD_PROT_NONE      (0)      /* pages may not be accessed */
+#define ULFD_PROT_READ      (1 << 0) /* pages may be read */
+#define ULFD_PROT_WRITE     (1 << 1) /* pages may be write */
+#define ULFD_PROT_EXEC      (1 << 2) /* pages may be executed */
+#define ULFD_PROT_READWRITE (ULFD_PROT_READ | ULFD_PROT_WRITE) /* pages may be read or write */
 
-#define ULFD_MAP_ANONYMOUS (1 << 3) /* the mapping isn't backed by any file */
+#define ULFD_MAP_SHARED    (1 << 3) /* share this mapping. otherwise, create a private copy-on-write mapping */
+#define ULFD_MAP_ANONYMOUS (1 << 4) /* the mapping isn't backed by any file */
 #define ULFD_MAP_ANON      ULFD_MAP_ANONYMOUS
-#define ULFD_MAP_FIXED     (1 << 4) /* place the mapping at exactly that address */
+#define ULFD_MAP_FIXED     (1 << 5) /* place the mapping at exactly that address */
 
-#define ULFD_MAP_SHARED    (1 << 5) /* POSIX: share this mapping */
-#define ULFD_MAP_PRIVATE   (1 << 6) /* POSIX: create a private copy-on-write mapping */
-
-ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags);
+ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int prot_and_flags);
 ul_hapi int ulfd_munmap(void* addr, size_t len);
 ul_hapi int ulfd_mprotect(void* addr, size_t len, int prot);
 #define ULFD_MS_ASYNC      1 /* POSIX: specifiy that an update be scheduled, but the call returns immediately */
 #define ULFD_MS_SYNC       2 /* POSIX: request an update and waits for it to complete. */
 #define ULFD_MS_INVALIDATE 4 /* POSIX: ask to invalidate other mappings of the same file */
-ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags);
+ul_hapi int ulfd_msync(void* addr, size_t len, int flags);
 /* note: some platforms may need `len` to be multiple of the page size */
 ul_hapi int ulfd_mlock(const void* addr, size_t len);
 ul_hapi int ulfd_munlock(const void* addr, size_t len);
+
+#define ULFD_MADV_WILLNEED   3 /* expect access in the near future */
+#define ULFD_MADV_DONTNEED   4 /* do not expect access in the near future */
+#define ULFD_MADV_NORMAL     0 /* POSIX: no special treatment */
+#define ULFD_MADV_RANDOM     1 /* POSIX: expect page references in random order */
+#define ULFD_MADV_SEQUENTIAL 2 /* POSIX: expect page references in sequential order */
+#define ULFD_MADV_DONTFORK   5 /* Linux: do not make the pages in this range available to the child after a fork */
+#define ULFD_MADV_DOFORK     6 /* Linux: undo the effect of MADV_DONTFORK, restoring the default behavior */
+#define ULFD_MADV_DODUMP     7 /* Linux: exclude from a core dump those pages specified */
+#define ULFD_MADV_DONTDUMP   8 /* Linux: undo the effect of MADV_DONTDUMP */
+ul_hapi int ulfd_madvise(void* addr, size_t len, int advice);
 
 ul_hapi size_t ulfd_pagesize(void);
 
@@ -611,6 +620,49 @@ ul_hapi size_t ulfd_pagesize(void);
     #define _UL_WIN32_TOERRNO_DEFINED
   #endif /* _UL_WIN32_TOERRNO_DEFINED */
 
+  #ifndef INVALID_SET_FILE_POINTER
+    #define INVALID_SET_FILE_POINTER ul_static_cast(DWORD, -1)
+  #endif
+  #ifndef FILE_MAP_EXECUTE
+    #define FILE_MAP_EXECUTE 0x0020
+  #endif
+
+  #if _WIN32_WINNT < 0x500
+    BOOL _ulfd_SetFilePointerEx(
+      HANDLE hFile, LARGE_INTEGER liDistanceToMove, PLARGE_INTEGER lpNewFilePointer,
+      DWORD dwMoveMethod
+    ) {
+      LONG lDistanceToMove, lDistanceToMoveHigh;
+      DWORD dwErrorCode;
+      lDistanceToMove = ul_static_cast(LONG, liDistanceToMove.LowPart);
+      lDistanceToMoveHigh = liDistanceToMove.HighPart;
+      lDistanceToMove = SetFilePointer(hFile, lDistanceToMove, &lDistanceToMoveHigh, dwMoveMethod);
+      if(lDistanceToMove == INVALID_SET_FILE_POINTER) {
+        dwErrorCode = GetLastError();
+        if(dwErrorCode) { SetLastError(dwErrorCode); return FALSE; }
+      }
+      lpNewFilePointer->LowPart = lDistanceToMove;
+      lpNewFilePointer->HighPart = ul_static_cast(LONG, lDistanceToMoveHigh);
+      return TRUE;
+    }
+    BOOL _ulfd_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
+      DWORD dwFileSize, dwFileSizeHigh;
+      DWORD dwErrorCode;
+      dwFileSize = GetFileSize(hFile, &dwFileSizeHigh);
+      if(dwFileSize == INVALID_SET_FILE_POINTER) {
+        dwErrorCode = GetLastError();
+        if(dwErrorCode) { SetLastError(dwErrorCode); return FALSE; }
+      }
+      lpFileSize->LowPart = dwFileSize;
+      lpFileSize->HighPart = ul_static_cast(LONG, dwFileSizeHigh);
+      return TRUE;
+    }
+  #else
+    #define _ulfd_SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer, dwMoveMethod) \
+      SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer, dwMoveMethod)
+    #define _ulfd_GetFileSizeEx(hFile, lpFileSize) GetFileSizeEx(hFile, lpFileSize)
+  #endif
+
   ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode) {
     DWORD access = 0;
     DWORD share;
@@ -723,7 +775,9 @@ ul_hapi size_t ulfd_pagesize(void);
     call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &read_bytes, NULL);
     if(!call_ret) error = GetLastError();
 
+  #ifdef _WIN64
   do_return:
+  #endif
     *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
@@ -747,7 +801,9 @@ ul_hapi size_t ulfd_pagesize(void);
     call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen_bytes, NULL);
     if(!call_ret) error = GetLastError();
 
+  #ifdef _WIN64
   do_return:
+  #endif
     if((*pwriten_bytes = sum_writen_bytes + writen_bytes) == 0 && error == 0) return ENOSPC;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else return _ul_win32_toerrno(error);
@@ -776,7 +832,9 @@ ul_hapi size_t ulfd_pagesize(void);
     call_ret = ReadFile(fd, buf, ul_static_cast(DWORD, count), &read_bytes, &overlapped);
     if(!call_ret) error = GetLastError();
 
+  #ifdef _WIN64
   do_return:
+  #endif
     *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
@@ -805,7 +863,9 @@ ul_hapi size_t ulfd_pagesize(void);
     call_ret = WriteFile(fd, buf, ul_static_cast(DWORD, count), &writen_bytes, &overlapped);
     if(!call_ret) error = GetLastError();
 
+  #ifdef _WIN64
   do_return:
+  #endif
     if((*pwriten_bytes = sum_writen_bytes + writen_bytes) == 0 && error == 0) return ENOSPC;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else return _ul_win32_toerrno(error);
@@ -821,7 +881,7 @@ ul_hapi size_t ulfd_pagesize(void);
     else if(origin == ULFD_SEEK_END) method = FILE_END;
     else return EINVAL;
 
-    if(!SetFilePointerEx(fd, move, &new_pos, method)) return _ul_win32_toerrno(GetLastError());
+    if(!_ulfd_SetFilePointerEx(fd, move, &new_pos, method)) return _ul_win32_toerrno(GetLastError());
     *poff = new_pos.QuadPart;
     return 0;
   }
@@ -877,7 +937,7 @@ ul_hapi size_t ulfd_pagesize(void);
   }
   ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength) {
     LARGE_INTEGER length;
-    if(!GetFileSizeEx(fd, &length)) return _ul_win32_toerrno(GetLastError());
+    if(!_ulfd_GetFileSizeEx(fd, &length)) return _ul_win32_toerrno(GetLastError());
     *plength = length.QuadPart; return 0;
   }
 
@@ -886,6 +946,7 @@ ul_hapi size_t ulfd_pagesize(void);
     DWORD maxsize_low, maxsize_high;
     DWORD protect, access = 0;
     HANDLE fm, map;
+    SECURITY_ATTRIBUTES security_attributes;
 
     if(off < 0) return EINVAL;
     off_low = ul_static_cast(DWORD, off);
@@ -894,24 +955,38 @@ ul_hapi size_t ulfd_pagesize(void);
     maxsize_low = ul_static_cast(DWORD, off);
     maxsize_high = ul_static_cast(DWORD, off >> 32);
 
-    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == ULFD_MAP_PROT_NONE)
-      protect = 0;
-    else
-      if(flags & ULFD_MAP_PROT_EXEC)
-        protect = ul_static_cast(DWORD, (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
-      else
-        protect = ul_static_cast(DWORD, (flags & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
+    security_attributes.nLength = sizeof(security_attributes);
+    security_attributes.lpSecurityDescriptor = NULL;
 
-    if(flags != ULFD_MAP_PROT_NONE) {
-      if(flags & ULFD_MAP_PROT_READ) access |= FILE_MAP_READ;
-      if(flags & ULFD_MAP_PROT_WRITE) access |= FILE_MAP_WRITE;
-      if(flags & ULFD_MAP_PROT_EXEC) access |= FILE_MAP_EXECUTE;
+    if((flags & (ULFD_PROT_READWRITE | ULFD_PROT_EXEC)) == ULFD_PROT_NONE)
+      protect = 0;
+    else {
+      if((flags & ULFD_PROT_READ) == 0) return EINVAL;
+      if(flags & ULFD_PROT_EXEC)
+        protect = ul_static_cast(DWORD, (flags & ULFD_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
+      else
+        protect = ul_static_cast(DWORD, (flags & ULFD_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
     }
 
-    if(len == 0 && (flags & ~ULFD_MAP_PROT_EXEC) == ULFD_MAP_PROT_EXEC) return EINVAL;
+    if(flags != ULFD_PROT_NONE) {
+      if(flags & ULFD_PROT_READ) access |= FILE_MAP_READ;
+      if(flags & ULFD_PROT_WRITE) access |= FILE_MAP_WRITE;
+      if(flags & ULFD_PROT_EXEC) access |= FILE_MAP_EXECUTE;
+    }
+
+    if(flags & ULFD_MAP_SHARED) {
+      security_attributes.bInheritHandle = TRUE;
+    } else {
+      if((flags & ULFD_PROT_WRITE) == 0) return EINVAL;
+      security_attributes.bInheritHandle = FALSE;
+      if(flags & ULFD_PROT_EXEC) protect = PAGE_EXECUTE_WRITECOPY;
+      else protect = PAGE_WRITECOPY;
+    }
+
+    if(len == 0 && (flags & ~ULFD_PROT_EXEC) == ULFD_PROT_EXEC) return EINVAL;
     if(flags & ULFD_MAP_ANONYMOUS) fd = INVALID_HANDLE_VALUE;
 
-    fm = CreateFileMapping(fd, NULL, protect, maxsize_high, maxsize_low, NULL);
+    fm = CreateFileMapping(fd, &security_attributes, protect, maxsize_high, maxsize_low, NULL);
     if(fm == NULL) return _ul_win32_toerrno(GetLastError());
 
     if(flags & ULFD_MAP_FIXED) map = MapViewOfFile(fm, access, off_high, off_low, len);
@@ -928,18 +1003,20 @@ ul_hapi size_t ulfd_pagesize(void);
     DWORD new_protect;
     DWORD old_protect = 0;
 
-    if((prot & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == ULFD_MAP_PROT_NONE)
+    if((prot & (ULFD_PROT_READWRITE | ULFD_PROT_EXEC)) == ULFD_PROT_NONE)
       new_protect = 0;
-    else
-      if(prot & ULFD_MAP_PROT_EXEC)
-        new_protect = ul_static_cast(DWORD, (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
+    else {
+      if((prot & ULFD_PROT_READ) == 0) return EINVAL;
+      if(prot & ULFD_PROT_EXEC)
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
       else
-        new_protect = ul_static_cast(DWORD, (prot & ULFD_MAP_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
+    }
 
     return VirtualProtect(addr, len, new_protect, &old_protect) ? 0 : _ul_win32_toerrno(GetLastError());
   }
-  ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags) {
-    (void)ms_flags;
+  ul_hapi int ulfd_msync(void* addr, size_t len, int flags) {
+    (void)flags;
     return FlushViewOfFile(addr, len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
   ul_hapi int ulfd_mlock(const void* addr, size_t len) {
@@ -947,6 +1024,31 @@ ul_hapi size_t ulfd_pagesize(void);
   }
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
     return VirtualUnlock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+
+  ul_hapi int ulfd_madvise(void* addr, size_t len, int advice) {
+    if(advice == ULFD_MADV_WILLNEED) {
+      typedef struct _ulfd_WIN32_MEMORY_RANGE_ENTRY {
+        PVOID VirtualAddress;
+        SIZE_T NumberOfBytes;
+      } _ulfd_WIN32_MEMORY_RANGE_ENTRY;
+      typedef BOOL (WINAPI *desire_func_t)(HANDLE, unsigned __int3264, _ulfd_WIN32_MEMORY_RANGE_ENTRY*, ULONG);
+
+      HMODULE kernel32;
+      desire_func_t desire_func;
+      _ulfd_WIN32_MEMORY_RANGE_ENTRY entry;
+
+      kernel32 = GetModuleHandle(TEXT("kernel32.dll"));
+      if(kernel32 == NULL) return EINVAL;
+      desire_func = ul_reinterpret_cast(desire_func_t, GetProcAddress(kernel32, "PrefetchVirtualMemory"));
+      if(desire_func == NULL) return EINVAL;
+
+      entry.VirtualAddress = addr;
+      entry.NumberOfBytes = len;
+      return desire_func(GetCurrentProcess(), 1, &entry, 0) ? 0 : _ul_win32_toerrno(GetLastError());
+    } else if(advice == ULFD_MADV_DONTNEED) {
+      return VirtualUnlock(addr, len) ? 0 : _ul_win32_toerrno(GetLastError());
+    } else return EINVAL;
   }
 
   ul_hapi size_t ulfd_pagesize(void) {
@@ -1122,19 +1224,19 @@ ul_hapi size_t ulfd_pagesize(void);
     int prot, flag = 0;
     void* map;
 
-    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == 0) {
+    if((flags & (ULFD_PROT_READ | ULFD_PROT_WRITE | ULFD_PROT_EXEC)) == 0) {
       prot = PROT_NONE;
     } else {
       prot = 0;
-      if(flags & ULFD_MAP_PROT_READ) prot |= PROT_READ;
-      if(flags & ULFD_MAP_PROT_WRITE) prot |= PROT_WRITE;
-      if(flags & ULFD_MAP_PROT_EXEC) prot |= PROT_EXEC;
+      if(flags & ULFD_PROT_READ) prot |= PROT_READ;
+      if(flags & ULFD_PROT_WRITE) prot |= PROT_WRITE;
+      if(flags & ULFD_PROT_EXEC) prot |= PROT_EXEC;
     }
 
     if(flags & ULFD_MAP_ANONYMOUS) flag |= MAP_ANONYMOUS;
     if(flags & ULFD_MAP_FIXED) flag |= MAP_FIXED;
     if(flags & ULFD_MAP_SHARED) flag |= MAP_SHARED;
-    if(flags & ULFD_MAP_PRIVATE) flag |= MAP_PRIVATE;
+    else flag |= MAP_PRIVATE;
 
     map = mmap64(addr, len, prot, flag, fd, off);
     if(map == MAP_FAILED) return errno;
@@ -1145,21 +1247,21 @@ ul_hapi size_t ulfd_pagesize(void);
   }
   ul_hapi int ulfd_mprotect(void* addr, size_t len, int flags) {
     int prot;
-    if((flags & (ULFD_MAP_PROT_READ | ULFD_MAP_PROT_WRITE | ULFD_MAP_PROT_EXEC)) == 0) {
+    if((flags & (ULFD_PROT_READ | ULFD_PROT_WRITE | ULFD_PROT_EXEC)) == 0) {
       prot = PROT_NONE;
     } else {
       prot = 0;
-      if(flags & ULFD_MAP_PROT_READ) prot |= PROT_READ;
-      if(flags & ULFD_MAP_PROT_WRITE) prot |= PROT_WRITE;
-      if(flags & ULFD_MAP_PROT_EXEC) prot |= PROT_EXEC;
+      if(flags & ULFD_PROT_READ) prot |= PROT_READ;
+      if(flags & ULFD_PROT_WRITE) prot |= PROT_WRITE;
+      if(flags & ULFD_PROT_EXEC) prot |= PROT_EXEC;
     }
     return mprotect(addr, len, prot) < 0 ? errno : 0;
   }
-  ul_hapi int ulfd_msync(void* addr, size_t len, int ms_flags) {
+  ul_hapi int ulfd_msync(void* addr, size_t len, int flags) {
     int flag = 0;
-    if(ms_flags & ULFD_MS_ASYNC) flag |= MS_ASYNC;
-    if(ms_flags & ULFD_MS_SYNC) flag |= MS_SYNC;
-    if(ms_flags & ULFD_MS_INVALIDATE) flag |= MS_INVALIDATE;
+    if(flags & ULFD_MS_ASYNC) flag |= MS_ASYNC;
+    if(flags & ULFD_MS_SYNC) flag |= MS_SYNC;
+    if(flags & ULFD_MS_INVALIDATE) flag |= MS_INVALIDATE;
     return msync(addr, len, flag) < 0 ? errno : 0;
   }
   ul_hapi int ulfd_mlock(const void* addr, size_t len) {
@@ -1167,6 +1269,52 @@ ul_hapi size_t ulfd_pagesize(void);
   }
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
     return munlock(addr, len) < 0 ? errno : 0;
+  }
+
+  ul_hapi int ulfd_madvise(void* addr, size_t len, int advice) {
+  #if defined(MADV_NORMAL)
+    int adv;
+    switch(advice) {
+    case ULFD_MADV_WILLNEED:   adv = MADV_WILLNEED; break;
+    case ULFD_MADV_DONTNEED:   adv = MADV_DONTNEED; break;
+    case ULFD_MADV_NORMAL:     adv = MADV_NORMAL; break;
+    case ULFD_MADV_RANDOM:     adv = MADV_RANDOM; break;
+    case ULFD_MADV_SEQUENTIAL: adv = MADV_SEQUENTIAL; break;
+
+    #ifdef MADV_DONTFORK
+    case ULFD_MADV_DONTFORK:   adv = MADV_DONTFORK; break;
+    #endif
+
+    #ifdef MADV_DOFORK
+    case ULFD_MADV_DOFORK:     adv = MADV_DOFORK; break;
+    #endif
+
+    #ifdef MADV_DODUMP
+    case ULFD_MADV_DODUMP:     adv = MADV_DODUMP; break;
+    #endif
+
+    #ifdef MADV_DONTDUMP
+    case ULFD_MADV_DONTDUMP:   adv = MADV_DONTDUMP; break;
+    #endif
+
+    default: return EINVAL;
+    }
+    return madvise(addr, len, adv) < 0 ? errno : 0;
+  #elif defined(POSIX_MADV_NORMAL)
+    int adv;
+    switch(advice) {
+    case ULFD_MADV_WILLNEED:   adv = POSIX_FADV_WILLNEED; break;
+    case ULFD_MADV_DONTNEED:   adv = POSIX_FADV_DONTNEED; break;
+    case ULFD_MADV_NORMAL:     adv = POSIX_FADV_NORMAL; break;
+    case ULFD_MADV_RANDOM:     adv = POSIX_FADV_RANDOM; break;
+    case ULFD_MADV_SEQUENTIAL: adv = POSIX_FADV_SEQUENTIAL; break;
+    default: return EINVAL;
+    }
+    adv = posix_madvise(addr, len, adv);
+    return adv;
+  #else
+    return EINVAL;
+  #endif
   }
 
   ul_hapi size_t ulfd_pagesize(void) {
