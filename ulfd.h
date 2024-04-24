@@ -4,7 +4,13 @@ File descriptor
 
 # Dependence
   - Windows API
-  - POSIX API (need LFS support)
+  - POSIX API
+
+
+# Note
+  All functions use 64-bit integer to indicate offset and size.
+  In POSIX, if `_LARGEFILE64_SOURCE` is not defined, functions will test if `off_t` can hold offset and size,
+    which means you can also setting `_FILE_OFFSET_BITS` to 64 to make functions work right.
 
 
 # License
@@ -121,9 +127,15 @@ File descriptor
   #endif
 #endif /* ul_const_cast */
 
-/* enable LFS in POSIX */
-#ifndef _LARGEFILE64_SOURCE
-  #define _LARGEFILE64_SOURCE 1
+#ifndef ul_malloc
+  #define ul_malloc(sz) malloc(sz)
+#endif /* ul_malloc */
+#ifndef ul_free
+  #define ul_free(ptr) free(ptr)
+#endif /* ul_free */
+
+#ifdef _LARGEFILE64_SOURCE
+  #define ULFD_HAS_LFS
 #endif
 
 #include <stddef.h>
@@ -133,31 +145,65 @@ File descriptor
 
 #if defined(ULLONG_MAX) && ((ULLONG_MAX >> 63) >= 1)
   typedef long long ulfd_int64_t;
+  typedef unsigned long long ulfd_uint64_t;
 #elif defined(_WIN32)
   typedef __int64 ulfd_int64_t;
+  typedef unsigned __int64 ulfd_uint64_t;
 #else
   #error "ulfd.h: need 64-bit integer"
 #endif
 
+/* milliseconds from POSIX epoch (equivalte to `uldate_t` in "uldate.h") */
+typedef ulfd_int64_t ulfd_time_t;
+
 #ifdef _WIN32
   #include <Windows.h>
+
   typedef HANDLE ulfd_t;
   #define ulfd_invalid_value INVALID_HANDLE_VALUE
 
   #define ulfd_stdin (GetStdHandle(STD_INPUT_HANDLE))
   #define ulfd_stdout (GetStdHandle(STD_OUTPUT_HANDLE))
   #define ulfd_stderr (GetStdHandle(STD_ERROR_HANDLE))
+
+  #define ULFD_PATH_MAX     MAX_PATH
+  #define ULFD_NAME_MAX     MAX_PATH
+  #define ULFD_FILENAME_MAX MAX_PATH
+
+  typedef int ulfd_dev_t;
+  typedef int ulfd_ino_t;
+  typedef int ulfd_mode_t;
+  typedef int ulfd_nlink_t;
+  typedef int ulfd_uid_t;
+  typedef int ulfd_gid_t;
+  typedef int ulfd_dev_t;
 #else
   #include <unistd.h>
+  #include <sys/types.h>
+  #include <limits.h>
 
   typedef int ulfd_t;
   #define ulfd_invalid_value -1
 
-  #define ulfd_stdin STDIN_FILENO
+  #define ulfd_stdin  STDIN_FILENO
   #define ulfd_stdout STDOUT_FILENO
   #define ulfd_stderr STDERR_FILENO
+
+  #define ULFD_PATH_MAX     PATH_MAX
+  #define ULFD_NAME_MAX     NAME_MAX
+  #define ULFD_FILENAME_MAX FILENAME_MAX
+
+  typedef dev_t ulfd_dev_t;
+  typedef ino_t ulfd_ino_t;
+  typedef mode_t ulfd_mode_t;
+  typedef nlink_t ulfd_nlink_t;
+  typedef uid_t ulfd_uid_t;
+  typedef gid_t ulfd_gid_t;
+  typedef dev_t ulfd_dev_t;
 #endif
 
+
+#define ULFD_S_IMASK    07777 /* a mask to get access of file */
 #define ULFD_S_ISUID    04000 /* set-user-ID on execute bit */
 #define ULFD_S_ISGID    02000 /* set-group-ID on execute bit */
 #define ULFD_S_ISVTX    01000 /* the sticky bit */
@@ -180,6 +226,23 @@ File descriptor
 #define ULFD_S_IREAD    ULFD_S_IRUSR /* read permission bit for the owner of the file */
 #define ULFD_S_IWRITE   ULFD_S_IWUSR /* write permission bit for the owner of the file */
 #define ULFD_S_IEXEC    ULFD_S_IXUSR /* execute or ordinary permission bit for the owner of the file */
+
+#define ULFD_S_IFMT   0170000 /* a mask to get type of file */
+#define ULFD_S_IFSOCK 0140000 /* socket */
+#define ULFD_S_IFLNK  0120000 /* symbolic link */
+#define ULFD_S_IFREG  0100000 /* regular */
+#define ULFD_S_IFBLK  0060000 /* block special */
+#define ULFD_S_IFDIR  0040000 /* directory */
+#define ULFD_S_IFCHR  0020000 /* character special */
+#define ULFD_S_IFIFO  0010000 /* FIFO special */
+
+#define ULFD_S_ISSOCK(val) ((val & ULFD_S_IFMT) == ULFD_S_IFSOCK) /* test for a socket */
+#define ULFD_S_ISLNK(val)  ((val & ULFD_S_IFMT) == ULFD_S_IFLNK)  /* test for a symbolic link */
+#define ULFD_S_ISREG(val)  ((val & ULFD_S_IFMT) == ULFD_S_IFREG)  /* test for a regular */
+#define ULFD_S_ISBLK(val)  ((val & ULFD_S_IFMT) == ULFD_S_IFBLK)  /* test for a block special */
+#define ULFD_S_ISDIR(val)  ((val & ULFD_S_IFMT) == ULFD_S_IFDIR)  /* test for a directory */
+#define ULFD_S_ISFIFO(val) ((val & ULFD_S_IFMT) == ULFD_S_IFIFO)  /* test for a character special */
+#define ULFD_S_ISCHR(val)  ((val & ULFD_S_IFMT) == ULFD_S_IFCHR)  /* test for a FIFO special */
 
 
 #define ULFD_O_RDONLY    (1l << 0) /* open for reading only */
@@ -209,10 +272,10 @@ File descriptor
 #define ULFD_O_SECURE    (1l << 26) /* Winodws: set secure mode (share read access but exclude write access) */
 #define ULFD_O_HIDDEN    (1l << 27) /* Windows: create hidden file */
 
-ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, int mode);
-ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode);
-ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, int mode);
-ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, int mode);
+ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, ulfd_mode_t mode);
+ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, ulfd_mode_t mode);
+ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, ulfd_mode_t mode);
+ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, ulfd_mode_t mode);
 ul_hapi int ulfd_close(ulfd_t fd);
 ul_hapi int ulfd_pipe(ulfd_t pfds[2]);
 
@@ -236,8 +299,9 @@ ul_hapi int ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 
 ul_hapi int ulfd_sync(ulfd_t fd);
-ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length);
+ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
+
 
 #define ULFD_PROT_NONE      (0)      /* pages may not be accessed */
 #define ULFD_PROT_READ      (1 << 0) /* pages may be read */
@@ -273,6 +337,58 @@ ul_hapi int ulfd_munlock(const void* addr, size_t len);
 ul_hapi int ulfd_madvise(void* addr, size_t len, int advice);
 
 ul_hapi size_t ulfd_pagesize(void);
+
+
+ul_hapi int ulfd_chdir(const char* path);
+ul_hapi int ulfd_chdir_w(const wchar_t* wpath);
+ul_hapi int ulfd_getcwd(char* path, size_t length);
+ul_hapi int ulfd_getcwd_w(wchar_t* wpath, size_t length);
+
+ul_hapi ulfd_mode_t ulfd_umask(ulfd_mode_t mask);
+/* `mode` accepts ULFD_S_IRUSR, ULFD_S_IWUSR, ULFD_S_IXUSR or their union */
+ul_hapi int ulfd_chmod(const char* path, ulfd_mode_t mode);
+/* `mode` accepts ULFD_S_IRUSR, ULFD_S_IWUSR, ULFD_S_IXUSR or their union */
+ul_hapi int ulfd_chmod_w(const wchar_t* wpath, ulfd_mode_t mode);
+ul_hapi int ulfd_chown(const char* path, ulfd_uid_t uid, ulfd_gid_t gid);
+ul_hapi int ulfd_chown_w(const wchar_t* wpath, ulfd_uid_t uid, ulfd_gid_t gid);
+ul_hapi int ulfd_utime(const char* path, ulfd_int64_t atime, ulfd_int64_t mtime);
+ul_hapi int ulfd_utime_w(const wchar_t* path, ulfd_int64_t atime, ulfd_int64_t mtime);
+
+typedef struct ulfd_stat_t {
+  ulfd_time_t atime; /* Time of last access */
+  ulfd_time_t mtime; /* Time of last modification */
+  ulfd_time_t ctime; /* Time of last status change */
+
+  ulfd_int64_t size; /* Total size */
+
+  ulfd_dev_t dev; /* ID of device containing file */
+  ulfd_dev_t rdev; /* Device ID (if special file) */
+  ulfd_ino_t ino; /* POSIX: Inode number */
+  ulfd_nlink_t nlink; /* Number of hard links */
+
+  ulfd_uid_t uid; /* POSIX: User ID of owner */
+  ulfd_gid_t gid; /* POSIX: Group ID of owner */
+  ulfd_mode_t mode; /* File type and mode */
+} ulfd_stat_t;
+
+ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat);
+ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat);
+ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode);
+ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode);
+
+ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode);
+ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode);
+
+ul_hapi int ulfd_link(const char* newpath, const char* oldpath);
+ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath);
+ul_hapi int ulfd_symlink(const char* target, const char* source);
+ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source);
+ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len);
+ul_hapi int ulfd_readlink_w(const wchar_t* wpath, wchar_t* buf, size_t len);
+
+ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
+ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
+
 
 #ifndef ULOS_STR_TO_WSTR_DEFINED
   #if UINT_MAX >= 0xFFFFFFFF
@@ -389,6 +505,42 @@ ul_hapi size_t ulfd_pagesize(void);
   #define ULOS_WSTR_TO_STR_DEFINED
 #endif /* ULOS_WSTR_TO_STR_DEFINED */
 
+#define _ulfd_begin_to_str(varname, wstr, encoding_errno) do { \
+  char* (varname); size_t varname ## _len; \
+  (varname ## _len) = ul_os_wstr_to_str_len(wstr); \
+  if(ul_unlikely((varname ## _len) == 0)) return encoding_errno; \
+  (varname) = ul_reinterpret_cast(char*, ul_malloc(sizeof((varname)) * (varname ## _len))); \
+  if(ul_unlikely((varname) == NULL)) return ENOMEM; \
+  ul_os_wstr_to_str((varname), wstr)
+#define _ulfd_end_to_str(varname) ul_free((varname)); } while(0)
+
+#define _ulfd_begin_to_str2(varname, wstr, encoding_errno, prev_varname) do { \
+  char* (varname); size_t varname ## _len; \
+  (varname ## _len) = ul_os_wstr_to_str_len(wstr); \
+  if(ul_unlikely((varname ## _len) == 0)) { ul_free(prev_varname); return encoding_errno; } \
+  (varname) = ul_reinterpret_cast(char*, ul_malloc(sizeof((varname)) * (varname ## _len))); \
+  if(ul_unlikely((varname) == NULL)) { ul_free(prev_varname); return ENOMEM; } \
+  ul_os_wstr_to_str((varname), wstr)
+#define _ulfd_end_to_str2(varname) ul_free((varname)); } while(0)
+
+#define _ulfd_begin_to_wstr(varname, str, encoding_errno) do { \
+  wchar_t* (varname); size_t varname ## _len; \
+  (varname ## _len) = ul_os_str_to_wstr_len(str); \
+  if(ul_unlikely((varname ## _len) == 0)) return encoding_errno; \
+  (varname) = ul_reinterpret_cast(wchar_t*, ul_malloc(sizeof((varname)) * (varname ## _len))); \
+  if(ul_unlikely((varname) == NULL)) return ENOMEM; \
+  ul_os_str_to_wstr((varname), str)
+#define _ulfd_end_to_wstr(varname) ul_free((varname)); } while(0)
+
+#define _ulfd_begin_to_wstr2(varname, str, encoding_errno, prev_varname) do { \
+  wchar_t* (varname); size_t varname ## _len; \
+  (varname ## _len) = ul_os_str_to_wstr_len(str); \
+  if(ul_unlikely((varname ## _len) == 0)) { ul_free(prev_varname); return encoding_errno; } \
+  (varname) = ul_reinterpret_cast(wchar_t*, ul_malloc(sizeof((varname)) * (varname ## _len))); \
+  if(ul_unlikely((varname) == NULL)) { ul_free(prev_varname); return ENOMEM; } \
+  ul_os_str_to_wstr((varname), str)
+#define _ulfd_end_to_wstr2(varname) ul_free((varname)); } while(0)
+
 #ifdef _WIN32
   #ifndef _UL_WIN32_TOERRNO_DEFINED
     #include <Windows.h>
@@ -424,7 +576,7 @@ ul_hapi size_t ulfd_pagesize(void);
         { ERROR_NO_MORE_FILES,             ENOENT },       /*   18 */ /* ENMFILE */
         { ERROR_WRITE_PROTECT,             EROFS },        /*   19 */
         { ERROR_BAD_UNIT,                  ENODEV },       /*   20 */
-      /*{ ERROR_NOT_READY,                 ENOMEDIUM },    //   21 */
+        { ERROR_NOT_READY,                 ENOENT },       /*   21 */ /* ENOMEDIUM */
         { ERROR_CRC,                       EIO },          /*   23 */
         { ERROR_SEEK,                      EINVAL },       /*   25 */
         { ERROR_SECTOR_NOT_FOUND,          EINVAL },       /*   27 */
@@ -620,6 +772,7 @@ ul_hapi size_t ulfd_pagesize(void);
     #define _UL_WIN32_TOERRNO_DEFINED
   #endif /* _UL_WIN32_TOERRNO_DEFINED */
 
+  /* VC6 polyfill */
   #ifndef INVALID_SET_FILE_POINTER
     #define INVALID_SET_FILE_POINTER ul_static_cast(DWORD, -1)
   #endif
@@ -641,8 +794,10 @@ ul_hapi size_t ulfd_pagesize(void);
         dwErrorCode = GetLastError();
         if(dwErrorCode) { SetLastError(dwErrorCode); return FALSE; }
       }
-      lpNewFilePointer->LowPart = lDistanceToMove;
-      lpNewFilePointer->HighPart = ul_static_cast(LONG, lDistanceToMoveHigh);
+      if(lpNewFilePointer) {
+        lpNewFilePointer->LowPart = lDistanceToMove;
+        lpNewFilePointer->HighPart = ul_static_cast(LONG, lDistanceToMoveHigh);
+      }
       return TRUE;
     }
     BOOL _ulfd_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
@@ -662,6 +817,83 @@ ul_hapi size_t ulfd_pagesize(void);
       SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer, dwMoveMethod)
     #define _ulfd_GetFileSizeEx(hFile, lpFileSize) GetFileSizeEx(hFile, lpFileSize)
   #endif
+
+  #if _MSC_VER < 1300
+    ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
+      return InterlockedCOmpareExchange(obj, exchange, compareand);
+    }
+  #elif defined(_WIN64)
+    ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
+      return ul_reinterpret_cast(void*,
+        _InterlockedCompareExchange64(
+          ul_reinterpret_cast(LONG64*, obj),
+          ul_reinterpret_cast(LONG64, exchange),
+          ul_reinterpret_cast(LONG64, compareand)
+        )
+      );
+    }
+  #else
+    ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
+      return ul_reinterpret_cast(void*,
+        _InterlockedCompareExchange64(
+          ul_reinterpret_cast(LONG*, obj),
+          ul_reinterpret_cast(LONG, exchange),
+          ul_reinterpret_cast(LONG, compareand)
+        )
+      );
+    }
+  #endif
+
+  /* get kernel32 module */
+  /* For any function supported since Windows Vista or higher, the file will dynmaic load kernel32.dll to check available */
+  ul_hapi HMODULE _ulfd_kernel32() {
+    static HANDLE _ulfd_kernel32_hold = NULL;
+    HANDLE stored;
+    stored = _ulfd_compare_exchange(&_ulfd_kernel32_hold, NULL, NULL);
+    if(stored == INVALID_HANDLE_VALUE) return NULL;
+    if(stored != NULL) return ul_reinterpret_cast(HMODULE, stored);
+    stored = GetModuleHandle(TEXT("kernel32.dll"));
+    if(stored == NULL) _ulfd_compare_exchange(&_ulfd_kernel32_hold, INVALID_HANDLE_VALUE, NULL);
+    else _ulfd_compare_exchange(&_ulfd_kernel32_hold, stored, NULL);
+    return ul_reinterpret_cast(HMODULE, stored);
+  }
+  ul_hapi HANDLE _ulfd_kernel32_function(HANDLE* hold, const char* name) {
+    HANDLE stored;
+    HMODULE _kernel32;
+    _kernel32 = _ulfd_kernel32();
+    if(_kernel32 == NULL) return NULL;
+    stored = _ulfd_compare_exchange(hold, NULL, NULL);
+    if(stored == INVALID_HANDLE_VALUE) return NULL;
+    if(stored != NULL) return ul_reinterpret_cast(HANDLE, stored);
+    stored = ul_reinterpret_cast(HANDLE, GetProcAddress(_kernel32, name));
+    if(stored == NULL) _ulfd_compare_exchange(hold, INVALID_HANDLE_VALUE, NULL);
+    else _ulfd_compare_exchange(hold, stored, NULL);
+    return ul_reinterpret_cast(HANDLE, stored);
+  }
+
+  typedef struct _ulfd_WIN32_MEMORY_RANGE_ENTRY {
+    PVOID VirtualAddress;
+    SIZE_T NumberOfBytes;
+  } _ulfd_WIN32_MEMORY_RANGE_ENTRY;
+  typedef BOOL (WINAPI *_ulfd_PrefetchVirtualMemory_t)(HANDLE, unsigned __int3264, _ulfd_WIN32_MEMORY_RANGE_ENTRY*, ULONG);
+  ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
+    static HANDLE hold = NULL; /* Windows 8 */
+    return ul_reinterpret_cast(_ulfd_PrefetchVirtualMemory_t, _ulfd_kernel32_function(&hold, "PrefetchVirtualMemory"));
+  }
+
+  typedef BOOLEAN (WINAPI *_ulfd_CreateSymbolicLinkW_t)(
+    LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags
+  );
+  ul_hapi _ulfd_CreateSymbolicLinkW_t _ulfd_get_CreateSymbolicLinkW(void) {
+    static HANDLE hold = NULL; /* Windows Vista */
+    return ul_reinterpret_cast(_ulfd_CreateSymbolicLinkW_t, _ulfd_kernel32_function(&hold, "CreateSymbolicLinkW"));
+  }
+
+  typedef DWORD (WINAPI *_ulfd_GetFinalPathNameByHandleW_t)(HANDLE hFile, LPWSTR lpszFilePath, DWORD cchFilePath, DWORD dwFlags);
+  ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
+    static HANDLE hold = NULL; /* Windows Vista */
+    return ul_reinterpret_cast(_ulfd_GetFinalPathNameByHandleW_t, _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
+  }
 
   ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode) {
     DWORD access = 0;
@@ -726,29 +958,18 @@ ul_hapi size_t ulfd_pagesize(void);
     return 0;
   }
   ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, int mode) {
-    wchar_t wpath_buf[MAX_PATH];
-    wchar_t* wpath;
-    size_t len;
     int ret;
-
-    len = ul_os_str_to_wstr_len(path);
-    if(ul_unlikely(len == 0)) return _ul_win32_toerrno(ERROR_FILE_NOT_FOUND);
-    if(ul_likely(len <= MAX_PATH)) wpath = wpath_buf;
-    else wpath = ul_reinterpret_cast(wchar_t*, malloc(sizeof(wchar_t) * len));
-
-    ul_os_str_to_wstr(wpath, path);
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
     ret = ulfd_open_w(pfd, wpath, oflag, mode);
-    if(ul_unlikely(len > MAX_PATH)) free(wpath);
+    _ulfd_end_to_wstr(wpath);
     return ret;
   }
-
   ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, int mode) {
     return ulfd_open(pfd, path, ULFD_O_CREAT | ULFD_O_TRUNC | ULFD_O_RDWR, mode);
   }
   ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, int mode) {
     return ulfd_open_w(pfd, path, ULFD_O_CREAT | ULFD_O_TRUNC | ULFD_O_RDWR, mode);
   }
-
   ul_hapi int ulfd_close(ulfd_t fd) {
     return CloseHandle(fd) ? 0 : _ul_win32_toerrno(GetLastError());
   }
@@ -927,7 +1148,7 @@ ul_hapi size_t ulfd_pagesize(void);
   ul_hapi int ulfd_sync(ulfd_t fd) {
     return FlushFileBuffers(fd) ? 0 : _ul_win32_toerrno(GetLastError());
   }
-  ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length) {
+  ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length) {
     ulfd_int64_t nul_off;
     int ret;
 
@@ -945,7 +1166,7 @@ ul_hapi size_t ulfd_pagesize(void);
     DWORD off_low, off_high;
     DWORD maxsize_low, maxsize_high;
     DWORD protect, access = 0;
-    HANDLE fm, map;
+    HANDLE filemap, map;
     SECURITY_ATTRIBUTES security_attributes;
 
     if(off < 0) return EINVAL;
@@ -986,13 +1207,13 @@ ul_hapi size_t ulfd_pagesize(void);
     if(len == 0 && (flags & ~ULFD_PROT_EXEC) == ULFD_PROT_EXEC) return EINVAL;
     if(flags & ULFD_MAP_ANONYMOUS) fd = INVALID_HANDLE_VALUE;
 
-    fm = CreateFileMapping(fd, &security_attributes, protect, maxsize_high, maxsize_low, NULL);
-    if(fm == NULL) return _ul_win32_toerrno(GetLastError());
+    filemap = CreateFileMappingW(fd, &security_attributes, protect, maxsize_high, maxsize_low, NULL);
+    if(filemap == NULL) return _ul_win32_toerrno(GetLastError());
 
-    if(flags & ULFD_MAP_FIXED) map = MapViewOfFile(fm, access, off_high, off_low, len);
-    else map = MapViewOfFileEx(fm, access, off_high, off_low, len, addr);
+    if(flags & ULFD_MAP_FIXED) map = MapViewOfFile(filemap, access, off_high, off_low, len);
+    else map = MapViewOfFileEx(filemap, access, off_high, off_low, len, addr);
 
-    CloseHandle(fm);
+    CloseHandle(filemap);
     if(map == NULL) return _ul_win32_toerrno(GetLastError());
     *pmap = map; return 0;
   }
@@ -1028,19 +1249,10 @@ ul_hapi size_t ulfd_pagesize(void);
 
   ul_hapi int ulfd_madvise(void* addr, size_t len, int advice) {
     if(advice == ULFD_MADV_WILLNEED) {
-      typedef struct _ulfd_WIN32_MEMORY_RANGE_ENTRY {
-        PVOID VirtualAddress;
-        SIZE_T NumberOfBytes;
-      } _ulfd_WIN32_MEMORY_RANGE_ENTRY;
-      typedef BOOL (WINAPI *desire_func_t)(HANDLE, unsigned __int3264, _ulfd_WIN32_MEMORY_RANGE_ENTRY*, ULONG);
-
-      HMODULE kernel32;
-      desire_func_t desire_func;
+      _ulfd_PrefetchVirtualMemory_t desire_func;
       _ulfd_WIN32_MEMORY_RANGE_ENTRY entry;
 
-      kernel32 = GetModuleHandle(TEXT("kernel32.dll"));
-      if(kernel32 == NULL) return EINVAL;
-      desire_func = ul_reinterpret_cast(desire_func_t, GetProcAddress(kernel32, "PrefetchVirtualMemory"));
+      desire_func = _ulfd_get_PrefetchVirtualMemory();
       if(desire_func == NULL) return EINVAL;
 
       entry.VirtualAddress = addr;
@@ -1056,11 +1268,541 @@ ul_hapi size_t ulfd_pagesize(void);
     GetSystemInfo(&info);
     return info.dwPageSize;
   }
+
+  ul_hapi int ulfd_chdir_w(const wchar_t* wpath) {
+    wchar_t rpath[MAX_PATH + 1];
+    wchar_t key[] = L"=A:";
+
+    if(!SetCurrentDirectoryW(wpath)) return _ul_win32_toerrno(GetLastError());
+
+    /*
+      After chdir(), we need set current directory for every drive.
+      For exchange, if the current directory is "D:\onedir\anotherdir", we need to set "=D:" to "D:\onedir\anotherdir".
+      It aims to be compatible with old MS-DOS behaviour(more details can be found in https://devblogs.microsoft.com/oldnewthing/20100506-00).
+      If any errors occurs, ignore them and still return 0.
+    */
+
+    if(!GetCurrentDirectoryW(sizeof(rpath) / sizeof(rpath[0]), rpath)) return 0;
+    if((rpath[0] == L'\\' || rpath[0] == L'/') && rpath[0] == rpath[1]) return 0; /* "//" or "\\\\" is a UNC name */
+    if(rpath[0] >= L'a' && rpath[0] <= L'z') key[1] = ul_static_cast(wchar_t, rpath[0] - L'a' + L'A');
+    else if(rpath[0] >= L'A' && rpath[0] <= L'Z') key[1] = rpath[0];
+    SetEnvironmentVariableW(key, rpath);
+    return 0;
+  }
+  ul_hapi int ulfd_chdir(const char* path) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_chdir_w(wpath);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+  ul_hapi int ulfd_getcwd_w(wchar_t* wpath, size_t length) {
+    DWORD adjust_length;
+    adjust_length = length >= 0xFFFFFFFFu ? 0xFFFFFFFFu : ul_static_cast(DWORD, length);
+    adjust_length = GetCurrentDirectoryW(adjust_length, wpath);
+    if(adjust_length == 0) return _ul_win32_toerrno(GetLastError());
+    return adjust_length > length ? ENOMEM : 0;
+  }
+  ul_hapi int ulfd_getcwd(char* path, size_t length) {
+    wchar_t* wpath;
+    DWORD need_len, writen_len;
+    size_t cast_len;
+
+    need_len = GetCurrentDirectoryW(0, NULL);
+    if(need_len == 0) return _ul_win32_toerrno(GetLastError());
+    wpath = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+    if(ul_unlikely(wpath == NULL)) return ENOMEM;
+    writen_len = GetCurrentDirectoryW(need_len, wpath);
+    if(ul_unlikely(writen_len == 0)) { ul_free(wpath); return _ul_win32_toerrno(GetLastError()); }
+    if(ul_unlikely(writen_len != need_len)) { ul_free(wpath); return ERANGE; }
+
+    cast_len = ul_os_wstr_to_str_len(wpath);
+    if(cast_len < length) { ul_free(wpath); return ERANGE; }
+    ul_os_wstr_to_str(path, wpath);
+
+    ul_free(wpath);
+    return 0;
+  }
+
+  ul_hapi ulfd_int64_t _ulfd_filetime_to_time_t(const FILETIME file_time, const ulfd_int64_t fallback) {
+    static const ULONGLONG EPOCH = 116444736000000000ui64;
+    SYSTEMTIME system_time;
+    SYSTEMTIME local_time;
+    FILETIME local_file_time;
+    ULONGLONG time;
+
+    if(file_time.dwLowDateTime == 0 && file_time.dwHighDateTime == 0) return fallback;
+    if(
+      !FileTimeToSystemTime(&file_time, &system_time) ||
+      !SystemTimeToTzSpecificLocalTime(NULL, &system_time, &local_time)
+    ) return fallback;
+
+    if(!SystemTimeToFileTime(&local_time, &local_file_time)) return fallback;
+    time = ul_static_cast(ULONGLONG, local_file_time.dwLowDateTime)
+      | (ul_static_cast(ULONGLONG, local_file_time.dwHighDateTime) << 32);
+    return ul_static_cast(ulfd_int64_t, (time - EPOCH) / 10000);
+  }
+  ul_hapi int _ulfd_time64_to_filetime(FILETIME* out, ulfd_int64_t time) {
+    static const LONGLONG EPOCH = 116444736000000000i64;
+    SYSTEMTIME local_time, system_time;
+    FILETIME local_file_time;
+    time = (time + EPOCH) * 10000;
+    if(time < 0) return -1;
+    local_file_time.dwLowDateTime = ul_static_cast(DWORD, time);
+    local_file_time.dwHighDateTime = ul_static_cast(DWORD, time >> 32);
+    if(!FileTimeToSystemTime(&local_file_time, &local_time)) return -1;
+    if(
+      !TzSpecificLocalTimeToSystemTime(NULL, &local_time, &system_time) ||
+      !SystemTimeToFileTime(&system_time, out)
+    ) return -1;
+    return 0;
+  }
+
+  ul_hapi ulfd_mode_t ulfd_umask(ulfd_mode_t mask) {
+    (void)mask; return 0777;
+  }
+  ul_hapi int ulfd_chmod_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    DWORD attributes = GetFileAttributesW(wpath);
+    if(attributes == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
+    if((mode & ULFD_S_IWRITE) == 0) attributes &= ul_static_cast(DWORD, ~FILE_ATTRIBUTE_READONLY);
+    else attributes |= FILE_ATTRIBUTE_READONLY;
+    return SetFileAttributesW(wpath, attributes) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_chmod(const char* path, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_chmod_w(wpath, mode);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+  ul_hapi int ulfd_chown_w(const wchar_t* wpath, ulfd_uid_t uid, ulfd_gid_t gid) {
+    (void)wpath; (void)uid; (void)gid; return EINVAL;
+  }
+  ul_hapi int ulfd_chown(const char* path, ulfd_uid_t uid, ulfd_gid_t gid) {
+    (void)path; (void)uid; (void)gid; return EINVAL;
+  }
+  ul_hapi int ulfd_utime_w(const wchar_t* wpath, ulfd_int64_t atime, ulfd_int64_t mtime) {
+    FILETIME access_time, write_time;
+    HANDLE handle;
+    DWORD error = 0;
+
+    if(!_ulfd_time64_to_filetime(&access_time, atime)) return ERANGE;
+    if(!_ulfd_time64_to_filetime(&write_time, mtime)) return ERANGE;
+    handle = CreateFileW(wpath,
+      FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL
+      );
+    if(!handle) return _ul_win32_toerrno(GetLastError());
+    if(!SetFileTime(handle, NULL, &access_time, &write_time)) error = GetLastError();
+    CloseHandle(handle);
+    return _ul_win32_toerrno(error);
+  }
+  ul_hapi int ulfd_utime(const char* path, ulfd_int64_t atime, ulfd_int64_t mtime) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_utime_w(wpath, atime, mtime);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
+  ul_hapi int _ulfd_is_slash(wchar_t wc) { return wc == L'/' || wc == L'\\'; }
+  ul_hapi int _ulfd_is_root_or_empty(const wchar_t* wpath) {
+    if((*wpath >= L'A' && *wpath <= L'Z') || (*wpath >= L'a' && *wpath <= L'z')) {
+      if(wpath[1] == L':') wpath += 2;
+    }
+    if(*wpath == L'\0') return 1;
+    if(_ulfd_is_slash(*wpath) && wpath[1] == L'\0') return 1;
+    return 0;
+  }
+  ul_hapi int _ulfd_is_executable_v1(const wchar_t* wpath) {
+    size_t n;
+    for(n = 0; *wpath; ++wpath) ++n;
+    if(n < 4) return 0;
+    if(wpath[-4] != L'.') return 0;
+    switch(wpath[-3]) {
+    case L'e': case L'E':
+      if(wpath[-2] == L'x' || wpath[-2] == L'X') {
+        if(wpath[-1] == L'e' || wpath[-1] == L'E')
+          return 1; /* .exe */
+      }
+      break;
+    case L'c': case L'C':
+      switch(wpath[-2]) {
+      case L'o': case L'O':
+        if(wpath[-1] == L'm' || wpath[-1] == L'M') return 1; /* .com */
+        break;
+      case L'm': case L'M':
+        if(wpath[-1] == L'd' || wpath[-1] == L'D') return 1; /* .bat */
+        break;
+      }
+      break;
+    case L'b': case L'B':
+      if(wpath[-2] == L'a' || wpath[-2] == L'A') {
+        if(wpath[-1] == L't' || wpath[-1] == L'T')
+          return 1; /* .bat */
+      }
+    }
+    return 0;
+  }
+  #include <shellapi.h>
+  ul_hapi int _ulfd_is_executable(const wchar_t* wpath) {
+    switch(CoInitializeEx(NULL, COINIT_MULTITHREADED)) {
+    case S_OK: case S_FALSE: case RPC_E_CHANGED_MODE:
+      return SHGetFileInfoW(wpath, 0, NULL, 0, SHGFI_EXETYPE) != 0;
+    default:
+      return _ulfd_is_executable_v1(wpath);
+    }
+  }
+  ul_hapi ulfd_mode_t _ulfd_stat_mode_cast(DWORD attr, const wchar_t* wpath) {
+    ulfd_mode_t mode;
+
+    attr &= 0xFFu;
+
+    /* check if `wpath` is a directory or root of a disk */
+    mode = ((attr & FILE_ATTRIBUTE_DIRECTORY) || _ulfd_is_root_or_empty(wpath))
+      ? ULFD_S_IFDIR | ULFD_S_IEXEC : ULFD_S_IFREG;
+
+    mode |= (attr & FILE_ATTRIBUTE_READONLY) ? ULFD_S_IREAD : ULFD_S_IREAD | ULFD_S_IWRITE;
+    if(_ulfd_is_executable(wpath)) mode |= ULFD_S_IEXEC;
+
+    /* propagate user bits to group/other fields */
+    mode |= (mode & 0700) >> 3;
+    mode |= (mode & 0700) >> 3;
+    return mode;
+  }
+  ul_hapi int _ulfd_is_root_unc_name(const wchar_t* wpath) {
+    size_t n;
+    for(n = 0; wpath[n] && n < 5; ++n) { } /* shortest name is like `//x/y` */
+    if(n < 5) return 0;
+    if(!_ulfd_is_slash(wpath[0]) || !_ulfd_is_slash(wpath[1]) || _ulfd_is_slash(wpath[2])) return 0;
+    for(wpath += 2; *++wpath && !_ulfd_is_slash(*wpath); ) { }
+    if(wpath[0] == L'\0' || wpath[1] == L'\0') return 0;
+    while(*++wpath && !_ulfd_is_slash(*wpath)) { }
+    if(wpath[0] == L'\0' || wpath[1] == L'\0') return 1;
+    return 0;
+  }
+  ul_hapi int _ulfd_is_usable_drive_or_unc_root(const wchar_t* wpath) {
+    const wchar_t* ptr;
+    wchar_t* full_path;
+    DWORD full_path_len;
+
+    for(ptr = wpath; *ptr; ++ptr)
+      if(*ptr == L'.'  && _ulfd_is_slash(*ptr)) return 0;
+
+    full_path_len = GetFullPathNameW(wpath, 0, NULL, NULL);
+    if(full_path_len == 0) return 0;
+    full_path = ul_reinterpret_cast(wchar_t*, ul_malloc(full_path_len * sizeof(wchar_t)));
+    if(ul_unlikely(full_path == NULL)) return ENOMEM;
+    if(ul_unlikely(GetFullPathNameW(wpath, full_path_len, full_path, NULL) != full_path_len)) {
+      ul_free(full_path); return 0;
+    }
+
+    if(full_path_len != 4 && !_ulfd_is_root_unc_name(wpath)) { ul_free(full_path); return 0; }
+    if(GetDriveTypeW(full_path) <= 1) { ul_free(full_path); return 0; }
+    ul_free(full_path); return 1;
+  }
+  ul_hapi int _ulfd_getdrive(void) {
+    DWORD need_len, writen_len;
+    wchar_t* wpath;
+    int ret;
+
+    need_len = GetCurrentDirectoryW(0, NULL);
+    if(need_len == 0) return _ul_win32_toerrno(GetLastError());
+    wpath = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+    if(ul_unlikely(wpath == NULL)) return ENOMEM;
+    writen_len = GetCurrentDirectoryW(need_len, wpath);
+    if(ul_unlikely(writen_len == 0)) return _ul_win32_toerrno(GetLastError());
+    if(ul_unlikely(writen_len != need_len)) return ERANGE;
+
+    if(wpath[0] == L'\0' || wpath[1] != L':') ret = 0;
+    else {
+      if(wpath[0] >= 'A' && wpath[0] <= 'Z') ret = wpath[0] - L'A' + 1;
+      else if(wpath[0] >= 'a' && wpath[0] <= 'z') ret = wpath[0] - L'a' + 1;
+      else ret = 0;
+    }
+    return ret;
+  }
+  ul_hapi int _ulfd_get_drive_number_from_path(const wchar_t* wpath, int* pdrive_number) {
+    int drive_number = -1;
+    if(wpath[0] >= L'A' && wpath[1] <= L'Z') drive_number = wpath[0] - L'A' + 1;
+    else if(wpath[0] >= L'a' && wpath[1] <= L'z') drive_number = wpath[0] - L'a' + 1;
+    if(drive_number != -1 && wpath[1] == L':') {
+      if(wpath[2] == L'\0') return _ul_win32_toerrno(GetLastError());
+    } else {
+      drive_number = _ulfd_getdrive();
+    }
+    *pdrive_number = drive_number;
+    return 0;
+  }
+
+  ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat) {
+    HANDLE handle;
+    int ret = 0;
+
+    memset(stat, 0, sizeof(*stat));
+    handle = CreateFileW(
+        wpath,
+        FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL
+      );
+    if(handle) {
+      DWORD file_type = ul_static_cast(DWORD, GetFileType(handle) & ul_static_cast(DWORD, ~FILE_TYPE_REMOTE));
+      if(file_type == FILE_TYPE_DISK) {
+        BY_HANDLE_FILE_INFORMATION file_info;
+
+        do {
+          int drive_number;
+          ret = _ulfd_get_drive_number_from_path(wpath, &drive_number);
+          if(ret) goto do_return;
+          stat->rdev = drive_number - 1;
+          stat->dev = drive_number - 1;
+        } while(0);
+
+        if(!GetFileInformationByHandle(handle, &file_info)) {
+          ret = _ul_win32_toerrno(GetLastError()); goto do_return;
+        }
+        stat->nlink = ul_static_cast(ulfd_nlink_t, file_info.nNumberOfLinks);
+        stat->mode = _ulfd_stat_mode_cast(file_info.dwFileAttributes, wpath);
+        stat->mtime = _ulfd_filetime_to_time_t(file_info.ftLastWriteTime, 0);
+        stat->atime = _ulfd_filetime_to_time_t(file_info.ftLastAccessTime, stat->mtime);
+        stat->ctime = _ulfd_filetime_to_time_t(file_info.ftCreationTime, stat->mtime);
+
+        stat->size = ul_static_cast(
+          ulfd_int64_t,
+          (ul_static_cast(ULONGLONG, file_info.nFileSizeHigh) << 32) | file_info.nFileSizeLow
+        );
+        ret = 0; goto do_return;
+      } else if(file_type == FILE_TYPE_CHAR | file_type == FILE_TYPE_PIPE) {
+        stat->mode = file_type == FILE_TYPE_CHAR ? ULFD_S_IFCHR : ULFD_S_IFIFO;
+        stat->nlink = 1;
+        stat->rdev = -1;
+        stat->dev = -1;
+        if(file_type != FILE_TYPE_CHAR) {
+          DWORD available;
+          if(PeekNamedPipe(handle, NULL, 0, NULL, &available, NULL))
+            stat->size = ul_static_cast(ulfd_int64_t, available);
+        }
+        ret = 0; goto do_return;
+      } else if(file_type == FILE_TYPE_UNKNOWN) {
+        ret = EBADF; goto do_return;
+      } else {
+        ret = _ul_win32_toerrno(GetLastError()); goto do_return;
+      }
+    } else {
+      int drive_number;
+      if(!_ulfd_is_usable_drive_or_unc_root(wpath)) {
+        ret = _ul_win32_toerrno(ERROR_FILE_NOT_FOUND); goto do_return;
+      }
+      stat->mode = _ulfd_stat_mode_cast(FILE_ATTRIBUTE_DIRECTORY, wpath);
+      stat->nlink = 1;
+      ret = _ulfd_get_drive_number_from_path(wpath, &drive_number);
+      if(ret) goto do_return;
+      stat->rdev = drive_number - 1;
+      stat->dev = drive_number - 1;
+      stat->mtime = -1;
+      stat->atime = stat->mtime;
+      stat->ctime = stat->mtime;
+      ret = 0; goto do_return;
+    }
+
+  do_return:
+    CloseHandle(handle);
+    return ret;
+  }
+  ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_stat_w(wpath, stat);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
+  ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    WIN32_FILE_ATTRIBUTE_DATA attributes;
+    if(!GetFileAttributesExW(wpath, GetFileExInfoStandard, &attributes))
+      return _ul_win32_toerrno(GetLastError());
+    if(attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) return 0;
+    if((attributes.dwFileAttributes & FILE_ATTRIBUTE_READONLY) && (mode & ULFD_S_IWRITE))
+      return EACCES;
+    return 0;
+  }
+  ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_access_w(wpath, mode);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
+  ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    (void)mode; return CreateDirectoryW(wpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_mkdir_w(wpath, mode);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
+  ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
+    return CreateHardLinkW(newpath, oldpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_link(const char* newpath, const char* oldpath) {
+    int ret;
+    _ulfd_begin_to_wstr(w_newpath, newpath, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    _ulfd_begin_to_wstr2(w_oldpath, oldpath, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND), w_newpath);
+    ret = ulfd_link_w(w_newpath, w_oldpath);
+    _ulfd_end_to_wstr2(w_oldpath);
+    _ulfd_end_to_wstr(w_newpath);
+    return ret;
+  }
+  ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source) {
+    DWORD attribute;
+    _ulfd_CreateSymbolicLinkW_t sysfunc;
+
+    sysfunc = _ulfd_get_CreateSymbolicLinkW();
+    if(sysfunc == NULL) return EINVAL;
+
+    attribute = GetFileAttributesW(source);
+    if(attribute == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
+    if(!CreateSymbolicLinkW(
+        source, target,
+        ((attribute & FILE_ATTRIBUTE_DIRECTORY) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+      )
+    ) return _ul_win32_toerrno(GetLastError());
+    return 0;
+  }
+  ul_hapi int ulfd_symlink(const char* target, const char* source) {
+    int ret;
+    _ulfd_begin_to_wstr(w_target, target, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    _ulfd_begin_to_wstr2(w_source, source, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND), w_target);
+    ret = ulfd_symlink_w(w_target, w_source);
+    _ulfd_end_to_wstr2(w_source);
+    _ulfd_end_to_wstr(w_target);
+    return ret;
+  }
+  ul_hapi int ulfd_readlink_w(const wchar_t* wpath, wchar_t* buf, size_t len) {
+    HANDLE handle;
+    DWORD adjust_len;
+    DWORD writen, error = 0;
+    _ulfd_GetFinalPathNameByHandleW_t sysfunc;
+
+    handle = CreateFileW(
+        wpath,
+        FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL
+      );
+    if(!handle) return _ul_win32_toerrno(GetLastError());
+
+    sysfunc = _ulfd_get_GetFinalPathNameByHandleW();
+    if(sysfunc == NULL) return EINVAL;
+
+    adjust_len = len >= 0xFFFFFFFFu ? 0xFFFFFFFFu : ul_static_cast(DWORD, len);
+    writen = sysfunc(handle, buf, adjust_len, 0);
+    if(writen == 0) error = GetLastError();
+    CloseHandle(handle);
+
+    if(writen == 0) return _ul_win32_toerrno(error);
+    if(writen >= len) return ENOMEM;
+    buf[writen] = 0; return 0;
+  }
+  ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len) {
+    wchar_t* wpath;
+    size_t path_len, need_len;
+    HANDLE handle;
+    DWORD writen;
+    _ulfd_GetFinalPathNameByHandleW_t sysfunc;
+
+    _ulfd_begin_to_wstr(wpath_, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    handle = CreateFileW(
+        wpath_,
+        FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL
+      );
+    _ulfd_end_to_wstr(wpath_);
+
+    if(!handle) return _ul_win32_toerrno(GetLastError());
+
+    sysfunc = _ulfd_get_GetFinalPathNameByHandleW();
+    if(sysfunc == NULL) return EINVAL;
+
+    path_len = sysfunc(handle, NULL, 0, 0);
+    if(path_len == 0) return _ul_win32_toerrno(GetLastError());
+    wpath = ul_reinterpret_cast(wchar_t*, (path_len + 1) * sizeof(wchar_t));
+    if(ul_unlikely(wpath == NULL)) return ENOMEM;
+    writen = sysfunc(handle, wpath, ul_static_cast(DWORD, path_len), 0);
+    if(writen == 0) { CloseHandle(handle); ul_free(wpath); return _ul_win32_toerrno(GetLastError()); }
+
+    CloseHandle(handle);
+    wpath[writen] = 0;
+    need_len = ul_os_wstr_to_str_len(wpath);
+    if(need_len < len) { ul_free(wpath); return ERANGE; }
+    ul_os_wstr_to_str(buf, wpath);
+    ul_free(wpath); return 0;
+  }
+
+  ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size) {
+    HANDLE handle;
+    LARGE_INTEGER sz;
+    int err;
+
+    handle = CreateFileW(wpath,
+      GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+    );
+    if(!handle) return _ul_win32_toerrno(GetLastError());
+    sz.QuadPart = size;
+    if(!_ulfd_SetFilePointerEx(handle, sz, NULL, FILE_BEGIN)) return _ul_win32_toerrno(GetLastError());
+
+    err = SetEndOfFile(handle) ? 0 : _ul_win32_toerrno(GetLastError());
+    CloseHandle(handle); return err;
+  }
+  ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_truncate_w(wpath, size);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
 #else
   #include <fcntl.h>
   #include <sys/stat.h>
 
-  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, int mode) {
+  #define _ulfd_to_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
+  #define _ulfd_from_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
+  ul_hapi mode_t _ulfd_to_full_mode(ulfd_mode_t mode) {
+    mode_t ret = ul_static_cast(mode_t, mode & 0777);
+    switch(mode) {
+    case ULFD_S_IFSOCK: ret |= S_IFSOCK; break;
+    case ULFD_S_IFLNK: ret |= S_IFLNK; break;
+    case ULFD_S_IFREG: ret |= S_IFREG; break;
+    case ULFD_S_IFBLK: ret |= S_IFBLK; break;
+    case ULFD_S_IFDIR: ret |= S_IFDIR; break;
+    case ULFD_S_IFCHR: ret |= S_IFCHR; break;
+    case ULFD_S_IFIFO: ret |= S_IFIFO; break;
+    default: break;
+    }
+    return ret;
+  }
+  ul_hapi ulfd_mode_t _ulfd_from_full_mode(mode_t mode) {
+    ulfd_mode_t ret = ul_static_cast(mode_t, mode & 0777);
+    switch(ret & S_IFMT) {
+    case S_IFSOCK: ret |= ULFD_S_IFSOCK; break;
+    case S_IFLNK: ret |= ULFD_S_IFLNK; break;
+    case S_IFREG: ret |= ULFD_S_IFREG; break;
+    case S_IFBLK: ret |= ULFD_S_IFBLK; break;
+    case S_IFDIR: ret |= ULFD_S_IFDIR; break;
+    case S_IFCHR: ret |= ULFD_S_IFCHR; break;
+    case S_IFIFO: ret |= ULFD_S_IFIFO; break;
+    default: break;
+    }
+    return ret;
+  }
+
+
+  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, ulfd_mode_t mode) {
     int flag = 0;
     int fd;
 
@@ -1073,12 +1815,20 @@ ul_hapi size_t ulfd_pagesize(void);
     if(oflag & ULFD_O_TRUNC) flag |= O_TRUNC;
 
     if(oflag & ULFD_O_APPEND) flag |= O_APPEND;
+  #ifdef O_CLOEXEC
     if(oflag & ULFD_O_CLOEXEC) flag |= O_CLOEXEC;
+  #endif
 
     if(oflag & ULFD_O_NONBLOCK) flag |= O_NONBLOCK;
     if(oflag & ULFD_O_NOCTTY) flag |= O_NOCTTY;
 
-    fd = open(path, flag, mode);
+  #if defined(ULFD_HAS_LFS) && defined(O_LARGEFILE)
+    #if !defined(_FILE_OFFSET_BITS) || _FILE_OFFSET_BITS != 64
+      flag |= O_LARGEFILE;
+    #endif
+  #endif
+
+    fd = open(path, flag, _ulfd_to_access_mode(mode));
 
     if(fd < 0) return errno;
     if(oflag & ULFD_O_TEMPORARY) {
@@ -1089,41 +1839,23 @@ ul_hapi size_t ulfd_pagesize(void);
     *pfd = fd;
     return 0;
   }
-  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode) {
-    char path_buf[PATH_MAX];
-    char* path;
-    size_t len;
+  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, ulfd_mode_t mode) {
     int ret;
-
-    len = ul_os_wstr_to_str_len(wpath);
-    if(ul_unlikely(len == 0)) return ENOENT;
-    if(ul_likely(len <= PATH_MAX)) path = path_buf;
-    else path = ul_reinterpret_cast(char*, malloc(len));
-
-    ul_os_wstr_to_str(path, wpath);
+    _ulfd_begin_to_str(path, wpath, ENOENT);
     ret = ulfd_open(pfd, path, oflag, mode);
-    if(ul_unlikely(len > PATH_MAX)) free(path);
+    _ulfd_end_to_str2(path);
     return ret;
   }
-  ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, int mode) {
-    int fd = creat(path, ul_static_cast(mode_t, mode));
+  ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, ulfd_mode_t mode) {
+    int fd = creat(path, _ulfd_to_access_mode(mode));
     if(fd < 0) return errno;
     *pfd = fd; return 0;
   }
-  ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* wpath, int mode) {
-    char path_buf[PATH_MAX];
-    char* path;
-    size_t len;
+  ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_mode_t mode) {
     int ret;
-
-    len = ul_os_wstr_to_str_len(wpath);
-    if(ul_unlikely(len == 0)) return ENOENT;
-    if(ul_likely(len <= PATH_MAX)) path = path_buf;
-    else path = ul_reinterpret_cast(char*, malloc(len));
-
-    ul_os_wstr_to_str(path, wpath);
+    _ulfd_begin_to_str(path, wpath, ENOENT);
     ret = ulfd_creat(pfd, path, mode);
-    if(ul_unlikely(len > PATH_MAX)) free(path);
+    _ulfd_end_to_str2(path);
     return ret;
   }
   ul_hapi int ulfd_close(ulfd_t fd) {
@@ -1150,14 +1882,24 @@ ul_hapi size_t ulfd_pagesize(void);
   }
   ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
     ssize_t ret;
+  #ifdef ULFD_HAS_LFS
     ret = pread64(fd, buf, count, off);
+  #else
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    ret = pread(fd, buf, count, ul_static_cast(off_t, off));
+  #endif
     if(ret < 0) return errno;
     *pread_bytes = ul_static_cast(size_t, ret);
     return 0;
   }
   ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
     ssize_t ret;
+  #ifdef ULFD_HAS_LFS
     ret = pwrite64(fd, buf, count, off);
+  #else
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    ret = pwrite(fd, buf, count, ul_static_cast(off_t, off));
+  #endif
     if(ret < 0) return errno;
     *pwriten_bytes = ul_static_cast(size_t, ret);
     return 0;
@@ -1172,7 +1914,12 @@ ul_hapi size_t ulfd_pagesize(void);
     else if(origin == ULFD_SEEK_END) whence = SEEK_END;
     else return EINVAL;
 
+  #ifdef ULFD_HAS_LFS
     new_off = lseek64(fd, off, whence);
+  #else
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    new_off = lseek(fd, ul_static_cast(off_t, off), whence);
+  #endif
     if(new_off < 0) return errno;
     *poff = new_off;
     return 0;
@@ -1182,41 +1929,91 @@ ul_hapi size_t ulfd_pagesize(void);
   }
 
   ul_hapi int ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode) {
+  #ifdef ULFD_HAS_LFS
     struct flock64 lock;
     lock.l_len = len;
     lock.l_start = off;
+  #else
+    struct flock lock;
+    if(ul_static_cast(off_t, len) != len) return ERANGE;
+    lock.l_len = ul_static_cast(off_t, len);
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    lock.l_start = ul_static_cast(off_t, off);
+  #endif
     lock.l_whence = SEEK_SET;
     if(mode == ULFD_F_RDLCK) lock.l_type = F_RDLCK;
     else if(mode == ULFD_F_WRLCK) lock.l_type = F_WRLCK;
     else if(mode == ULFD_F_UNLCK) lock.l_type = F_UNLCK;
     else return EINVAL;
 
-    return fcntl64(fd, F_SETLK64, &lock) < 0 ? errno : 0;
+  #ifdef ULFD_HAS_LFS
+    return fcntl(fd, F_SETLK64, &lock) < 0 ? errno : 0;
+  #else
+    return fcntl(fd, F_SETLK, &lock) < 0 ? errno : 0;
+  #endif
   }
   ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode) {
+  #ifdef ULFD_HAS_LFS
     struct flock64 lock;
     lock.l_len = len;
     lock.l_start = off;
+  #else
+    struct flock lock;
+    if(ul_static_cast(off_t, len) != len) return ERANGE;
+    lock.l_len = ul_static_cast(off_t, len);
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    lock.l_start = ul_static_cast(off_t, off);
+  #endif
     lock.l_whence = SEEK_SET;
     if(mode == ULFD_F_RDLCK) lock.l_type = F_RDLCK;
     else if(mode == ULFD_F_WRLCK) lock.l_type = F_WRLCK;
     else if(mode == ULFD_F_UNLCK) lock.l_type = F_UNLCK;
     else return EINVAL;
 
-    return fcntl64(fd, F_SETLKW64, &lock) < 0 ? errno : 0;
+  #ifdef ULFD_HAS_LFS
+    return fcntl(fd, F_SETLKW64, &lock) < 0 ? errno : 0;
+  #else
+    return fcntl(fd, F_SETLKW, &lock) < 0 ? errno : 0;
+  #endif
   }
 
   ul_hapi int ulfd_sync(ulfd_t fd) {
     return fsync(fd) < 0 ? errno : 0;
   }
-  ul_hapi int ulfd_truncate(ulfd_t fd, ulfd_int64_t length) {
+  ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length) {
+  #ifdef ULFD_HAS_LFS
     return ftruncate64(fd, length) < 0 ? errno : 0;
+  #else
+    if(ul_static_cast(off_t, length) != 0) return ERANGE;
+    return ftruncate(fd, ul_static_cast(off_t, length)) < 0 ? errno : 0;
+  #endif
   }
   ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength) {
-    struct stat64 stat;
-    if(fstat64(fd, &stat) < 0) return errno;
-    *plength = stat.st_size;
+  #ifdef ULFD_HAS_LFS
+    struct stat64 state;
+    if(fstat64(fd, &state) < 0) return errno;
+  #else
+    struct stat state;
+    if(fstat(fd, &state) < 0) return errno;
+  #endif
+    *plength = state.st_size;
     return 0;
+  }
+
+  ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t length) {
+  #ifdef ULFD_HAS_LFS
+    return truncate64(path, length) < 0 ? errno : 0;
+  #else
+    if(ul_static_cast(off_t, length) != 0) return ERANGE;
+    return truncate(path, ul_static_cast(off_t, length)) < 0 ? errno : 0;
+  #endif
+  }
+  ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t length) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_truncate(path, length);
+    _ulfd_end_to_str(path);
+    return ret;
   }
 
   #include <sys/mman.h>
@@ -1238,7 +2035,12 @@ ul_hapi size_t ulfd_pagesize(void);
     if(flags & ULFD_MAP_SHARED) flag |= MAP_SHARED;
     else flag |= MAP_PRIVATE;
 
+  #ifdef ULFD_HAS_LFS
     map = mmap64(addr, len, prot, flag, fd, off);
+  #else
+    if(ul_static_cast(off_t, off) != off) return ERANGE;
+    map = mmap(addr, len, prot, flag, fd, ul_static_cast(off_t, off));
+  #endif
     if(map == MAP_FAILED) return errno;
     *pmap = map; return 0;
   }
@@ -1319,6 +2121,210 @@ ul_hapi size_t ulfd_pagesize(void);
 
   ul_hapi size_t ulfd_pagesize(void) {
     return ul_static_cast(size_t, sysconf(_SC_PAGESIZE));
+  }
+
+  ul_hapi int ulfd_chdir(const char* path) {
+    return chdir(path) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_chdir_w(const wchar_t* wpath) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_chdir(path);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+  ul_hapi int ulfd_getcwd(char* path, size_t length) {
+    char* ret;
+    ret = getcwd(path, length);
+    if(ret == NULL) return errno;
+    return 0;
+  }
+  ul_hapi int ulfd_getcwd_w(wchar_t* wpath, size_t length) {
+    char* path;
+    size_t cast_len;
+    int ret = 0;
+
+    path = ul_reinterpret_cast(char*, ul_malloc(ULFD_PATH_MAX + 1));
+    if(ul_unlikely(path == NULL)) return ENOMEM;
+    if(getcwd(path, ULFD_PATH_MAX + 1) == NULL) { ret = errno; goto do_return; }
+    cast_len = ul_os_str_to_wstr_len(path);
+    if(cast_len > length) { ret = ERANGE; goto do_return; }
+    ul_os_str_to_wstr(wpath, path);
+
+  do_return:
+    ul_free(path); return ret;
+  }
+
+  ul_hapi ulfd_mode_t ulfd_umask(ulfd_mode_t mask) {
+    return _ulfd_from_access_mode(umask(_ulfd_to_access_mode(mask)));
+  }
+  ul_hapi int ulfd_chmod(const char* path, ulfd_mode_t mode) {
+    return chmod(path, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_chmod_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_chmod(path, mode);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+  ul_hapi int ulfd_chown(const char* path, ulfd_uid_t uid, ulfd_gid_t gid) {
+    return chown(path, uid, gid) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_chown_w(const wchar_t* wpath, ulfd_uid_t uid, ulfd_gid_t gid) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_chown(path, uid, gid);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+
+  #include <utime.h>
+  ul_hapi int ulfd_utime(const char* path, ulfd_int64_t atime, ulfd_int64_t mtime) {
+    struct utimbuf times = { ul_static_cast(time_t, atime), ul_static_cast(time_t, mtime) };
+    return utime(path, &times) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_utime_w(const wchar_t* wpath, ulfd_int64_t atime, ulfd_int64_t mtime) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_utime(path, atime, mtime);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+
+  ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* out) {
+  #ifdef ULFD_HAS_LFS
+    struct stat64 state;
+    if(stat64(path, &state) < 0) return errno;
+  #else
+    struct stat state;
+    if(stat(path, &state) < 0) return errno;
+  #endif
+
+    out->dev = state.st_dev;
+    out->rdev = state.st_rdev;
+    out->ino = state.st_ino;
+    out->mode = _ulfd_from_full_mode(state.st_mode);
+    out->nlink = state.st_nlink;
+    out->uid = state.st_uid;
+    out->gid = state.st_gid;
+    out->size = ul_static_cast(ulfd_int64_t, state.st_size);
+  #if (__GLIBC__ >= 2 && __GLIBC_MINOR__ >= 12 && (_POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 700)) || \
+      ((__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 19)) && (_BSD_SOURCE || _SVID_SOURCE))
+    out->atime = ul_static_cast(ulfd_time_t, state.st_atim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_atim.tv_nsec / 1000000);
+    out->mtime = ul_static_cast(ulfd_time_t, state.st_mtim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_mtim.tv_nsec / 1000000);
+    out->ctime = ul_static_cast(ulfd_time_t, state.st_ctim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_ctim.tv_nsec / 1000000);
+  #else
+    out->atime = ul_static_cast(ulfd_int64_t, state.st_atime * 1000);
+    out->mtime = ul_static_cast(ulfd_int64_t, state.st_mtime * 1000);
+    out->ctime = ul_static_cast(ulfd_int64_t, state.st_ctime * 1000);
+  #endif
+    return 0;
+  }
+  ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_stat(path, stat);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+  ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode) {
+    int mode2 = 0;
+    if(mode & ULFD_S_IREAD) mode2 |= R_OK;
+    if(mode & ULFD_S_IWRITE) mode2 |= W_OK;
+    if(mode & ULFD_S_IEXEC) mode2 |= X_OK;
+    return access(path, mode2) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_access(path, mode);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+
+  ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode) {
+    return mkdir(path, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_mkdir(path, mode);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+
+  ul_hapi int ulfd_link(const char* newpath, const char* oldpath) {
+    return link(oldpath, newpath) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
+    int ret;
+    _ulfd_begin_to_str(_newpath, newpath, ENOENT);
+    _ulfd_begin_to_str(_oldpath, oldpath, ENOENT);
+    ret = ulfd_link(_newpath, _oldpath);
+    _ulfd_end_to_str(_oldpath);
+    _ulfd_end_to_str(_newpath);
+    return ret;
+  }
+  ul_hapi int ulfd_symlink(const char* target, const char* source) {
+    return symlink(source, target) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source) {
+    int ret;
+    _ulfd_begin_to_str(_target, target, ENOENT);
+    _ulfd_begin_to_str(_source, source, ENOENT);
+    ret = ulfd_symlink(_target, _source);
+    _ulfd_end_to_str(_source);
+    _ulfd_end_to_str(_target);
+    return ret;
+
+  }
+  ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len) {
+  #if (_XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L) || \
+      ((__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 19)) && _BSD_SOURCE)
+    ssize_t l;
+    l = readlink(path, buf, len);
+    if(l < 0) return errno;
+    if(ul_static_cast(size_t, l) == len) return ERANGE;
+    buf[l] = 0;
+    return 0;
+  #else
+    return EINVAL;
+  #endif
+  }
+  ul_hapi int ulfd_readlink_w(const wchar_t* wpath, wchar_t* buf, size_t len) {
+  #if (_XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L) || \
+      ((__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 19)) && _BSD_SOURCE)
+
+    char* tmp;
+    size_t cast_len;
+    ssize_t sret;
+    int ret = 0;
+
+    tmp = ul_reinterpret_cast(char*, ul_malloc(ULFD_PATH_MAX + 1));
+    if(ul_unlikely(tmp == NULL)) return ENOMEM;
+
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    sret = readlink(path, tmp, ULFD_PATH_MAX + 1);
+    _ulfd_end_to_str(path);
+
+    if(sret < 0) { ret = errno; goto do_return; }
+    if(sret == ULFD_PATH_MAX + 1) { ret = ERANGE; goto do_return; }
+    tmp[sret] = 0;
+
+    cast_len = ul_os_str_to_wstr_len(tmp);
+    if(ul_unlikely(cast_len == 0)) { ret = EINVAL; goto do_return; }
+    if(cast_len > len) { ret = ERANGE; goto do_return; }
+    ul_os_str_to_wstr(buf, tmp);
+
+  do_return:
+    ul_free(tmp); return ret;
+  #else
+    return EINVAL;
+  #endif
   }
 #endif
 
