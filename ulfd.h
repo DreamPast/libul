@@ -146,9 +146,11 @@ File descriptor
 #if defined(ULLONG_MAX) && ((ULLONG_MAX >> 63) >= 1)
   typedef long long ulfd_int64_t;
   typedef unsigned long long ulfd_uint64_t;
+  #define ULFD_INT64_C(val) (val ## ll)
 #elif defined(_WIN32)
   typedef __int64 ulfd_int64_t;
   typedef unsigned __int64 ulfd_uint64_t;
+  #define ULFD_INT64_C(val) (val ## i64)
 #else
   #error "ulfd.h: need 64-bit integer"
 #endif
@@ -160,11 +162,11 @@ typedef ulfd_int64_t ulfd_time_t;
   #include <Windows.h>
 
   typedef HANDLE ulfd_t;
-  #define ulfd_invalid_value INVALID_HANDLE_VALUE
+  #define ULFD_INVALID_VALUE INVALID_HANDLE_VALUE
 
-  #define ulfd_stdin (GetStdHandle(STD_INPUT_HANDLE))
-  #define ulfd_stdout (GetStdHandle(STD_OUTPUT_HANDLE))
-  #define ulfd_stderr (GetStdHandle(STD_ERROR_HANDLE))
+  #define ULFD_STDIN  (GetStdHandle(STD_INPUT_HANDLE))
+  #define ULFD_STDOUT (GetStdHandle(STD_OUTPUT_HANDLE))
+  #define ULFD_STDERR (GetStdHandle(STD_ERROR_HANDLE))
 
   #define ULFD_PATH_MAX     MAX_PATH
   #define ULFD_NAME_MAX     MAX_PATH
@@ -183,11 +185,11 @@ typedef ulfd_int64_t ulfd_time_t;
   #include <limits.h>
 
   typedef int ulfd_t;
-  #define ulfd_invalid_value -1
+  #define ULFD_INVALID_VALUE -1
 
-  #define ulfd_stdin  STDIN_FILENO
-  #define ulfd_stdout STDOUT_FILENO
-  #define ulfd_stderr STDERR_FILENO
+  #define ULFD_STDIN  STDIN_FILENO
+  #define ULFD_STDOUT STDOUT_FILENO
+  #define ULFD_STDERR STDERR_FILENO
 
   #define ULFD_PATH_MAX     PATH_MAX
   #define ULFD_NAME_MAX     NAME_MAX
@@ -375,9 +377,15 @@ ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat);
 ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat);
 ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode);
+ul_hapi int ulfd_unlink(const char* path);
+ul_hapi int ulfd_unlink_w(const wchar_t* wpath);
 
 ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode);
+ul_hapi int ulfd_rmdir(const char* path);
+ul_hapi int ulfd_rmdir_w(const wchar_t* wpath);
+ul_hapi int ulfd_remove(const char* path) { return ulfd_rmdir(path); }
+ul_hapi int ulfd_remove_w(const wchar_t* wpath) { return ulfd_rmdir_w(wpath); }
 
 ul_hapi int ulfd_link(const char* newpath, const char* oldpath);
 ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath);
@@ -546,12 +554,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     #include <Windows.h>
     #include <errno.h>
 
-    /* some errno codes don't exist in older compiler */
-    /* TODO: fix these errno codes or test more compilers? */
-    #if (defined(_MSC_VER) && _MSC_VER >= 1900) || defined(__GNUC__)
-      #define UL_WIN32_ERRNO_MODERN
-    #endif
-
+    /* some errno codes don't exist in older compiler, so we ignore them */
     ul_hapi int _ul_win32_toerrno(DWORD error) {
       size_t i;
       static const unsigned short map[][2] = {
@@ -583,7 +586,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         { ERROR_SHARING_VIOLATION,         EBUSY },        /*   32 */
         { ERROR_LOCK_VIOLATION,            EBUSY },        /*   33 */
         { ERROR_SHARING_BUFFER_EXCEEDED,   ENOLCK },       /*   36 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_HANDLE_EOF) && defined(ENODATA)
         { ERROR_HANDLE_EOF,                ENODATA },      /*   38 */
       #endif
         { ERROR_HANDLE_DISK_FULL,          ENOSPC },       /*   39 */
@@ -642,7 +645,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         { ERROR_PIPE_BUSY,                 EBUSY },        /*  231 */
         { ERROR_NO_DATA,                   EPIPE },        /*  232 */
       /*{ ERROR_PIPE_NOT_CONNECTED,        ECOMM },        //  233 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_MORE_DATA) && defined(EMSGSIZE)
         { ERROR_MORE_DATA,                 EMSGSIZE },     /*  234 */
       #endif
         { ERROR_INVALID_EA_NAME,           EINVAL },       /*  254 */
@@ -651,7 +654,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         { ERROR_DIRECTORY,                 ENOTDIR },      /*  267 */
         { ERROR_EAS_DIDNT_FIT,             ENOSPC },       /*  275 */
         { ERROR_EA_TABLE_FULL,             ENOSPC },       /*  277 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_EAS_NOT_SUPPORTED) && defined(ENOTSUP)
         { ERROR_EAS_NOT_SUPPORTED,         ENOTSUP },      /*  282 */
       #endif
         { ERROR_NOT_OWNER,                 EPERM },        /*  288 */
@@ -682,7 +685,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         { ERROR_DEVICE_DOOR_OPEN,          EIO },          /* 1166 */
         { ERROR_CANCELLED,                 EINTR },        /* 1223 */
         { ERROR_BAD_DEVICE,                ENODEV },       /* 1200 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_CONNECTION_REFUSED) && defined(ECONNREFUSED)
         { ERROR_CONNECTION_REFUSED,        ECONNREFUSED }, /* 1225 */
       #endif
         { ERROR_PRIVILEGE_NOT_HELD,        EPERM },        /* 1314 */
@@ -698,17 +701,17 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         { ERROR_TIMEOUT,                   EBUSY },        /* 1460 */
         { ERROR_NOT_ENOUGH_QUOTA,          ENOMEM },       /* 1816 */
         { ERROR_BAD_USERNAME,              EINVAL },       /* 2202 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_NOT_CONNECTED) && defined(ENOLINK)
         { ERROR_NOT_CONNECTED,             ENOLINK },      /* 2250 */
       #endif
         { ERROR_OPEN_FILES,                EAGAIN },       /* 2401 */
         { ERROR_ACTIVE_CONNECTIONS,        EACCES },       /* 2402 */
         { ERROR_DEVICE_IN_USE,             EAGAIN },       /* 2404 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_DS_GENERIC_ERROR) && defined(EIO)
         { ERROR_DS_GENERIC_ERROR,          EIO },          /* 8341 */
       #endif
 
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(WSAEWOULDBLOCK) && defined(EWOULDBLOCK)
         /* WinSock error codes */
         { WSAEINTR,                        EINTR },           /* 10004 */
         { WSAEBADF,                        EBADF },           /* 10009 */
@@ -779,6 +782,15 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   #ifndef FILE_MAP_EXECUTE
     #define FILE_MAP_EXECUTE 0x0020
   #endif
+  #ifndef SYMBOLIC_LINK_FLAG_DIRECTORY
+    #define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
+  #endif
+  #ifndef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+    #define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE (0x2)
+  #endif
+  #ifndef INVALID_FILE_ATTRIBUTES
+    #define INVALID_FILE_ATTRIBUTES ul_static_cast(DWORD, -1)
+  #endif
 
   #if _WIN32_WINNT < 0x500
     BOOL _ulfd_SetFilePointerEx(
@@ -818,14 +830,14 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     #define _ulfd_GetFileSizeEx(hFile, lpFileSize) GetFileSizeEx(hFile, lpFileSize)
   #endif
 
-  #if _MSC_VER < 1300
+  #if (defined(_MSC_VER) && _MSC_VER < 1300)
     ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
-      return InterlockedCOmpareExchange(obj, exchange, compareand);
+      return InterlockedCompareExchange(obj, exchange, compareand);
     }
   #elif defined(_WIN64)
     ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
       return ul_reinterpret_cast(void*,
-        _InterlockedCompareExchange64(
+        InterlockedCompareExchange64(
           ul_reinterpret_cast(LONG64*, obj),
           ul_reinterpret_cast(LONG64, exchange),
           ul_reinterpret_cast(LONG64, compareand)
@@ -835,7 +847,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   #else
     ul_hapi void* _ulfd_compare_exchange(void** obj, void* exchange, void* compareand) {
       return ul_reinterpret_cast(void*,
-        _InterlockedCompareExchange64(
+        InterlockedCompareExchange(
           ul_reinterpret_cast(LONG*, obj),
           ul_reinterpret_cast(LONG, exchange),
           ul_reinterpret_cast(LONG, compareand)
@@ -1314,10 +1326,10 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     if(ul_unlikely(wpath == NULL)) return ENOMEM;
     writen_len = GetCurrentDirectoryW(need_len, wpath);
     if(ul_unlikely(writen_len == 0)) { ul_free(wpath); return _ul_win32_toerrno(GetLastError()); }
-    if(ul_unlikely(writen_len != need_len)) { ul_free(wpath); return ERANGE; }
+    if(ul_unlikely(writen_len > need_len)) { ul_free(wpath); return ERANGE; }
 
     cast_len = ul_os_wstr_to_str_len(wpath);
-    if(cast_len < length) { ul_free(wpath); return ERANGE; }
+    if(cast_len > length) { ul_free(wpath); return ERANGE; }
     ul_os_wstr_to_str(path, wpath);
 
     ul_free(wpath);
@@ -1325,7 +1337,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   }
 
   ul_hapi ulfd_int64_t _ulfd_filetime_to_time_t(const FILETIME file_time, const ulfd_int64_t fallback) {
-    static const ULONGLONG EPOCH = 116444736000000000ui64;
+    static const ULONGLONG EPOCH = ULFD_INT64_C(116444736000000000);
     SYSTEMTIME system_time;
     SYSTEMTIME local_time;
     FILETIME local_file_time;
@@ -1342,17 +1354,38 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
       | (ul_static_cast(ULONGLONG, local_file_time.dwHighDateTime) << 32);
     return ul_static_cast(ulfd_int64_t, (time - EPOCH) / 10000);
   }
+
+  #if _WIN32_WINNT < 0x0501
+    typedef BOOL (WINAPI *_ulfd_TzSpecificLocalTimeToSystemTime_t)(
+      const TIME_ZONE_INFORMATION* lpTimeZoneInformation, const SYSTEMTIME* lpLocalTime, LPSYSTEMTIME lpUniversalTime
+    );
+    ul_hapi _ulfd_TzSpecificLocalTimeToSystemTime_t _ulfd_get_TzSpecificLocalTimeToSystemTime(void) {
+      static HANDLE hold = NULL; /* Windows XP (but VC6 don't define it) */
+      return ul_reinterpret_cast(_ulfd_TzSpecificLocalTimeToSystemTime_t, _ulfd_kernel32_function(&hold, "TzSpecificLocalTimeToSystemTime"));
+    }
+  #endif
+
   ul_hapi int _ulfd_time64_to_filetime(FILETIME* out, ulfd_int64_t time) {
-    static const LONGLONG EPOCH = 116444736000000000i64;
+    static const LONGLONG EPOCH = ULFD_INT64_C(116444736000000000);
     SYSTEMTIME local_time, system_time;
     FILETIME local_file_time;
+  #if _WIN32_WINNT < 0x501
+    _ulfd_TzSpecificLocalTimeToSystemTime_t sysfunc;
+    sysfunc = _ulfd_get_TzSpecificLocalTimeToSystemTime();
+    if(sysfunc == NULL) return -1; /* It shouldn't happen */
+  #endif
+
     time = (time + EPOCH) * 10000;
     if(time < 0) return -1;
     local_file_time.dwLowDateTime = ul_static_cast(DWORD, time);
     local_file_time.dwHighDateTime = ul_static_cast(DWORD, time >> 32);
     if(!FileTimeToSystemTime(&local_file_time, &local_time)) return -1;
     if(
+  #if _WIN32_WINNT >= 0x501
       !TzSpecificLocalTimeToSystemTime(NULL, &local_time, &system_time) ||
+  #else
+      sysfunc(NULL, &local_time, &system_time) ||
+  #endif
       !SystemTimeToFileTime(&system_time, out)
     ) return -1;
     return 0;
@@ -1392,7 +1425,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
       FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
       NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL
       );
-    if(!handle) return _ul_win32_toerrno(GetLastError());
+    if(handle == INVALID_HANDLE_VALUE) return _ul_win32_toerrno(GetLastError());
     if(!SetFileTime(handle, NULL, &access_time, &write_time)) error = GetLastError();
     CloseHandle(handle);
     return _ul_win32_toerrno(error);
@@ -1446,12 +1479,19 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   }
   #include <shellapi.h>
   ul_hapi int _ulfd_is_executable(const wchar_t* wpath) {
+  #if (_WIN32_WINNT >= 0x0400) || defined(_WIN32_DCOM)
+    #ifdef _MSC_VER
+      #pragma comment(lib, "Ole32.lib")
+      #pragma comment(lib, "Shell32.lib")
+    #endif
+    /* If you meet compiling errors about `CoInitializeEx`, please link "Ole32.lib" and "Shell32.lib" manually */
+
     switch(CoInitializeEx(NULL, COINIT_MULTITHREADED)) {
     case S_OK: case S_FALSE: case RPC_E_CHANGED_MODE:
       return SHGetFileInfoW(wpath, 0, NULL, 0, SHGFI_EXETYPE) != 0;
-    default:
-      return _ulfd_is_executable_v1(wpath);
     }
+  #endif
+    return _ulfd_is_executable_v1(wpath);
   }
   ul_hapi ulfd_mode_t _ulfd_stat_mode_cast(DWORD attr, const wchar_t* wpath) {
     ulfd_mode_t mode;
@@ -1512,7 +1552,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     if(ul_unlikely(wpath == NULL)) return ENOMEM;
     writen_len = GetCurrentDirectoryW(need_len, wpath);
     if(ul_unlikely(writen_len == 0)) return _ul_win32_toerrno(GetLastError());
-    if(ul_unlikely(writen_len != need_len)) return ERANGE;
+    if(ul_unlikely(writen_len > need_len)) return ERANGE;
 
     if(wpath[0] == L'\0' || wpath[1] != L':') ret = 0;
     else {
@@ -1543,9 +1583,9 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     handle = CreateFileW(
         wpath,
         FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL
       );
-    if(handle) {
+    if(handle != INVALID_HANDLE_VALUE) {
       DWORD file_type = ul_static_cast(DWORD, GetFileType(handle) & ul_static_cast(DWORD, ~FILE_TYPE_REMOTE));
       if(file_type == FILE_TYPE_DISK) {
         BY_HANDLE_FILE_INFORMATION file_info;
@@ -1572,7 +1612,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
           (ul_static_cast(ULONGLONG, file_info.nFileSizeHigh) << 32) | file_info.nFileSizeLow
         );
         ret = 0; goto do_return;
-      } else if(file_type == FILE_TYPE_CHAR | file_type == FILE_TYPE_PIPE) {
+      } else if(file_type == FILE_TYPE_CHAR || file_type == FILE_TYPE_PIPE) {
         stat->mode = file_type == FILE_TYPE_CHAR ? ULFD_S_IFCHR : ULFD_S_IFIFO;
         stat->nlink = 1;
         stat->rdev = -1;
@@ -1606,7 +1646,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     }
 
   do_return:
-    CloseHandle(handle);
+    if(handle != INVALID_HANDLE_VALUE) CloseHandle(handle);
     return ret;
   }
   ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat) {
@@ -1634,6 +1674,17 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     return ret;
   }
 
+  ul_hapi int ulfd_unlink_w(const wchar_t* wpath) {
+    return DeleteFileW(wpath) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_unlink(const char* path) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_unlink_w(wpath);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+
   ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode) {
     (void)mode; return CreateDirectoryW(wpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
   }
@@ -1644,10 +1695,33 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     _ulfd_end_to_wstr(wpath);
     return ret;
   }
+  ul_hapi int ulfd_rmdir_w(const wchar_t* wpath) {
+    return RemoveDirectoryW(wpath) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_rmdir(const char* path) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
+    ret = ulfd_rmdir_w(wpath);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
 
+  #if _WIN32_WINNT >= 0x0501
   ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
     return CreateHardLinkW(newpath, oldpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
   }
+  #else
+  typedef BOOL (WINAPI *_ulfd_CreateHardLinkW_t)(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+  ul_hapi _ulfd_CreateHardLinkW_t _ulfd_get_CreateHardLinkW(void) {
+    static HANDLE hold = NULL; /* Windows XP (but VC6 don't define it?) */
+    return ul_reinterpret_cast(_ulfd_CreateHardLinkW_t, _ulfd_kernel32_function(&hold, "CreateHardLinkW"));
+  }
+  ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
+    _ulfd_CreateHardLinkW_t sysfunc = _ulfd_get_CreateHardLinkW();
+    if(sysfunc == NULL) return EINVAL;
+    return sysfunc(newpath, oldpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  #endif
   ul_hapi int ulfd_link(const char* newpath, const char* oldpath) {
     int ret;
     _ulfd_begin_to_wstr(w_newpath, newpath, _ul_win32_toerrno(ERROR_FILE_NOT_FOUND));
@@ -1666,9 +1740,11 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
 
     attribute = GetFileAttributesW(source);
     if(attribute == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
-    if(!CreateSymbolicLinkW(
-        source, target,
-        ((attribute & FILE_ATTRIBUTE_DIRECTORY) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+    if(!sysfunc(
+        target, source,
+        ul_static_cast(DWORD, ((attribute & FILE_ATTRIBUTE_DIRECTORY) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0)
+          | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+        )
       )
     ) return _ul_win32_toerrno(GetLastError());
     return 0;
@@ -1693,7 +1769,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
         FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL
       );
-    if(!handle) return _ul_win32_toerrno(GetLastError());
+    if(handle == INVALID_HANDLE_VALUE) return _ul_win32_toerrno(GetLastError());
 
     sysfunc = _ulfd_get_GetFinalPathNameByHandleW();
     if(sysfunc == NULL) return EINVAL;
@@ -1709,7 +1785,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   }
   ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len) {
     wchar_t* wpath;
-    size_t path_len, need_len;
+    size_t path_len, cast_len;
     HANDLE handle;
     DWORD writen;
     _ulfd_GetFinalPathNameByHandleW_t sysfunc;
@@ -1718,26 +1794,25 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     handle = CreateFileW(
         wpath_,
         FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL
       );
     _ulfd_end_to_wstr(wpath_);
-
-    if(!handle) return _ul_win32_toerrno(GetLastError());
+    if(handle == INVALID_HANDLE_VALUE) return _ul_win32_toerrno(GetLastError());
 
     sysfunc = _ulfd_get_GetFinalPathNameByHandleW();
     if(sysfunc == NULL) return EINVAL;
 
     path_len = sysfunc(handle, NULL, 0, 0);
     if(path_len == 0) return _ul_win32_toerrno(GetLastError());
-    wpath = ul_reinterpret_cast(wchar_t*, (path_len + 1) * sizeof(wchar_t));
+    wpath = ul_reinterpret_cast(wchar_t*, malloc((path_len + 1) * sizeof(wchar_t)));
     if(ul_unlikely(wpath == NULL)) return ENOMEM;
     writen = sysfunc(handle, wpath, ul_static_cast(DWORD, path_len), 0);
     if(writen == 0) { CloseHandle(handle); ul_free(wpath); return _ul_win32_toerrno(GetLastError()); }
 
     CloseHandle(handle);
     wpath[writen] = 0;
-    need_len = ul_os_wstr_to_str_len(wpath);
-    if(need_len < len) { ul_free(wpath); return ERANGE; }
+    cast_len = ul_os_wstr_to_str_len(wpath);
+    if(cast_len > len) { ul_free(wpath); return ERANGE; }
     ul_os_wstr_to_str(buf, wpath);
     ul_free(wpath); return 0;
   }
@@ -1751,7 +1826,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
       GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
     );
-    if(!handle) return _ul_win32_toerrno(GetLastError());
+    if(handle == INVALID_HANDLE_VALUE) return _ul_win32_toerrno(GetLastError());
     sz.QuadPart = size;
     if(!_ulfd_SetFilePointerEx(handle, sz, NULL, FILE_BEGIN)) return _ul_win32_toerrno(GetLastError());
 
@@ -1774,7 +1849,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   #define _ulfd_from_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
   ul_hapi mode_t _ulfd_to_full_mode(ulfd_mode_t mode) {
     mode_t ret = ul_static_cast(mode_t, mode & 0777);
-    switch(mode) {
+    switch(mode & ULFD_S_IFMT) {
     case ULFD_S_IFSOCK: ret |= S_IFSOCK; break;
     case ULFD_S_IFLNK: ret |= S_IFLNK; break;
     case ULFD_S_IFREG: ret |= S_IFREG; break;
@@ -1788,7 +1863,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   }
   ul_hapi ulfd_mode_t _ulfd_from_full_mode(mode_t mode) {
     ulfd_mode_t ret = ul_static_cast(mode_t, mode & 0777);
-    switch(ret & S_IFMT) {
+    switch(mode & S_IFMT) {
     case S_IFSOCK: ret |= ULFD_S_IFSOCK; break;
     case S_IFLNK: ret |= ULFD_S_IFLNK; break;
     case S_IFREG: ret |= ULFD_S_IFREG; break;
@@ -2245,6 +2320,16 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     _ulfd_end_to_str(path);
     return ret;
   }
+  ul_hapi int ulfd_unlink(const char* path) {
+    return unlink(path) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_unlink_w(const wchar_t* wpath) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_unlink(path);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
 
   ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode) {
     return mkdir(path, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
@@ -2253,6 +2338,16 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     int ret;
     _ulfd_begin_to_str(path, wpath, ENOENT);
     ret = ulfd_mkdir(path, mode);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
+  ul_hapi int ulfd_rmdir(const char* path) {
+    return rmdir(path) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_rmdir_w(const wchar_t* wpath) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath, ENOENT);
+    ret = ulfd_rmdir(path);
     _ulfd_end_to_str(path);
     return ret;
   }
