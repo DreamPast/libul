@@ -272,16 +272,12 @@ Dynamic library
     #define ULOS_WSTR_TO_STR_DEFINED
   #endif /* ULOS_WSTR_TO_STR_DEFINED */
 
+#ifdef _WIN32
   #ifndef _UL_WIN32_TOERRNO_DEFINED
     #include <Windows.h>
     #include <errno.h>
 
-    /* some errno codes don't exist in older compiler */
-    /* TODO: fix these errno codes or test more compilers? */
-    #if (defined(_MSC_VER) && _MSC_VER >= 1900) || defined(__GNUC__)
-      #define UL_WIN32_ERRNO_MODERN
-    #endif
-
+    /* some errno codes don't exist in older compiler, so we ignore them */
     ul_hapi int _ul_win32_toerrno(DWORD error) {
       size_t i;
       static const unsigned short map[][2] = {
@@ -306,14 +302,14 @@ Dynamic library
         { ERROR_NO_MORE_FILES,             ENOENT },       /*   18 */ /* ENMFILE */
         { ERROR_WRITE_PROTECT,             EROFS },        /*   19 */
         { ERROR_BAD_UNIT,                  ENODEV },       /*   20 */
-      /*{ ERROR_NOT_READY,                 ENOMEDIUM },    //   21 */
+        { ERROR_NOT_READY,                 ENOENT },       /*   21 */ /* ENOMEDIUM */
         { ERROR_CRC,                       EIO },          /*   23 */
         { ERROR_SEEK,                      EINVAL },       /*   25 */
         { ERROR_SECTOR_NOT_FOUND,          EINVAL },       /*   27 */
         { ERROR_SHARING_VIOLATION,         EBUSY },        /*   32 */
         { ERROR_LOCK_VIOLATION,            EBUSY },        /*   33 */
         { ERROR_SHARING_BUFFER_EXCEEDED,   ENOLCK },       /*   36 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_HANDLE_EOF) && defined(ENODATA)
         { ERROR_HANDLE_EOF,                ENODATA },      /*   38 */
       #endif
         { ERROR_HANDLE_DISK_FULL,          ENOSPC },       /*   39 */
@@ -372,7 +368,7 @@ Dynamic library
         { ERROR_PIPE_BUSY,                 EBUSY },        /*  231 */
         { ERROR_NO_DATA,                   EPIPE },        /*  232 */
       /*{ ERROR_PIPE_NOT_CONNECTED,        ECOMM },        //  233 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_MORE_DATA) && defined(EMSGSIZE)
         { ERROR_MORE_DATA,                 EMSGSIZE },     /*  234 */
       #endif
         { ERROR_INVALID_EA_NAME,           EINVAL },       /*  254 */
@@ -381,7 +377,7 @@ Dynamic library
         { ERROR_DIRECTORY,                 ENOTDIR },      /*  267 */
         { ERROR_EAS_DIDNT_FIT,             ENOSPC },       /*  275 */
         { ERROR_EA_TABLE_FULL,             ENOSPC },       /*  277 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_EAS_NOT_SUPPORTED) && defined(ENOTSUP)
         { ERROR_EAS_NOT_SUPPORTED,         ENOTSUP },      /*  282 */
       #endif
         { ERROR_NOT_OWNER,                 EPERM },        /*  288 */
@@ -412,7 +408,7 @@ Dynamic library
         { ERROR_DEVICE_DOOR_OPEN,          EIO },          /* 1166 */
         { ERROR_CANCELLED,                 EINTR },        /* 1223 */
         { ERROR_BAD_DEVICE,                ENODEV },       /* 1200 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_CONNECTION_REFUSED) && defined(ECONNREFUSED)
         { ERROR_CONNECTION_REFUSED,        ECONNREFUSED }, /* 1225 */
       #endif
         { ERROR_PRIVILEGE_NOT_HELD,        EPERM },        /* 1314 */
@@ -428,17 +424,17 @@ Dynamic library
         { ERROR_TIMEOUT,                   EBUSY },        /* 1460 */
         { ERROR_NOT_ENOUGH_QUOTA,          ENOMEM },       /* 1816 */
         { ERROR_BAD_USERNAME,              EINVAL },       /* 2202 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_NOT_CONNECTED) && defined(ENOLINK)
         { ERROR_NOT_CONNECTED,             ENOLINK },      /* 2250 */
       #endif
         { ERROR_OPEN_FILES,                EAGAIN },       /* 2401 */
         { ERROR_ACTIVE_CONNECTIONS,        EACCES },       /* 2402 */
         { ERROR_DEVICE_IN_USE,             EAGAIN },       /* 2404 */
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(ERROR_DS_GENERIC_ERROR) && defined(EIO)
         { ERROR_DS_GENERIC_ERROR,          EIO },          /* 8341 */
       #endif
 
-      #ifdef UL_WIN32_ERRNO_MODERN
+      #if defined(WSAEWOULDBLOCK) && defined(EWOULDBLOCK)
         /* WinSock error codes */
         { WSAEINTR,                        EINTR },           /* 10004 */
         { WSAEBADF,                        EBADF },           /* 10009 */
