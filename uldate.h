@@ -155,6 +155,9 @@ Date and time (like `Date` in Javascript)
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
+#include <string.h>
+
+#undef min
 
 typedef int64_t uldate_t;
 #define ULDATE_INVALID INT64_MIN
@@ -561,8 +564,8 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Extension */
     case '+': /* 3 digits of milliseconds as a decimal number */
       if(len < 3) return 0;
+      if(ul_unlikely(tm->msec < 0 || tm->msec > 999)) return 0;
       x = tm->msec;
-      if(ul_unlikely(x < 0 || x > 999)) return 0;
       dest[2] = ul_static_cast(char, x % 10 + '0'); x /= 10;
       dest[1] = ul_static_cast(char, x % 10 + '0'); x /= 10;
       dest[0] = ul_static_cast(char, x + '0');
@@ -571,7 +574,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Year */
     case 'Y': /* 4 digits of year as a decimal number, range [0000, 9999] */
       if(len < 4) return 0;
-      if(ul_unlikely(x < 0 || x > 9999)) return 0;
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999)) return 0;
       x = ul_static_cast(int, tm->year);
       dest[3] = ul_static_cast(char, x % 10 + '0'); x /= 10;
       dest[2] = ul_static_cast(char, x % 10 + '0'); x /= 10;
@@ -580,21 +583,21 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       len -= 4; dest += 4; break;
     case 'y': /* last 2 digits of year as a decimal number, range [00, 99]  */
       if(len < 2) return 0;
-      if(ul_unlikely(x < 0 || x > 9999)) return 0;
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999)) return 0;
       x = ul_static_cast(int, tm->year % 100);
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
     case 'C': /* first 2 digits of year as a deciaml number, range [00, 99] */
       if(len < 2) return 0;
-      if(ul_unlikely(x < 0 || x > 9999)) return 0;
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999)) return 0;
       x = ul_static_cast(int, tm->year / 100);
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
     case 'G': /* 4 digits of ISO 8601 week-based year as a decimal number, range [0000, 9999] */
       if(len < 4) return 0;
-      if(ul_unlikely(tm->year < 0 || tm->year > 9999 || tm->yday < 0)) return 0;
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999 || tm->yday < 0 || tm->yday >= 366)) return 0;
       switch(_uldate_wday_from_days(_uldate_days_from_year(tm->year))) {
       case 0: x = -(tm->yday == 0); break;
       case 1: x = 0; break;
@@ -633,8 +636,8 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Month */
     case 'b': case 'h': /* abbreviated month name */
       if(len < 3) return 0;
+      if(ul_unlikely(tm->mon < 0 || tm->mon >= 12)) return 0;
       x = tm->mon * 3;
-      if(ul_unlikely(x < 0 || x >= 12)) return 0;
       dest[0] = _uldate_abbr_month_names[x];
       dest[1] = _uldate_abbr_month_names[x + 1];
       dest[2] = _uldate_abbr_month_names[x + 2];
@@ -650,8 +653,8 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       } while(0); break;
     case 'm': /* month as a decimal number, range [01, 12] */
       if(len < 2) return 0;
+      if(ul_unlikely(tm->mon < 0 || tm->mon >= 12)) return 0;
       x = tm->mon + 1;
-      if(ul_unlikely(x < 1 || x > 12)) return 0;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
@@ -659,7 +662,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Week */
     case 'U': /* week of the year as a decimal number(week starts in Sunday), range [00, 53]. */
       if(len < 2) return 0;
-      if(ul_unlikely(tm->yday < 0)) return 0;
+      if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
       x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
       x = (tm->yday + _uldate_week_sun_fix[x]) / 7;
       dest[1] = ul_static_cast(char, x % 10 + '0');
@@ -667,7 +670,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       len -= 2; dest += 2; break;
     case 'W': /* week of the year as a decimal number(week starts in Monday), range [00, 53]. */
       if(len < 2) return 0;
-      if(ul_unlikely(tm->yday < 0)) return 0;
+      if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
       x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
       x = (tm->yday + _uldate_week_mon_fix[x]) / 7;
       dest[1] = ul_static_cast(char, x % 10 + '0');
@@ -675,7 +678,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       len -= 2; dest += 2; break;
     case 'V': /* ISO 8601 week of the year as a decimal number, range [00, 53] */
       if(len < 2) return 0;
-      if(ul_unlikely(tm->yday < 0)) return 0;
+      if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
       x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
       do {
         int yday = tm->yday;
@@ -696,23 +699,23 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Day of the year/month */
     case 'j': /* day of the year as a decimal number, range [001, 366] */
       if(len < 3) return 0;
+      if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
       x = tm->yday + 1;
-      if(ul_unlikely(x < 1 || x > 366)) return 0;
       dest[2] = ul_static_cast(char, x % 10 + '0'); x /= 10;
       dest[1] = ul_static_cast(char, x % 10 + '0'); x /= 10;
       dest[0] = ul_static_cast(char, x + '0');
       dest += 3; len -= 3; break;
     case 'd': /* day of the month as a decimal number, range [01, 31] */
       if(len < 2) return 0;
+      if(ul_unlikely(tm->mday < 0 || tm->mday >= 31)) return 0;
       x = tm->mday + 1;
-      if(ul_unlikely(x < 1 || x > 31)) return 0;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest += 2; len -= 2; break;
     case 'e': /* day of the month as a decimal number, range [ 1, 31] */
       if(len < 2) return 0;
+      if(ul_unlikely(tm->mday < 0 || tm->mday >= 31)) return 0;
       x = tm->mday + 1;
-      if(ul_unlikely(x < 1 || x > 31)) return 0;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       if(x > 9) dest[0] = ul_static_cast(char, x / 10 + '0');
       else dest[0] = ' ';
@@ -721,14 +724,14 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     /* Day of the week */
     case 'a': /* abbreviated weekday name */
       if(len < 3) return 0;
+      if(ul_unlikely(tm->wday < 0 || tm->wday >= 7)) return 0;
       x = tm->wday * 3;
-      if(ul_unlikely(x < 0 || x > 6)) return 0;
       dest[0] = _uldate_abbr_wday_names[x];
       dest[1] = _uldate_abbr_wday_names[x + 1];
       dest[2] = _uldate_abbr_wday_names[x + 2];
       dest += 3; len -= 3; break;
     case 'A': /* full weekday name */
-      if(ul_unlikely(tm->wday < 0 || tm->wday > 6)) return 0;
+      if(ul_unlikely(tm->wday < 0 || tm->wday >= 7)) return 0;
       do {
         size_t l = ul_static_cast(size_t,
           _uldate_wday_names_len[tm->wday + 1] - _uldate_wday_names_len[tm->wday]);
@@ -738,42 +741,43 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       } while(0); break;
     case 'w': /* weekday as a decimal number, range [0, 6] */
       if(len < 1) return 0;
-      if(ul_unlikely(tm->wday < 0 || tm->wday > 6)) return 0;
+      if(ul_unlikely(tm->wday < 0 || tm->wday >= 7)) return 0;
       *dest++ = ul_static_cast(char, tm->wday + '0');
       --len; break;
     case 'u': /* weekday as a decimal number, range [1, 7] */
       if(len < 1) return 0;
-      if(ul_unlikely(tm->wday < 0 || tm->wday > 6)) return 0;
+      if(ul_unlikely(tm->wday < 0 || tm->wday >= 7)) return 0;
       *dest++ = ul_static_cast(char, tm->wday ? tm->wday + '0' : '7');
       --len; break;
 
     /* Hour, minute, second */
     case 'H': /* hour as a decimal number, 24 hour clock, range [00, 23] */
-      x = tm->hour;
       if(len < 2) return 0;
-      if(ul_unlikely(x < 0 || x >= 24)) return 0;
+      if(ul_unlikely(tm->hour < 0 || tm->hour >= 24)) return 0;
+      x = tm->hour;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest += 2; len -= 2; break;
     case 'I': /* hour as a decimal number, 12 hour clock, range [01, 12] */
-      x = tm->hour % 12;
       if(len < 2) return 0;
+      if(ul_unlikely(tm->hour < 0 || tm->hour >= 24)) return 0;
+      x = tm->hour % 12;
       if(ul_unlikely(x < 0 || x >= 24)) return 0;
       if(x == 0) x = 12; else ++x;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest += 2; len -= 2; break;
     case 'M': /* minute as a decimal number, range [00, 59] */
-      x = tm->min;
       if(len < 2) return 0;
-      if(ul_unlikely(x < 0 || x >= 60)) return 0;
+      if(ul_unlikely(tm->min < 0 || tm->min >= 60)) return 0;
+      x = tm->min;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest += 2; len -= 2; break;
     case 'S': /* second as a decimal number, range [00, 59](NOTE: leap second not supported) */
-      x = tm->sec;
       if(len < 2) return 0;
-      if(ul_unlikely(x < 0 || x >= 60)) return 0;
+      if(ul_unlikely(tm->sec < 0 || tm->sec >= 60)) return 0;
+      x = tm->sec;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       dest += 2; len -= 2; break;
