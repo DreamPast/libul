@@ -377,6 +377,9 @@ ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat);
 ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat);
 ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode);
+
+ul_hapi int ulfd_rename(const char* newpath, const char* oldpath);
+ul_hapi int ulfd_rename_w(const wchar_t* newpath, const wchar_t* oldpath);
 ul_hapi int ulfd_unlink(const char* path);
 ul_hapi int ulfd_unlink_w(const wchar_t* wpath);
 
@@ -1674,6 +1677,18 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     return ret;
   }
 
+  ul_hapi int ulfd_rename_w(const wchar_t* newpath, const wchar_t* oldpath) {
+    return MoveFileExW(oldpath, newpath, MOVEFILE_COPY_ALLOWED) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_rename(const char* newpath, const char* oldpath) {
+    int ret;
+    _ulfd_begin_to_wstr(_newpath, newpath, EINVAL);
+    _ulfd_begin_to_wstr2(_oldpath, oldpath, ENOENT, _newpath);
+    ret = ulfd_rename_w(_newpath, _oldpath);
+    _ulfd_end_to_wstr2(_oldpath);
+    _ulfd_end_to_wstr(_newpath);
+    return ret;
+  }
   ul_hapi int ulfd_unlink_w(const wchar_t* wpath) {
     return DeleteFileW(wpath) ? 0 : _ul_win32_toerrno(GetLastError());
   }
@@ -2320,6 +2335,21 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     _ulfd_end_to_str(path);
     return ret;
   }
+
+  #include <stdio.h>
+  ul_hapi int ulfd_rename(const char* newpath, const char* oldpath) {
+    errno = EINVAL;
+    return rename(oldpath, newpath) ? errno : 0;
+  }
+  ul_hapi int ulfd_rename_w(const wchar_t* newpath, const wchar_t* oldpath) {
+    int ret;
+    _ulfd_begin_to_str(_newpath, newpath, EINVAL);
+    _ulfd_begin_to_str2(_oldpath, oldpath, ENOENT, _newpath);
+    ret = ulfd_rename(_newpath, _oldpath);
+    _ulfd_end_to_str2(_oldpath);
+    _ulfd_end_to_str(_newpath);
+    return ret;
+  }
   ul_hapi int ulfd_unlink(const char* path) {
     return unlink(path) < 0 ? errno : 0;
   }
@@ -2393,7 +2423,6 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   ul_hapi int ulfd_readlink_w(const wchar_t* wpath, wchar_t* buf, size_t len) {
   #if (_XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L) || \
       ((__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 19)) && _BSD_SOURCE)
-
     char* tmp;
     size_t cast_len;
     ssize_t sret;
