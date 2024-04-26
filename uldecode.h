@@ -306,7 +306,7 @@ uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, c
 
 /**
  * Get length needed to convert text encoding.
- * 
+ *
  * This function will return 0 if following situationsn happen:
  * - text encoding is not supported;
  * - illegal character in `src`.
@@ -326,7 +326,9 @@ uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
       #define ul_assume(cond) __builtin_assume(cond)
     #endif
     #if __has_builtin(__builtin_unreachable)
-      #define ul_assume(cond) (!!(cond) ? (void)0 : __builtin_unreachable())
+      #ifndef ul_assume
+        #define ul_assume(cond) (!!(cond) ? (void)0 : __builtin_unreachable())
+      #endif
     #endif
   #endif
   #ifndef ul_assume
