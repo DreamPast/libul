@@ -272,7 +272,6 @@ Dynamic library
     #define ULOS_WSTR_TO_STR_DEFINED
   #endif /* ULOS_WSTR_TO_STR_DEFINED */
 
-#ifdef _WIN32
   #ifndef _UL_WIN32_TOERRNO_DEFINED
     #include <Windows.h>
     #include <errno.h>
