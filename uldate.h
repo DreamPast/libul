@@ -172,7 +172,7 @@ typedef int64_t uldate_t;
 #define ULDATE_YEAR        INT64_C(31556952000)
 
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
-ul_hapi int uldate_get_gmtoff(void) {
+ul_hapi int uldate_get_gmtoff_minutes(void) {
 #if defined(ULDATE_API_WIN32)
   TIME_ZONE_INFORMATION info;
   GetTimeZoneInformation(&info);
@@ -194,10 +194,10 @@ ul_hapi int uldate_get_gmtoff(void) {
 }
 
 ul_hapi uldate_t uldate_utc_to_locale(uldate_t utc) {
-  return utc + uldate_get_gmtoff() * ULDATE_MINUTE;
+  return utc + uldate_get_gmtoff_minutes() * ULDATE_MINUTE;
 }
 ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc) {
-  return loc - uldate_get_gmtoff() * ULDATE_MINUTE;
+  return loc - uldate_get_gmtoff_minutes() * ULDATE_MINUTE;
 }
 
 ul_hapi uldate_t uldate_now_utc(void) {
@@ -275,7 +275,7 @@ ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_no
     static const int TABLE[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     if(ul_likely(y > 1582))
       return mi != 1 ? TABLE[mi] : TABLE[mi] + !(y % 4) - !(y % 100) + !(y % 400);
-    else if(y < 1582 || mi != 9)
+    else if(ul_likely(y < 1582 || mi != 9))
       return TABLE[mi] + (mi != 1 && !(y % 4));
     else return 21;
   }
@@ -305,6 +305,8 @@ ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_no
   }
 #endif
 
+static const int _uldate_week_sun_fix[] = { 0, 1, 2, 3, 4, 5, 6 };
+static const int _uldate_week_mon_fix[] = { 6, 0, 1, 2, 3, 4, 5 };
 ul_hapi int64_t _uldate_year_from_days(int64_t* days) {
   int64_t d = *days, nd;
   int64_t y = d / 365 + 1970;
@@ -330,6 +332,12 @@ ul_hapi int _uldate_wday_from_days(int64_t days) {
   int x = ul_static_cast(int, (days + 4) % 7);
   return ul_unlikely(x < 0) ? x + 7 : x;
 }
+ul_hapi int64_t _uldate_yday_from_wday_sunday(int64_t year, int64_t week, int64_t wday) {
+  return week * 7 + wday - _uldate_week_sun_fix[_uldate_wday_from_days(_uldate_days_from_year(year))];
+}
+ul_hapi int64_t _uldate_yday_from_wday_monday(int64_t year, int64_t week, int64_t wday) {
+  return week * 7 + wday - _uldate_week_mon_fix[_uldate_wday_from_days(_uldate_days_from_year(year))];
+}
 
 ul_hapi uldate_t uldate_from_ms(int64_t ms_since_epoch) { return ms_since_epoch; }
 
@@ -343,7 +351,13 @@ ul_hapi uldate_t uldate_from_mday(int64_t year, int64_t mon, int64_t mday) {
   return (mday + _uldate_days_from_year_mon(yi, ul_static_cast(int, mon))) * ULDATE_DAY;
 }
 ul_hapi uldate_t uldate_from_yday(int64_t year, int64_t yday) {
-  return (yday + _uldate_days_from_year(year)) * ULDATE_YEAR;
+  return (yday + _uldate_days_from_year(year)) * ULDATE_DAY;
+}
+ul_hapi uldate_t uldate_from_wday_sunday(int64_t year, int64_t week, int64_t wday) {
+  return (_uldate_days_from_year(year) + _uldate_yday_from_wday_sunday(year, week, wday)) * ULDATE_DAY;
+}
+ul_hapi uldate_t uldate_from_wday_monday(int64_t year, int64_t week, int64_t wday) {
+  return (_uldate_days_from_year(year) + _uldate_yday_from_wday_monday(year, week, wday)) * ULDATE_DAY;
 }
 ul_hapi uldate_t uldate_from_time(int64_t hour, int64_t min, int64_t sec, int64_t msec) {
   return hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
@@ -352,15 +366,19 @@ ul_hapi uldate_t uldate_from_time(int64_t hour, int64_t min, int64_t sec, int64_
 ul_hapi uldate_t uldate_from_mday_time(
   int64_t year, int64_t mon, int64_t mday,
   int64_t hour, int64_t min, int64_t sec, int64_t msec
-) {
-  return uldate_from_mday(year, mon, mday) + uldate_from_time(hour, min, sec, msec);
-}
+) { return uldate_from_mday(year, mon, mday) + uldate_from_time(hour, min, sec, msec); }
 ul_hapi uldate_t uldate_from_yday_time(
   int64_t year, int64_t yday,
   int64_t hour, int64_t min, int64_t sec, int64_t msec
-) {
-  return uldate_from_yday(year, yday) + uldate_from_time(hour, min, sec, msec);
-}
+) { return uldate_from_yday(year, yday) + uldate_from_time(hour, min, sec, msec); }
+ul_hapi uldate_t uldate_from_wday_sunday_time(
+  int64_t year, int64_t week, int64_t wday,
+  int64_t hour, int64_t min, int64_t sec, int64_t msec
+) { return uldate_from_wday_sunday(year, week, wday) + uldate_from_time(hour, min, sec, msec); }
+ul_hapi uldate_t uldate_from_wday_monday_time(
+  int64_t year, int64_t week, int64_t wday,
+  int64_t hour, int64_t min, int64_t sec, int64_t msec
+) { return uldate_from_wday_monday(year, week, wday) + uldate_from_time(hour, min, sec, msec); }
 
 ul_hapi uldate_t uldate_from_mday_time_double(
   double year, double mon, double mday,
@@ -418,7 +436,6 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   h = date % ULDATE_DAY;
   days = (date - h) / ULDATE_DAY;
   tm->wday = _uldate_wday_from_days(days);
-  if(tm->wday < 0) tm->wday += 7;
 
   y = _uldate_year_from_days(&days);
   for(i = 0; i < 11; ++i) {
@@ -451,6 +468,58 @@ ul_hapi uldate_t uldate_from_tm_normalized(uldate_tm_t* tm) {
   return date;
 }
 
+ul_hapi int uldate_tm_get_week_sunday(const uldate_tm_t* tm) {
+  if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return -1;
+  int x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
+  return ul_static_cast(int, (tm->yday + _uldate_week_sun_fix[x]) / 7);
+}
+ul_hapi int uldate_tm_get_week_monday(const uldate_tm_t* tm) {
+  if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return -1;
+  int x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
+  return ul_static_cast(int, (tm->yday + _uldate_week_mon_fix[x]) / 7);
+}
+/* return -1 if failed, otherwise return the week index */
+ul_hapi int uldate_tm_get_iso8601_week(const uldate_tm_t* tm, int64_t* p_year) {
+  static int iso8601_fix[] = { -1, 0, 1, 2, 3, -3, -2 };
+  int64_t year = tm->year;
+  int yday = tm->yday;
+  if(ul_unlikely(yday < 0 || yday >= 366)) return -1;
+  switch(_uldate_wday_from_days(_uldate_days_from_year(year))) {
+  case 0: if(yday == 0) yday += _uldate_days_in_year(--year); break;
+  case 5: if(yday <= 2) yday += _uldate_days_in_year(--year); break;
+  case 6: if(yday <= 1) yday += _uldate_days_in_year(--year); break;
+  default:
+    do {
+      const int d = yday - _uldate_days_in_year(year)
+        + iso8601_fix[_uldate_wday_from_days(_uldate_days_from_year(year + 1))];
+      if(ul_unlikely(d > 0)) {
+        if(ul_likely(p_year)) *p_year = year + 1;
+        return d / 7;
+      }
+    } while(0);
+  }
+  if(ul_likely(p_year)) *p_year = year;
+  return (yday + iso8601_fix[_uldate_wday_from_days(_uldate_days_from_year(year))]) / 7;
+}
+
+ul_hapi int uldate_get_week_monday(uldate_t date) {
+  uldate_tm_t tm;
+  uldate_to_tm(date, &tm);
+  return uldate_tm_get_week_monday(&tm);
+}
+ul_hapi int uldate_get_week_sunday(uldate_t date) {
+  uldate_tm_t tm;
+  uldate_to_tm(date, &tm);
+  return uldate_tm_get_week_sunday(&tm);
+}
+/* return -1 if failed, otherwise return the week index */
+ul_hapi int uldate_get_iso8601_week(uldate_t date, int64_t* p_year) {
+  uldate_tm_t tm;
+  uldate_to_tm(date, &tm);
+  return uldate_tm_get_iso8601_week(&tm, p_year);
+}
+
+
 static const char _uldate_abbr_month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 static const char _uldate_month_names[] =
   "JanuaryFebruaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember";
@@ -459,9 +528,6 @@ static const int _uldate_month_names_len[] = { 0, 7, 15, 20, 25, 28, 32, 36, 42,
 static const char _uldate_abbr_wday_names[] = "SunMonTueWedThuFriSat";
 static const char _uldate_wday_names[] = "SundayMondayTuesdayWednesdayThursdayFridaySaturday";
 static const int _uldate_wday_names_len[] = { 0, 6, 12, 19, 28, 36, 42, 50 };
-
-static const int _uldate_week_sun_fix[] = { 0, 1, 2, 3, 4, 5, 6 };
-static const int _uldate_week_mon_fix[] = { 6, 0, 1, 2, 3, 4, 5 };
 
 /* gets the length needed for the buffer (including tail '\0') to format `tm`. returns 0 if failed. */
 ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
@@ -606,40 +672,28 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       len -= 2; dest += 2; break;
     case 'G': /* 4 digits of ISO 8601 week-based year as a decimal number, range [0000, 9999] */
       if(len < 4) return 0;
-      if(ul_unlikely(tm->year < 0 || tm->year > 9999 || tm->yday < 0 || tm->yday >= 366)) return 0;
-      switch(_uldate_wday_from_days(_uldate_days_from_year(tm->year))) {
-      case 0: x = -(tm->yday == 0); break;
-      case 1: x = 0; break;
-      case 2: x = (tm->yday >= _uldate_days_in_year(tm->year) - 1); break;
-      case 3: x = (tm->yday >= _uldate_days_in_year(tm->year) - 2); break;
-      case 4: x = (tm->yday >= _uldate_days_in_year(tm->year) - 3); break;
-      case 5: x = -(tm->yday <= 2); break;
-      case 6: x = -(tm->yday <= 1); break;
-      }
-      x += ul_static_cast(int, tm->year);
-      if(ul_unlikely(x < 0 || x > 9999)) return 0;
-      dest[3] = ul_static_cast(char, x % 10 + '0'); x /= 10;
-      dest[2] = ul_static_cast(char, x % 10 + '0'); x /= 10;
-      dest[1] = ul_static_cast(char, x % 10 + '0'); x /= 10;
-      dest[0] = ul_static_cast(char, x + '0');
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999)) return 0;
+      do {
+        int64_t year;
+        if(uldate_tm_get_iso8601_week(tm, &year) < 0) return 0;
+        if(ul_unlikely(year < 0 || year > 9999)) return 0;
+        dest[3] = ul_static_cast(char, year % 10 + '0'); year /= 10;
+        dest[2] = ul_static_cast(char, year % 10 + '0'); year /= 10;
+        dest[1] = ul_static_cast(char, year % 10 + '0'); year /= 10;
+        dest[0] = ul_static_cast(char, year + '0');
+      } while(0);
       len -= 4; dest += 4; break;
     case 'g': /* last 2 digits of ISO 8601 week-based year as a decimal number, range [00, 99] */
       if(len < 2) return 0;
-      if(ul_unlikely(tm->year < 0 || tm->year > 9999 || tm->yday < 0)) return 0;
-      switch(_uldate_wday_from_days(_uldate_days_from_year(tm->year))) {
-      case 0: x = -(tm->yday == 0); break;
-      case 1: x = 0; break;
-      case 2: x = (tm->yday >= _uldate_days_in_year(tm->year) - 1); break;
-      case 3: x = (tm->yday >= _uldate_days_in_year(tm->year) - 2); break;
-      case 4: x = (tm->yday >= _uldate_days_in_year(tm->year) - 3); break;
-      case 5: x = -(tm->yday <= 2); break;
-      case 6: x = -(tm->yday <= 1); break;
-      }
-      x += ul_static_cast(int, tm->year);
-      if(ul_unlikely(x < 0 || x > 9999)) return 0;
-      x %= 100;
-      dest[1] = ul_static_cast(char, x % 10 + '0');
-      dest[0] = ul_static_cast(char, x / 10 + '0');
+      if(ul_unlikely(tm->year < 0 || tm->year > 9999)) return 0;
+      do {
+        int64_t year;
+        if(uldate_tm_get_iso8601_week(tm, &year) < 0) return 0;
+        if(ul_unlikely(year < 0 || year > 9999)) return 0;
+        year %= 100;
+        dest[0] = ul_static_cast(char, year / 10 + '0');
+        dest[1] = ul_static_cast(char, year % 10 + '0');
+      } while(0);
       len -= 2; dest += 2; break;
 
     /* Month */
@@ -672,35 +726,21 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
     case 'U': /* week of the year as a decimal number(week starts in Sunday), range [00, 53]. */
       if(len < 2) return 0;
       if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
-      x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
-      x = (tm->yday + _uldate_week_sun_fix[x]) / 7;
+      x = uldate_tm_get_week_sunday(tm);
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
     case 'W': /* week of the year as a decimal number(week starts in Monday), range [00, 53]. */
       if(len < 2) return 0;
       if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
-      x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
-      x = (tm->yday + _uldate_week_mon_fix[x]) / 7;
+      x = uldate_tm_get_week_monday(tm);
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
     case 'V': /* ISO 8601 week of the year as a decimal number, range [00, 53] */
       if(len < 2) return 0;
-      if(ul_unlikely(tm->yday < 0 || tm->yday >= 366)) return 0;
-      x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
-      do {
-        int yday = tm->yday;
-      calc_iso_8601:
-        if(x >= 1 && x <= 4) x = (yday + _uldate_week_mon_fix[x]) / 7;
-        else
-          if(ul_likely(yday > (x ? 7 - x : 0))) x = (yday - 1 + _uldate_week_mon_fix[x]) / 7;
-          else {
-            yday = _uldate_yday_from_mon_day(tm->year - 1, 12, 31) + yday + 1;
-            x = _uldate_wday_from_days(_uldate_days_from_year(tm->year - 1));
-            goto calc_iso_8601;
-          }
-      } while(0);
+      x = uldate_tm_get_iso8601_week(tm, NULL);
+      if(ul_unlikely(x < 0)) return 0;
       dest[1] = ul_static_cast(char, x % 10 + '0');
       dest[0] = ul_static_cast(char, x / 10 + '0');
       len -= 2; dest += 2; break;
@@ -939,7 +979,7 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
       dest += 2; len -= 2; break;
     case 'z': /* offset from UTC in the ISO 8601 format */
       if(len < 5) return 0;
-      x = uldate_get_gmtoff();
+      x = uldate_get_gmtoff_minutes();
       if(x >= 0) dest[0] = '+';
       else { dest[0] = '-'; x = -x; }
       do {
@@ -1100,7 +1140,7 @@ do_again:
     case 'w':
       /* weekday as a decimal number, range [0, 6], where Sunday is 0 */
       if(*src < '0' || *src >= '7') return NULL;
-      wday = *src - '0';
+      wday = *src++ - '0';
       break;
 
     /* Hour, minute, second */
@@ -1160,7 +1200,7 @@ do_again:
 
     case 'p': /* "AM" or "PM" */
       if(src[0] == 'A' || src[1] == 'a') { /* do nothing */ }
-      else if(src[0] == 'P' || src[1] == 'p') hour += 12;
+      else if(src[0] == 'P' || src[1] == 'p') hour = ul_likely(hour < 12) ? hour + 12 : hour;
       else return NULL;
       if(src[1] != 'M' && src[1] != 'm') return NULL;
       src += 2; break;
@@ -1209,7 +1249,7 @@ do_again:
   if(week != -1 && wday != -1) {
     int _mon, _yday, _mday;
 
-    _yday = week * 7 - _uldate_week_sun_fix[year];
+    _yday = ul_static_cast(int, _uldate_yday_from_wday_sunday(year, week, wday));
     if(yday != -1 && _yday != mday) return NULL;
 
     _mday = _yday;
@@ -1235,6 +1275,11 @@ fillback:
   return src;
 }
 
+ul_hapi size_t uldate_format_len(const char* fmt, uldate_t date) {
+  uldate_tm_t tm;
+  uldate_to_tm(date, &tm);
+  return uldate_tm_format_len(fmt, &tm);
+}
 ul_hapi size_t uldate_format(char* dest, size_t len, const char* fmt, uldate_t date) {
   uldate_tm_t tm;
   uldate_to_tm(date, &tm);
@@ -1252,7 +1297,7 @@ ul_hapi size_t uldate_to_utc_string(char* dest, size_t len, uldate_t utc) { /* 3
   return uldate_format(dest, len, "%a, %d %b %Y %T GMT", utc);
 }
 ul_hapi size_t uldate_to_string(char* dest, size_t len, uldate_t utc) { /* 34 bytes */
-  return uldate_format(dest, len, "%a %b %d %Y %T GMT%z", utc + uldate_get_gmtoff() * 60000);
+  return uldate_format(dest, len, "%a %b %d %Y %T GMT%z", utc + uldate_get_gmtoff_minutes() * ULDATE_MINUTE);
 }
 ul_hapi size_t uldate_to_iso_string(char* dest, size_t len, uldate_t utc) { /* 25 bytes */
   return uldate_format(dest, len, "%FT%T.%+Z", utc);
