@@ -303,6 +303,7 @@ ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 ul_hapi int ulfd_sync(ulfd_t fd);
 ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
+ul_hapi int ulfd_isatty(ulfd_t fd, int* presult);
 
 
 #define ULFD_PROT_NONE      (0)      /* pages may not be accessed */
@@ -378,17 +379,16 @@ ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat);
 ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode);
 
+ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode);
+ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode);
 ul_hapi int ulfd_rename(const char* newpath, const char* oldpath);
 ul_hapi int ulfd_rename_w(const wchar_t* newpath, const wchar_t* oldpath);
 ul_hapi int ulfd_unlink(const char* path);
 ul_hapi int ulfd_unlink_w(const wchar_t* wpath);
-
-ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode);
-ul_hapi int ulfd_mkdir_w(const wchar_t* wpath, ulfd_mode_t mode);
+ul_hapi int ulfd_remove(const char* path) { return ulfd_unlink(path); }
+ul_hapi int ulfd_remove_w(const wchar_t* wpath) { return ulfd_unlink_w(wpath); }
 ul_hapi int ulfd_rmdir(const char* path);
 ul_hapi int ulfd_rmdir_w(const wchar_t* wpath);
-ul_hapi int ulfd_remove(const char* path) { return ulfd_rmdir(path); }
-ul_hapi int ulfd_remove_w(const wchar_t* wpath) { return ulfd_rmdir_w(wpath); }
 
 ul_hapi int ulfd_link(const char* newpath, const char* oldpath);
 ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath);
@@ -1175,6 +1175,12 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     LARGE_INTEGER length;
     if(!_ulfd_GetFileSizeEx(fd, &length)) return _ul_win32_toerrno(GetLastError());
     *plength = length.QuadPart; return 0;
+  }
+  ul_hapi int ulfd_isatty(ulfd_t fd, int* presult) {
+    DWORD ret;
+    ret = GetFileType(fd);
+    if(ret == FILE_TYPE_UNKNOWN) { *presult = 0; return _ul_win32_toerrno(GetLastError()); }
+    *presult = (ret == FILE_TYPE_CHAR); return 0;
   }
 
   ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags) {
@@ -2088,6 +2094,11 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   #endif
     *plength = state.st_size;
     return 0;
+  }
+  ul_hapi int ulfd_isatty(ulfd_t fd, int* presult) {
+    int r = isatty(fd);
+    if(r < 0) return errno;
+    *presult = (r > 0); return 0;
   }
 
   ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t length) {
