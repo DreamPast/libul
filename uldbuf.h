@@ -225,6 +225,7 @@ ul_hapi int uldbuf_put0(uldbuf_t* b, size_t num) {
   if(_uldbuf_may_realloc(b, b->len + num)) return -1;
   memset(b->data + b->len, 0, num);
   b->len += num;
+  return 0;
 }
 ul_hapi int uldbuf_align(uldbuf_t* b, size_t align) {
   size_t rest = b->len % align;
@@ -233,6 +234,7 @@ ul_hapi int uldbuf_align(uldbuf_t* b, size_t align) {
   if(_uldbuf_may_realloc(b, b->len + rest)) return -1;
   memset(b->data + b->len, 0, rest);
   b->len += rest;
+  return 0;
 }
 
 ul_hapi int uldbuf_put_char(uldbuf_t* b, char c) {
