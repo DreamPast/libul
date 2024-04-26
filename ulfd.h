@@ -2002,7 +2002,11 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   }
 
   ul_hapi int ulfd_seek(ulfd_t fd, ulfd_int64_t off, int origin, ulfd_int64_t* poff) {
-    loff_t new_off;
+  #ifdef ULFD_HAS_LFS
+    off64_t new_off;
+  #else
+    off_t new_off;
+  #endif
     int whence;
 
     if(origin == ULFD_SEEK_CUR) whence = SEEK_CUR;
@@ -2428,6 +2432,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
     buf[l] = 0;
     return 0;
   #else
+    (void)path; (void)buf; (void)len;
     return EINVAL;
   #endif
   }
@@ -2458,6 +2463,7 @@ ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t size);
   do_return:
     ul_free(tmp); return ret;
   #else
+    (void)wpath; (void)buf; (void)len;
     return EINVAL;
   #endif
   }
