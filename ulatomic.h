@@ -993,7 +993,7 @@ Atomic (32-bit, and optional 64-bit)
   #endif
 #endif
 
-#ifndef ULATOMIC_FLAG_INIT
+#if !defined(ULATOMIC_FLAG_INIT) && defined(ULATOMIC32_INIT)
   typedef ulatomic32_t ulatomic_flag_t;
   #define ULATOMIC_FLAG_INIT ULATOMIC32_INIT
   #define ulatomic_flag_test_and_set(obj)               ulatomic_exchange_32(obj, 1)
@@ -1052,14 +1052,24 @@ Atomic (32-bit, and optional 64-bit)
   #define ulatomic_fetch_xor_explicit_iptr(obj, val, ord)                         ulatomic_fetch_xor_explicit_32(obj, val, ord)
   #define ulatomic_fetch_and_explicit_iptr(obj, val, ord)                         ulatomic_fetch_and_explicit_32(obj, val, ord)
 #else
-  #error "ulatomic.h: atomic intptr_t defined failed"
+  #if defined(ULATOMIC32_INIT) || defined(ULATOMIC64_INIT)
+    #error "ulatomic.h: atomic intptr_t defined failed"
+  #endif
 #endif
 
 /* ulatomic_spinlock_t */
-typedef ulatomic_flag_t ulatomic_spinlock_t;
-#define ULATOMIC_SPINLOCK_INIT ULATOMIC_FLAG_INIT
-ul_hapi void ulatomic_spinlock_lock(ulatomic_spinlock_t* lck) { while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire)); }
-ul_hapi int ulatomic_spinlock_trylock(ulatomic_spinlock_t* lck) { return !ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire); }
-ul_hapi void ulatomic_spinlock_unlock(ulatomic_spinlock_t* lck) { ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_release); }
+#ifdef ULATOMIC_FLAG_INIT
+  typedef ulatomic_flag_t ulatomic_spinlock_t;
+  #define ULATOMIC_SPINLOCK_INIT ULATOMIC_FLAG_INIT
+  ul_hapi void ulatomic_spinlock_lock(ulatomic_spinlock_t* lck) {
+    while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire));
+  }
+  ul_hapi int ulatomic_spinlock_trylock(ulatomic_spinlock_t* lck) {
+    return !ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire);
+  }
+  ul_hapi void ulatomic_spinlock_unlock(ulatomic_spinlock_t* lck) {
+    ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_release);
+  }
+#endif
 
 #endif /* ULATOMIC_H */
