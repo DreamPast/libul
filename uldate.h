@@ -162,6 +162,15 @@ Date and time (like `Date` in Javascript)
 typedef int64_t uldate_t;
 #define ULDATE_INVALID INT64_MIN
 
+#define ULDATE_MICROSECOND INT64_C(1)
+#define ULDATE_SECOND      INT64_C(1000)
+#define ULDATE_MINUTE      INT64_C(60000)
+#define ULDATE_HOUR        INT64_C(3600000)
+#define ULDATE_DAY         INT64_C(86400000)
+#define ULDATE_WEEK        INT64_C(604800000)
+#define ULDATE_MONTH       INT64_C(2629746000)
+#define ULDATE_YEAR        INT64_C(31556952000)
+
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
 ul_hapi int uldate_get_gmtoff(void) {
 #if defined(ULDATE_API_WIN32)
@@ -185,10 +194,10 @@ ul_hapi int uldate_get_gmtoff(void) {
 }
 
 ul_hapi uldate_t uldate_utc_to_locale(uldate_t utc) {
-  return utc + uldate_get_gmtoff() * 60000;
+  return utc + uldate_get_gmtoff() * ULDATE_MINUTE;
 }
 ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc) {
-  return loc - uldate_get_gmtoff() * 60000;
+  return loc - uldate_get_gmtoff() * ULDATE_MINUTE;
 }
 
 ul_hapi uldate_t uldate_now_utc(void) {
@@ -331,13 +340,13 @@ ul_hapi uldate_t uldate_from_mday(int64_t year, int64_t mon, int64_t mday) {
   if(ul_unlikely(mon < 0)) { mon += 12; --yi; }
   yi += year;
 
-  return (mday + _uldate_days_from_year_mon(yi, ul_static_cast(int, mon))) * 86400000;
+  return (mday + _uldate_days_from_year_mon(yi, ul_static_cast(int, mon))) * ULDATE_DAY;
 }
 ul_hapi uldate_t uldate_from_yday(int64_t year, int64_t yday) {
-  return (yday + _uldate_days_from_year(year)) * 86400000;
+  return (yday + _uldate_days_from_year(year)) * ULDATE_YEAR;
 }
 ul_hapi uldate_t uldate_from_time(int64_t hour, int64_t min, int64_t sec, int64_t msec) {
-  return hour * 3600000 + min * 60000 + sec * 1000 + msec;
+  return hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
 }
 
 ul_hapi uldate_t uldate_from_mday_time(
@@ -365,8 +374,8 @@ ul_hapi uldate_t uldate_from_mday_time_double(
   if(ul_unlikely(m < 0)) m += 12;
   di = ul_static_cast(double,
     _uldate_days_from_year_mon(ul_static_cast(int64_t, year + floor(mon / 12)), m)) + mday;
-  x = hour * 3600000 + min * 6000 + sec * 1000 + msec;
-  ret = di * 86400000;
+  x = hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
+  ret = di * ULDATE_DAY;
   ret += x;
   return ul_static_cast(int64_t, _uldate_trunc(ret));
 }
@@ -377,8 +386,8 @@ ul_hapi uldate_t uldate_from_yday_time_double(
   double di, x;
   volatile double ret;
   di = ul_static_cast(double, _uldate_days_from_year(ul_static_cast(int64_t, year))) + yday;
-  x = hour * 3600000 + min * 6000 + sec * 1000 + msec;
-  ret = di * 86400000;
+  x = hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
+  ret = di * ULDATE_DAY;
   ret += x;
   return ul_static_cast(int64_t, _uldate_trunc(ret));
 }
@@ -406,8 +415,8 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   int64_t h, days, y;
   int ms, s, m, i, md;
 
-  h = date % 86400000;
-  days = (date - h) / 86400000;
+  h = date % ULDATE_DAY;
+  days = (date - h) / ULDATE_DAY;
   tm->wday = _uldate_wday_from_days(days);
   if(tm->wday < 0) tm->wday += 7;
 
@@ -957,14 +966,15 @@ ul_hapi const char* uldate_tm_parse(const char* src, const char* fmt, uldate_tm_
   int i, j, x;
   int year = 0, mon = -1, mday = -1, yday = -1, wday = -1;
   int week = -1, week_start_sun = 1;
-  int hour = 0, min = 0, sec = 0;
-  const char* fmt_rec = fmt;
+  int hour = 0, min = 0, sec = 0, msec = 0;
+  const char* fmt_rec = NULL;
 
 do_again:
   while(*fmt) {
     if(*fmt++ != '%') {
-      if(isspace(fmt[-1])) { while(isspace(*src)) { ++src; } continue; }
-      else { if(*src != fmt[-1]) return NULL; }
+      if(isspace(fmt[-1])) { while(isspace(*src)) { ++src; } }
+      else { if(*src != fmt[-1]) return NULL; else ++src; }
+      continue;
     }
     if(*fmt == 'E' || *fmt == 'O') ++fmt; /* ignore */
     switch(*fmt++) {
@@ -984,7 +994,7 @@ do_again:
         x = x * 10 + *src - '0';
       if(i == 0) return NULL;
       if(x > 999) return NULL;
-      sec = x;
+      msec = x;
       break;
     case 'F': /* equivalent to "%Y-%m-%d" */
       fmt_rec = fmt; fmt = "%Y-%m-%d"; break;
@@ -1042,7 +1052,7 @@ do_again:
           x = x * 10 + *src - '0';
       if(i == 0) return NULL;
       if(x < 0 || x > 53) return NULL;
-      week = x; break;
+      week = x; week_start_sun = 1; break;
     case 'W':
       /* the week of the year (a week starts on Monday) as a decimal number, range [00, 53],
       leading zero permitted but not require. */
@@ -1132,6 +1142,7 @@ do_again:
       break;
 
     /* Other */
+    /* Note: the following characters shouldn't appear in `fmt` if `fmt_rec` is not NULL */
     case 'c': /* standard date and time string (equivalent to "%a %b %d %H:%M:%S %Y") */
       fmt_rec = fmt; fmt = "%a %b %d %H:%M:%S %Y"; break;
     case 'x': /* localized date representation (equivalent to "%m/%d/%y" there) */
@@ -1167,40 +1178,46 @@ do_again:
 
   if(yday != -1) {
     int _mday = yday, _mon, _week, _wday;
+
     _mon = _uldate_mon_day_from_yday(year, &_mday);
     if(ul_unlikely(_mon == -1)) return NULL;
-    _wday = ul_static_cast(int, (_uldate_days_from_year(year) + yday) % 7);
-    if(ul_unlikely(_wday < 0)) _wday += 7;
-    _week = (yday + _uldate_week_sun_fix[_wday]) / 7;
-
-    if(week != -1 && _week != week) return NULL;
     if(mon != -1 && _mon != mon) return NULL;
-    if(wday != -1 && _wday != wday) return NULL;
     if(mday != -1 && _mday != mday) return NULL;
+
+    _wday = _uldate_wday_from_days(_uldate_days_from_year(year));
+    _week = (yday + _uldate_week_sun_fix[_wday]) / 7;
+    _wday = (_wday + yday) % 7;
+    if(week != -1 && _week != week) return NULL;
+    if(wday != -1 && _wday != wday) return NULL;
+
     goto fillback;
   }
   if(mon != -1 && mday != -1) {
     int _week, _wday, _yday;
-    _yday = _uldate_yday_from_mon_day(year, mon, mday);
-    _wday = ul_static_cast(int, (_uldate_days_from_year(year) + _yday) % 7);
-    if(ul_unlikely(_wday < 0)) _wday += 7;
-    _week = (_yday + _uldate_week_sun_fix[_wday]) / 7;
 
+    _yday = _uldate_yday_from_mon_day(year, mon, mday);
+    if(yday != -1 && _yday != mday) return NULL;
+
+    _wday = _uldate_wday_from_days(_uldate_days_from_year(year));
+    _week = (_yday + _uldate_week_sun_fix[yday]) / 7;
+    _wday = (_wday + yday) % 7;
     if(week != -1 && _week != week) return NULL;
     if(wday != -1 && _wday != wday) return NULL;
-    if(yday != -1 && _yday != mday) return NULL;
+
     goto fillback;
   }
   if(week != -1 && wday != -1) {
     int _mon, _yday, _mday;
+
     _yday = week * 7 - _uldate_week_sun_fix[year];
+    if(yday != -1 && _yday != mday) return NULL;
+
     _mday = _yday;
     _mon = _uldate_mon_day_from_yday(year, &_mday);
     if(ul_unlikely(_mon == -1)) return NULL;
-
     if(mon != -1 && _mon != week) return NULL;
     if(mday != -1 && _mday != wday) return NULL;
-    if(yday != -1 && _yday != mday) return NULL;
+
     goto fillback;
   }
   return NULL;
@@ -1209,7 +1226,7 @@ fillback:
   tm->hour = hour;
   tm->min = min;
   tm->sec = sec;
-  tm->msec = 0;
+  tm->msec = msec;
 
   tm->year = year;
   tm->mon = mon;
