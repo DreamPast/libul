@@ -293,6 +293,10 @@ ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t o
 ul_hapi int ulfd_seek(ulfd_t fd, ulfd_int64_t off, int origin, ulfd_int64_t* poff);
 ul_hapi int ulfd_tell(ulfd_t fd, ulfd_int64_t* poff);
 
+ul_hapi int ulfd_ffullsync(ulfd_t fd);
+ul_hapi int ulfd_fsync(ulfd_t fd);
+ul_hapi int ulfd_fdatasync(ulfd_t fd);
+
 #define ULFD_F_RDLCK 0 /* specify a read (or shared) lock */
 #define ULFD_F_WRLCK 1 /* specify a write (or exclusive) lock */
 #define ULFD_F_UNLCK 2 /* specify that the region is unlocked */
@@ -300,11 +304,13 @@ ul_hapi int ulfd_tell(ulfd_t fd, ulfd_int64_t* poff);
 ul_hapi int ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 
-ul_hapi int ulfd_ffullsync(ulfd_t fd);
-ul_hapi int ulfd_fsync(ulfd_t fd);
-ul_hapi int ulfd_fdatasync(ulfd_t fd);
 ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_filelength(ulfd_t fd, ulfd_int64_t* plength);
+/* `mode` accepts ULFD_S_IRUSR, ULFD_S_IWUSR, ULFD_S_IXUSR or their union */
+ul_hapi int ulfd_fchmod(ulfd_t fd, ulfd_mode_t mode);
+ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid);
+ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime);
+
 ul_hapi int ulfd_isatty(ulfd_t fd, int* presult);
 
 
@@ -378,6 +384,7 @@ typedef struct ulfd_stat_t {
 
 ul_hapi int ulfd_stat(const char* path, ulfd_stat_t* stat);
 ul_hapi int ulfd_stat_w(const wchar_t* wpath, ulfd_stat_t* stat);
+ul_hapi int ulfd_fstat(ulfd_t fd, ulfd_stat_t* stat);
 ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_access_w(const wchar_t* wpath, ulfd_mode_t mode);
 
@@ -1127,6 +1134,12 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return ulfd_seek(fd, 0, ULFD_SEEK_CUR, poff);
   }
 
+  ul_hapi int ulfd_fsync(ulfd_t fd) {
+    return FlushFileBuffers(fd) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+  ul_hapi int ulfd_ffullsync(ulfd_t fd) { return ulfd_fsync(fd); }
+  ul_hapi int ulfd_fdatasync(ulfd_t fd) { return ulfd_fsync(fd); }
+
   ul_hapi int _ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode, DWORD flags) {
     OVERLAPPED overlapped = { 0 };
     DWORD error;
@@ -1162,11 +1175,6 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return _ulfd_lock(fd, off, len, mode, 0);
   }
 
-  ul_hapi int ulfd_fsync(ulfd_t fd) {
-    return FlushFileBuffers(fd) ? 0 : _ul_win32_toerrno(GetLastError());
-  }
-  ul_hapi int ulfd_ffullsync(ulfd_t fd) { return ulfd_fsync(fd); }
-  ul_hapi int ulfd_fdatasync(ulfd_t fd) { return ulfd_fsync(fd); }
   ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length) {
     ulfd_int64_t nul_off;
     int ret;
@@ -1180,6 +1188,53 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     if(!_ulfd_GetFileSizeEx(fd, &length)) return _ul_win32_toerrno(GetLastError());
     *plength = length.QuadPart; return 0;
   }
+
+  ul_hapi int _ulfd_get_path_from_handle(ulfd_t fd, wchar_t** pwpath) {
+    _ulfd_GetFinalPathNameByHandleW_t sysfunc;
+    DWORD need_len;
+    wchar_t* wpath;
+
+    sysfunc = _ulfd_get_GetFinalPathNameByHandleW();
+    if(ul_unlikely(sysfunc == NULL)) return ENOSYS;
+    need_len = sysfunc(fd, NULL, 0, 0);
+    wpath = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+    if(ul_unlikely(wpath == NULL)) return ENOMEM;
+    if(sysfunc(fd, NULL, 0, 0) > need_len) { ul_free(wpath); return ERANGE; }
+    wpath[need_len] = 0;
+    *pwpath = wpath;
+    return 0;
+  }
+  ul_hapi int ulfd_fchmod(ulfd_t fd, ulfd_mode_t mode) {
+    wchar_t* wpath;
+    int ret;
+
+    ret = _ulfd_get_path_from_handle(fd, &wpath);
+    if(ret) return ret;
+    ret = ulfd_chmod_w(wpath, mode);
+    ul_free(wpath); return ret;
+  }
+  ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid) {
+    (void)fd; (void)uid; (void)gid; return ENOSYS;
+  }
+  ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime) {
+    wchar_t* wpath;
+    int ret;
+
+    ret = _ulfd_get_path_from_handle(fd, &wpath);
+    if(ret) return ret;
+    ret = ulfd_utime_w(wpath, atime, mtime);
+    ul_free(wpath); return ret;
+  }
+  ul_hapi int ulfd_fstat(ulfd_t fd, ulfd_stat_t* stat) {
+    wchar_t* wpath;
+    int ret;
+
+    ret = _ulfd_get_path_from_handle(fd, &wpath);
+    if(ret) return ret;
+    ret = ulfd_stat_w(wpath, stat);
+    ul_free(wpath); return ret;
+  }
+
   ul_hapi int ulfd_isatty(ulfd_t fd, int* presult) {
     DWORD ret;
     ret = GetFileType(fd);
@@ -1995,7 +2050,8 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return 0;
   }
   ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
-  #if _XOPEN_SOURCE >= 500 || (_ULFD_GLIBC_CHECK(2, 12) && _POSIX_C_SOURCE >= 200809L)
+  #if (_XOPEN_SOURCE+0) >= 500 || \
+      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L)
     ssize_t ret;
     #ifdef ULFD_HAS_LFS
       ret = pread64(fd, buf, count, off);
@@ -2011,7 +2067,8 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
   #endif
   }
   ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
-  #if _XOPEN_SOURCE >= 500 || (_ULFD_GLIBC_CHECK(2, 12) && _POSIX_C_SOURCE >= 200809L)
+  #if (_XOPEN_SOURCE+0) >= 500 || \
+      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L)
     ssize_t ret;
     #ifdef ULFD_HAS_LFS
       ret = pwrite64(fd, buf, count, off);
@@ -2052,6 +2109,30 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
   }
   ul_hapi int ulfd_tell(ulfd_t fd, ulfd_int64_t* poff) {
     return ulfd_seek(fd, 0, ULFD_SEEK_END, poff);
+  }
+
+  ul_hapi int ulfd_ffullsync(ulfd_t fd) {
+  #ifdef F_FULLFSYNC
+    return fcntl(fd, F_FULLFSYNC, 0) < 0 ? errno : 0;
+  #else
+    (void)fd; return ENOSYS;
+  #endif
+  }
+  ul_hapi int ulfd_fsync(ulfd_t fd) {
+  #if _ULFD_GLIBC_CHECK(2, 16) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 15) && \
+        ((BSD_SOURCE+0) || (_XOPEN_SOURCE+0) || (_ULFD_GLIBC_CHECK(2, 8) && (_POSIX_C_SOURCE+0) >= 200112L)))
+    return fsync(fd) < 0 ? errno : 0;
+  #else
+    (void)fd; return ENOSYS;
+  #endif
+  }
+  ul_hapi int ulfd_fdatasync(ulfd_t fd) {
+  #if (_POSIX_C_SOURCE+0) >= 199309L || (_XOPEN_SOURCE+0) >= 500
+    return fdatasync(fd) < 0 ? errno : 0;
+  #else
+    (void)fd; return ENOSYS;
+  #endif
   }
 
   ul_hapi int ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode) {
@@ -2103,30 +2184,11 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
   #endif
   }
 
-  ul_hapi int ulfd_ffullsync(ulfd_t fd) {
-  #ifdef F_FULLFSYNC
-    return fcntl(fd, F_FULLFSYNC, 0) < 0 ? errno : 0;
-  #else
-    (void)fd; return ENOSYS;
-  #endif
-  }
-  ul_hapi int ulfd_fsync(ulfd_t fd) {
-  #if BSD_SOURCE || _XOPEN_SOURCE || (_ULFD_GLIBC_CHECK(2, 8) && _POSIX_C_SOURCE >= 200112L)
-    return fsync(fd) < 0 ? errno : 0;
-  #else
-    (void)fd; return ENOSYS;
-  #endif
-  }
-  ul_hapi int ulfd_fdatasync(ulfd_t fd) {
-  #if _POSIX_C_SOURCE >= 199309L || _XOPEN_SOURCE >= 500
-    return fdatasync(fd) < 0 ? errno : 0;
-  #else
-    (void)fd; return ENOSYS;
-  #endif
-  }
   ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length) {
-  #if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || \
-      (_ULFD_GLIBC_CHECK(2, 4) && _POSIX_C_SOURCE >= 200112L)
+  #if (_XOPEN_SOURCE+0) >= 500 || \
+      (_ULFD_GLIBC_CHECK(2, 4) && (_POSIX_C_SOURCE+0) >= 200112L) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) || (_BSD_SOURCE+0)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     #ifdef ULFD_HAS_LFS
       return ftruncate64(fd, length) < 0 ? errno : 0;
     #else
@@ -2148,6 +2210,43 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     *plength = state.st_size;
     return 0;
   }
+  ul_hapi int ulfd_fchmod(ulfd_t fd, ulfd_mode_t mode) {
+  #if (_ULFD_GLIBC_CHECK(2, 24) && (_POSIX_C_SOURCE+0) >= 199309L) || \
+      (_ULFD_GLIBC_CHECK(2, 19) && _ULFD_GLIBC_CHECK_BELOW(2, 23) && (_POSIX_C_SOURCE+0)) || \
+      (_ULFD_GLIBC_CHECK(2, 16) && _ULFD_GLIBC_CHECK_BELOW(2, 19) && ((_BSD_SOURCE+0) || (_POSIX_C_SOURCE+0))) || \
+      (_ULFD_GLIBC_CHECK(2, 12) && _ULFD_GLIBC_CHECK_BELOW(2, 16) && \
+        ((_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200809L)) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 11) && ((_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+    return fchmod(fd, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
+  }
+  ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid) {
+  #if (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L) || \
+      (_XOPEN_SOURCE+0) >= 500 || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+    return fchown(fd, uid, gid) < 0 ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
+  }
+  ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime) {
+  #if (_ULFD_GLIBC_CHECK(2, 19) && (_DEFAULT_SOURCE+0)) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0))
+    struct timeval tv[2];
+    tv[0].tv_sec = ul_static_cast(time_t, atime / 1000);
+    tv[0].tv_usec = ul_static_cast(suseconds_t, (atime % 1000) * 1000000);
+    tv[1].tv_sec = ul_static_cast(time_t, mtime / 1000);
+    tv[1].tv_usec = ul_static_cast(suseconds_t, (mtime % 1000) * 1000000);
+    return futimes(fd, tv) < 0 ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
+  }
+
   ul_hapi int ulfd_isatty(ulfd_t fd, int* presult) {
     int r = isatty(fd);
     if(r < 0) return errno;
@@ -2155,8 +2254,10 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
   }
 
   ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t length) {
-  #if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || \
-      (_ULFD_GLIBC_CHECK(2, 12) && _POSIX_C_SOURCE >= 200809L)
+  #if (_XOPEN_SOURCE+0) >= 500 || \
+      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     #ifdef ULFD_HAS_LFS
       return truncate64(path, length) < 0 ? errno : 0;
     #else
@@ -2338,10 +2439,14 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return ret;
   }
 
-  #include <utime.h>
+  #include <sys/time.h>
   ul_hapi int ulfd_utime(const char* path, ulfd_int64_t atime, ulfd_int64_t mtime) {
-    struct utimbuf times = { ul_static_cast(time_t, atime), ul_static_cast(time_t, mtime) };
-    return utime(path, &times) < 0 ? errno : 0;
+    struct timeval tv[2];
+    tv[0].tv_sec = ul_static_cast(time_t, atime / 1000);
+    tv[0].tv_usec = ul_static_cast(suseconds_t, (atime % 1000) * 1000000);
+    tv[1].tv_sec = ul_static_cast(time_t, mtime / 1000);
+    tv[1].tv_usec = ul_static_cast(suseconds_t, (mtime % 1000) * 1000000);
+    return utimes(path, tv) < 0 ? errno : 0;
   }
   ul_hapi int ulfd_utime_w(const wchar_t* wpath, ulfd_int64_t atime, ulfd_int64_t mtime) {
     int ret;
@@ -2368,8 +2473,8 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     out->uid = state.st_uid;
     out->gid = state.st_gid;
     out->size = ul_static_cast(ulfd_int64_t, state.st_size);
-  #if (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 700)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE || _SVID_SOURCE))
+  #if (_ULFD_GLIBC_CHECK(2, 12) && ((_POSIX_C_SOURCE+0) >= 200809L || (_XOPEN_SOURCE+0) >= 700)) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && ((_BSD_SOURCE+0) || (_SVID_SOURCE+0)))
     out->atime = ul_static_cast(ulfd_time_t, state.st_atim.tv_sec) * 1000
       + ul_static_cast(ulfd_time_t, state.st_atim.tv_nsec / 1000000);
     out->mtime = ul_static_cast(ulfd_time_t, state.st_mtim.tv_sec) * 1000
@@ -2389,6 +2494,38 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     ret = ulfd_stat(path, stat);
     _ulfd_end_to_str(path);
     return ret;
+  }
+  ul_hapi int ulfd_fstat(ulfd_t fd, ulfd_stat_t* out) {
+  #ifdef ULFD_HAS_LFS
+    struct stat64 state;
+    if(fstat64(fd, &state) < 0) return errno;
+  #else
+    struct stat state;
+    if(fstat(fd, &state) < 0) return errno;
+  #endif
+
+    out->dev = state.st_dev;
+    out->rdev = state.st_rdev;
+    out->ino = state.st_ino;
+    out->mode = _ulfd_from_full_mode(state.st_mode);
+    out->nlink = state.st_nlink;
+    out->uid = state.st_uid;
+    out->gid = state.st_gid;
+    out->size = ul_static_cast(ulfd_int64_t, state.st_size);
+  #if (_ULFD_GLIBC_CHECK(2, 12) && ((_POSIX_C_SOURCE+0) >= 200809L || (_XOPEN_SOURCE+0) >= 700)) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && ((_BSD_SOURCE+0) || (_SVID_SOURCE+0)))
+    out->atime = ul_static_cast(ulfd_time_t, state.st_atim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_atim.tv_nsec / 1000000);
+    out->mtime = ul_static_cast(ulfd_time_t, state.st_mtim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_mtim.tv_nsec / 1000000);
+    out->ctime = ul_static_cast(ulfd_time_t, state.st_ctim.tv_sec) * 1000
+      + ul_static_cast(ulfd_time_t, state.st_ctim.tv_nsec / 1000000);
+  #else
+    out->atime = ul_static_cast(ulfd_int64_t, state.st_atime * 1000);
+    out->mtime = ul_static_cast(ulfd_int64_t, state.st_mtime * 1000);
+    out->ctime = ul_static_cast(ulfd_int64_t, state.st_ctime * 1000);
+  #endif
+    return 0;
   }
   ul_hapi int ulfd_access(const char* path, ulfd_mode_t mode) {
     int mode2 = 0;
@@ -2464,7 +2601,12 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return ret;
   }
   ul_hapi int ulfd_symlink(const char* target, const char* source) {
+  #if (_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0))
     return symlink(source, target) < 0 ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
   }
   ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source) {
     int ret;
@@ -2476,8 +2618,9 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
     return ret;
   }
   ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len) {
-  #if (_XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && _BSD_SOURCE)
+  #if ((_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     ssize_t l;
     l = readlink(path, buf, len);
     if(l < 0) return errno;
@@ -2490,8 +2633,9 @@ ul_hapi int ulfd_truncate_w(const wchar_t* wpath, ulfd_int64_t size);
   #endif
   }
   ul_hapi int ulfd_readlink_w(const wchar_t* wpath, wchar_t* buf, size_t len) {
-  #if (_XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && _BSD_SOURCE)
+  #if ((_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L) || \
+      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
+      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     char* tmp;
     size_t cast_len;
     ssize_t sret;
