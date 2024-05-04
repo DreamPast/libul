@@ -199,7 +199,11 @@ typedef ulfd_int64_t ulfd_time_t;
   #define ULFD_FILENAME_MAX FILENAME_MAX
 
   typedef dev_t ulfd_dev_t;
-  typedef ino_t ulfd_ino_t;
+  #ifdef ULFD_HAS_LFS
+    typedef ino64_t ulfd_ino_t;
+  #else
+    typedef ino_t ulfd_ino_t;
+  #endif
   typedef mode_t ulfd_mode_t;
   typedef nlink_t ulfd_nlink_t;
   typedef uid_t ulfd_uid_t;
@@ -360,6 +364,8 @@ ul_hapi int ulfd_chdir(const char* path);
 ul_hapi int ulfd_chdir_w(const wchar_t* wpath);
 ul_hapi int ulfd_getcwd(char* path, size_t length);
 ul_hapi int ulfd_getcwd_w(wchar_t* wpath, size_t length);
+ul_hapi int ulfd_getcwd_alloc(char** ppath);
+ul_hapi int ulfd_getcwd_alloc_w(wchar_t** pwpath);
 
 ul_hapi ulfd_mode_t ulfd_umask(ulfd_mode_t mask);
 /* `mode` accepts ULFD_S_IRUSR, ULFD_S_IWUSR, ULFD_S_IXUSR or their union */
@@ -380,9 +386,9 @@ typedef struct ulfd_stat_t {
 
   ulfd_dev_t dev; /* ID of device containing file */
   ulfd_dev_t rdev; /* device ID (if special file) */
-  ulfd_ino_t ino; /* POSIX: inode number */
   ulfd_nlink_t nlink; /* number of hard links */
 
+  ulfd_ino_t ino; /* POSIX: inode number */
   ulfd_uid_t uid; /* POSIX: user ID of owner */
   ulfd_gid_t gid; /* POSIX: group ID of owner */
   ulfd_mode_t mode; /* file type and mode */
@@ -400,8 +406,8 @@ ul_hapi int ulfd_rename(const char* newpath, const char* oldpath);
 ul_hapi int ulfd_rename_w(const wchar_t* newpath, const wchar_t* oldpath);
 ul_hapi int ulfd_unlink(const char* path);
 ul_hapi int ulfd_unlink_w(const wchar_t* wpath);
-ul_hapi int ulfd_remove(const char* path) { return ulfd_unlink(path); }
-ul_hapi int ulfd_remove_w(const wchar_t* wpath) { return ulfd_unlink_w(wpath); }
+ul_hapi int ulfd_remove(const char* path);
+ul_hapi int ulfd_remove_w(const wchar_t* wpath);
 ul_hapi int ulfd_rmdir(const char* path);
 ul_hapi int ulfd_rmdir_w(const wchar_t* wpath);
 
@@ -440,6 +446,28 @@ ul_hapi int ulfd_rewinddir(ulfd_dir_t* dir);
 ul_hapi int ulfd_closedir(ulfd_dir_t* dir);
 ul_hapi int ulfd_readdir(ulfd_dir_t* dir, const char** pname);
 ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
+
+
+#include <string.h>
+ul_hapi char* ulfd_strdup(const char* str) {
+  char* ret;
+  size_t len = strlen(str);
+  ret = ul_reinterpret_cast(char*, ul_malloc(len + 1));
+  if(ul_unlikely(ret == NULL)) return NULL;
+  memcpy(ret, str, len + 1);
+  return ret;
+}
+ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
+  wchar_t* ret;
+  size_t bytes;
+  for(bytes = 0; wstr[bytes]; ++bytes) { }
+  bytes = (bytes + 1) * sizeof(wchar_t);
+  ret = ul_reinterpret_cast(wchar_t*, ul_malloc(bytes));
+  if(ul_unlikely(ret == NULL)) return NULL;
+  memcpy(ret, wstr, bytes);
+  return ret;
+
+}
 
 
 #ifndef ULOS_STR_TO_WSTR_DEFINED
@@ -935,7 +963,7 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     }
   #else
     ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
-      static HANDLE hold = NULL; 
+      static HANDLE hold = NULL;
       return ul_reinterpret_cast(_ulfd_GetFinalPathNameByHandleW_t, _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
     }
   #endif
@@ -1439,6 +1467,35 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     ul_free(wpath);
     return 0;
   }
+  ul_hapi int ulfd_getcwd_alloc_w(wchar_t** pwpath) {
+    DWORD need_len, writen_len;
+    wchar_t* wpath;
+    need_len = GetCurrentDirectoryW(0, NULL);
+    if(need_len == 0) return _ul_win32_toerrno(GetLastError());
+    wpath = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+    if(ul_unlikely(wpath == NULL)) return ENOMEM;
+    writen_len = GetCurrentDirectoryW(need_len, wpath);
+    if(ul_unlikely(writen_len == 0)) { ul_free(wpath); return _ul_win32_toerrno(GetLastError()); }
+    if(ul_unlikely(writen_len > need_len)) { ul_free(wpath); return ERANGE; }
+    *pwpath = wpath; return 0;
+  }
+  ul_hapi int ulfd_getcwd_alloc(char** ppath) {
+    wchar_t* wpath;
+    size_t cast_len;
+    char* path;
+    int err;
+
+    err = ulfd_getcwd_alloc_w(&wpath);
+    if(err) return err;
+    cast_len = ul_os_wstr_to_str_len(wpath);
+    if(ul_unlikely(cast_len == 0)) { ul_free(wpath); return EILSEQ; }
+    path = ul_reinterpret_cast(char*, ul_malloc(cast_len));
+    if(ul_unlikely(path == NULL)) { ul_free(wpath); return ENOMEM; }
+    ul_os_wstr_to_str(path, wpath);
+    ul_free(wpath);
+    *ppath = path;
+    return 0;
+  }
 
   ul_hapi ulfd_int64_t _ulfd_filetime_to_time_t(const FILETIME file_time, const ulfd_int64_t fallback) {
     static const ULONGLONG EPOCH = ULFD_INT64_C(116444736000000000);
@@ -1790,12 +1847,46 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     return ret;
   }
   ul_hapi int ulfd_unlink_w(const wchar_t* wpath) {
-    return DeleteFileW(wpath) ? 0 : _ul_win32_toerrno(GetLastError());
+    DWORD attr, error;
+    if(DeleteFileW(wpath)) return 0;
+    attr = GetFileAttributesW(wpath);
+    if(attr == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
+    if(attr & FILE_ATTRIBUTE_READONLY) {
+      if(!SetFileAttributesW(wpath, ul_static_cast(DWORD, attr & ul_static_cast(DWORD, ~FILE_ATTRIBUTE_READONLY))))
+        return _ul_win32_toerrno(GetLastError());
+    }
+    if(DeleteFileW(wpath)) return 0;
+    error = GetLastError();
+    if(attr & FILE_ATTRIBUTE_READONLY) /* we cannot remove it, so we have to restore attribute */
+      SetFileAttributesW(wpath, attr);
+    return _ul_win32_toerrno(error);
   }
   ul_hapi int ulfd_unlink(const char* path) {
     int ret;
     _ulfd_begin_to_wstr(wpath, path);
     ret = ulfd_unlink_w(wpath);
+    _ulfd_end_to_wstr(wpath);
+    return ret;
+  }
+  ul_hapi int ulfd_remove_w(const wchar_t* wpath) {
+    DWORD attr, error;
+    attr = GetFileAttributesW(wpath);
+    if(attr == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
+    if(attr & FILE_ATTRIBUTE_READONLY) {
+      if(!SetFileAttributesW(wpath, ul_static_cast(DWORD, attr & ul_static_cast(DWORD, ~FILE_ATTRIBUTE_READONLY))))
+        return _ul_win32_toerrno(GetLastError());
+    }
+    if(attr & FILE_ATTRIBUTE_DIRECTORY) { if(RemoveDirectoryW(wpath)) return 0; }
+    else { if(DeleteFileW(wpath)) return 0; }
+    error = GetLastError();
+    if(attr & FILE_ATTRIBUTE_READONLY) /* we cannot remove it, so we have to restore attribute */
+      SetFileAttributesW(wpath, attr);
+    return _ul_win32_toerrno(error);
+  }
+  ul_hapi int ulfd_remove(const char* path) {
+    int ret;
+    _ulfd_begin_to_wstr(wpath, path);
+    ret = ulfd_remove_w(wpath);
     _ulfd_end_to_wstr(wpath);
     return ret;
   }
@@ -1811,7 +1902,19 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     return ret;
   }
   ul_hapi int ulfd_rmdir_w(const wchar_t* wpath) {
-    return RemoveDirectoryW(wpath) ? 0 : _ul_win32_toerrno(GetLastError());
+    DWORD attr, error;
+    if(RemoveDirectoryW(wpath)) return 0;
+    attr = GetFileAttributesW(wpath);
+    if(attr == INVALID_FILE_ATTRIBUTES) return _ul_win32_toerrno(GetLastError());
+    if(attr & FILE_ATTRIBUTE_READONLY) {
+      if(!SetFileAttributesW(wpath, ul_static_cast(DWORD, attr & ul_static_cast(DWORD, ~FILE_ATTRIBUTE_READONLY))))
+        return _ul_win32_toerrno(GetLastError());
+    }
+    if(RemoveDirectoryW(wpath)) return 0;
+    error = GetLastError();
+    if(attr & FILE_ATTRIBUTE_READONLY) /* we cannot remove it, so we have to restore attribute */
+      SetFileAttributesW(wpath, attr);
+    return _ul_win32_toerrno(error);
   }
   ul_hapi int ulfd_rmdir(const char* path) {
     int ret;
@@ -1849,7 +1952,7 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     _ulfd_end_to_wstr(w_newpath);
     return ret;
   }
-  
+
   typedef BOOLEAN (WINAPI *_ulfd_CreateSymbolicLinkW_t)(
     LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags
   );
@@ -2591,6 +2694,71 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
   do_return:
     ul_free(path); return ret;
   }
+  ul_hapi int ulfd_getcwd_alloc(char** ppath) {
+  #if (_GNU_SOURCE+0)
+    char* ret;
+    char* path = get_current_dir_name();
+    if(ul_unlikely(path == NULL)) return errno;
+    ret = ulfd_strdup(path);
+    free(path);
+    *ppath = ret;
+    return ul_likely(ret) ? 0 : ENOMEM;
+  #else
+    size_t cap = ULFD_PATH_MAX;
+    char* path = NULL;
+    for(;;) {
+      char* npath = ul_reinterpret_cast(char*, ul_realloc(path, cap));
+      if(ul_unlikely(npath == NULL)) break;
+      path = npath;
+      if(ul_likely(getcwd(path, cap))) {
+        *ppath = path; return 0;
+      }
+      if(errno != ERANGE) return errno;
+      cap = cap + (cap >> 1);
+    }
+    ul_free(path);
+    return ENOMEM;
+  #endif
+  }
+  ul_hapi int ulfd_getcwd_alloc_w(wchar_t** pwpath) {
+  #if (_GNU_SOURCE+0)
+    wchar_t* ret;
+    size_t need_len;
+    char* path = get_current_dir_name();
+    if(ul_unlikely(path == NULL)) return errno;
+    need_len = ul_os_str_to_wstr_len(path);
+    if(ul_unlikely(need_len == 0)) { free(path); return EILSEQ; }
+    ret = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+    if(ul_unlikely(ret == NULL)) { free(path); return ENOMEM; }
+    ul_os_str_to_wstr(ret, path);
+    free(path);
+    *pwpath = ret;
+    return 0;
+  #else
+    size_t cap = ULFD_PATH_MAX;
+    char* path = NULL;
+    int err = ENOMEM;
+    for(;;) {
+      char* npath = ul_reinterpret_cast(char*, ul_realloc(path, cap));
+      if(ul_unlikely(npath == NULL)) break;
+      path = npath;
+      if(ul_likely(getcwd(path, cap))) {
+        wchar_t* wpath;
+        size_t need_len = ul_os_str_to_wstr_len(path);
+        if(ul_unlikely(need_len == 0)) { err = EILSEQ; break; }
+        wpath = ul_reinterpret_cast(wchar_t*, ul_malloc(need_len * sizeof(wchar_t)));
+        if(ul_unlikely(wpath == NULL)) { err = ENOMEM; break; }
+        ul_os_str_to_wstr(wpath, path);
+        err = 0;
+        break;
+      }
+      if(errno != ERANGE) return errno;
+      cap = cap + (cap >> 1);
+    }
+    ul_free(path);
+    return err;
+  #endif
+  }
 
   ul_hapi ulfd_mode_t ulfd_umask(ulfd_mode_t mask) {
     return _ulfd_from_access_mode(umask(_ulfd_to_access_mode(mask)));
@@ -2743,6 +2911,17 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
     _ulfd_end_to_str(path);
     return ret;
   }
+  ul_hapi int ulfd_remove(const char* path) {
+    errno = 0;
+    return remove(path) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_remove_w(const wchar_t* wpath) {
+    int ret;
+    _ulfd_begin_to_str(path, wpath);
+    ret = ulfd_remove(path);
+    _ulfd_end_to_str(path);
+    return ret;
+  }
 
   ul_hapi int ulfd_mkdir(const char* path, ulfd_mode_t mode) {
     return mkdir(path, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
@@ -2842,7 +3021,6 @@ ul_hapi int ulfd_readdir_w(ulfd_dir_t* dir, const wchar_t** pwname);
   }
 
 
-  #include <string.h>
   ul_hapi int ulfd_opendir(ulfd_dir_t* dir, const char* path) {
     dir->dir = opendir(path);
     if(dir->dir == NULL) return errno;
