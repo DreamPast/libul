@@ -175,13 +175,15 @@ typedef ulfd_int64_t ulfd_time_t;
   #define ULFD_NAME_MAX     MAX_PATH
   #define ULFD_FILENAME_MAX MAX_PATH
 
+  #define ULFD_PATH_SEP      "\\"
+  #define ULFD_PATH_SEP_WIDE L"\\"
+
   typedef int ulfd_dev_t;
   typedef int ulfd_ino_t;
   typedef int ulfd_mode_t;
   typedef int ulfd_nlink_t;
   typedef int ulfd_uid_t;
   typedef int ulfd_gid_t;
-  typedef int ulfd_dev_t;
 #else
   #include <unistd.h>
   #include <sys/types.h>
@@ -198,6 +200,9 @@ typedef ulfd_int64_t ulfd_time_t;
   #define ULFD_NAME_MAX     NAME_MAX
   #define ULFD_FILENAME_MAX FILENAME_MAX
 
+  #define ULFD_PATH_SEP      "/"
+  #define ULFD_PATH_SEP_WIDE L"/"
+
   typedef dev_t ulfd_dev_t;
   #ifdef ULFD_HAS_LFS
     typedef ino64_t ulfd_ino_t;
@@ -208,7 +213,6 @@ typedef ulfd_int64_t ulfd_time_t;
   typedef nlink_t ulfd_nlink_t;
   typedef uid_t ulfd_uid_t;
   typedef gid_t ulfd_gid_t;
-  typedef dev_t ulfd_dev_t;
 #endif
 
 
@@ -322,6 +326,12 @@ ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid);
 ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime);
 
 ul_hapi int ulfd_isatty(ulfd_t fd, int* presult);
+
+#include <stdio.h>
+ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd);
+ul_hapi int ulfd_fdopen(FILE** pfp, ulfd_t fd, const char* mode);
+ul_hapi int ulfd_fdopen_w(FILE** pfp, ulfd_t fd, const wchar_t* wmode);
+ul_hapi int ulfd_fileno(ulfd_t* pfd, FILE* fp);
 
 
 #define ULFD_PROT_NONE      (0)      /* pages may not be accessed */
@@ -1288,6 +1298,88 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
     ret = GetFileType(fd);
     if(ret == FILE_TYPE_UNKNOWN) { *presult = 0; return _ul_win32_toerrno(GetLastError()); }
     *presult = (ret == FILE_TYPE_CHAR); return 0;
+  }
+
+  ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd) {
+    return DuplicateHandle(
+        GetCurrentProcess(), ofd,
+        GetCurrentProcess(), pnfd,
+        0L, TRUE, DUPLICATE_SAME_ACCESS
+      ) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+
+  #include <io.h>
+  #include <fcntl.h>
+  ul_hapi int _ulfd_parse_mode(const char* mode) {
+    int flags = 0;
+    while((*mode >= 9 && *mode < 13) || *mode == ' ') ++mode;
+    switch(*mode++) {
+    case 'r': flags = _O_RDONLY; break;
+    case 'w': flags = _O_WRONLY | _O_CREAT | _O_TRUNC; break;
+    case 'a': flags = _O_WRONLY | _O_CREAT | _O_APPEND; break;
+    default: return -1;
+    }
+    while(*mode) {
+      switch(*mode) {
+      case '+':
+        if(flags & _O_RDWR) return -1;
+        flags |= _O_RDWR; flags &= ~(_O_RDONLY | _O_WRONLY); break;
+      case 'b':
+        if(flags & (_O_TEXT | _O_BINARY)) return -1;
+        flags |= _O_BINARY; break;
+      case 't':
+        if(flags & (_O_TEXT | _O_BINARY)) return -1;
+        flags |= _O_TEXT; break;
+      default: break; /* we ignore other characters */
+      }
+    }
+    return flags;
+  }
+  ul_hapi int _ulfd_parse_mode_w(const wchar_t* mode) {
+    int flags = 0;
+    while((*mode >= 9 && *mode < 13) || *mode == L' ') ++mode;
+    switch(*mode++) {
+    case L'r': flags = _O_RDONLY; break;
+    case L'w': flags = _O_WRONLY | _O_CREAT | _O_TRUNC; break;
+    case L'a': flags = _O_WRONLY | _O_CREAT | _O_APPEND; break;
+    default: return -1;
+    }
+    while(*mode) {
+      switch(*mode) {
+      case L'+':
+        if(flags & _O_RDWR) return -1;
+        flags |= _O_RDWR; flags &= ~(_O_RDONLY | _O_WRONLY); break;
+      case L'b':
+        if(flags & (_O_TEXT | _O_BINARY)) return -1;
+        flags |= _O_BINARY; break;
+      case L't':
+        if(flags & (_O_TEXT | _O_BINARY)) return -1;
+        flags |= _O_TEXT; break;
+      default: break; /* we ignore other characters */
+      }
+    }
+    return flags;
+  }
+  ul_hapi int ulfd_fdopen(FILE** pfp, ulfd_t fd, const char* mode) {
+    int cfd = _open_osfhandle(ul_reinterpret_cast(INT_PTR, fd), _ulfd_parse_mode(mode));
+    if(cfd < 0) return errno;
+    *pfp = _fdopen(cfd, mode);
+    if(*pfp == NULL) { int err = errno; _close(cfd); return err; }
+    return 0;
+  }
+  ul_hapi int ulfd_fdopen_w(FILE** pfp, ulfd_t fd, const wchar_t* wmode) {
+    int cfd = _open_osfhandle(ul_reinterpret_cast(INT_PTR, fd), _ulfd_parse_mode_w(wmode));
+    if(cfd < 0) return errno;
+    *pfp = _wfdopen(cfd, wmode);
+    if(*pfp == NULL) { int err = errno; _close(cfd); return err; }
+    return 0;
+  }
+  ul_hapi int ulfd_fileno(ulfd_t* pfd, FILE* fp) {
+    int cfd = _fileno(fp);
+    if(cfd < 0) return errno;
+    *pfd = ul_reinterpret_cast(ulfd_t, _get_osfhandle(cfd));
+    if(*pfd == INVALID_HANDLE_VALUE) return errno;
+    return 0;
   }
 
   ul_hapi int ulfd_mmap(void** pmap, ulfd_t fd, void* addr, size_t len, ulfd_int64_t off, int flags) {
@@ -2532,6 +2624,31 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
     *presult = (r > 0); return 0;
   }
 
+  ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd) {
+    return (*pnfd = dup(ofd)) < 0 ? errno : 0;
+  }
+  ul_hapi int ulfd_fdopen(FILE** pfp, ulfd_t fd, const char* mode) {
+  #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
+    return (*pfp = fdopen(fd, mode)) == NULL ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
+  }
+  ul_hapi int ulfd_fdopen_w(FILE** pfp, ulfd_t fd, const wchar_t* wmode) {
+    int ret;
+    _ulfd_begin_to_str(mode, wmode);
+    ret = ulfd_fdopen(pfp, fd, mode);
+    _ulfd_end_to_str(mode);
+    return ret;
+  }
+  ul_hapi int ulfd_fileno(ulfd_t* pfd, FILE* fp) {
+  #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
+    return (*pfd = fileno(fp)) < 0 ? errno : 0;
+  #else
+    return ENOSYS;
+  #endif
+  }
+
   ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t length) {
   #if (_XOPEN_SOURCE+0) >= 500 || \
       (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L) || \
@@ -2887,7 +3004,6 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
     return ret;
   }
 
-  #include <stdio.h>
   ul_hapi int ulfd_rename(const char* newpath, const char* oldpath) {
     errno = EINVAL;
     return rename(oldpath, newpath) ? errno : 0;
