@@ -160,6 +160,16 @@ File descriptor (Unix style)
   #error "ulfd.h: need 64-bit integer"
 #endif
 
+#if INT_MAX == 0x7FFFFFFF
+  typedef int ulfd_int32_t;
+#elif LONG_MAX == 0x7FFFFFFF
+  typedef long ulfd_int32_t;
+#elif SHRT_MAX == 0x7FFFFFFF
+  typedef short ulfd_int32_t;
+#else
+  #error "ulfd.h: need 32-bit integer"
+#endif
+
 /* milliseconds from POSIX epoch (equivalte to `uldate_t` in "uldate.h") */
 typedef ulfd_int64_t ulfd_time_t;
 
@@ -223,7 +233,7 @@ typedef ulfd_int64_t ulfd_time_t;
   #else
     typedef ino_t ulfd_ino_t;
   #endif
-  typedef mode_t ulfd_mode_t;
+  typedef ulfd_int32_t ulfd_mode_t;
   typedef nlink_t ulfd_nlink_t;
   typedef uid_t ulfd_uid_t;
   typedef gid_t ulfd_gid_t;
@@ -680,22 +690,22 @@ ul_hapi int _ulfd_wstr_to_str(char** pstr, const wchar_t* wstr) {
 }
 
 #define _ulfd_begin_to_str(varname, wstr) do { \
-  char* (varname); int _ulfd_bts_err1 = _ulfd_wstr_to_str(&(varname), (wstr)); \
+  char* varname; int _ulfd_bts_err1 = _ulfd_wstr_to_str(&(varname), (wstr)); \
   if(ul_unlikely(_ulfd_bts_err1)) return _ulfd_bts_err1
 #define _ulfd_end_to_str(varname) ul_free((varname)); } while(0)
 
 #define _ulfd_begin_to_str2(varname, wstr, prev_varname) do { \
-  char* (varname); int _ulfd_bts_err2 = _ulfd_wstr_to_str(&(varname), (wstr)); \
+  char* varname; int _ulfd_bts_err2 = _ulfd_wstr_to_str(&(varname), (wstr)); \
   if(ul_unlikely(_ulfd_bts_err2)) { ul_free(prev_varname); return _ulfd_bts_err2; } (void)0
 #define _ulfd_end_to_str2(varname) ul_free((varname)); } while(0)
 
 #define _ulfd_begin_to_wstr(varname, str) do { \
-  wchar_t* (varname); int _ulfd_bts_err1 = _ulfd_str_to_wstr(&(varname), (str)); \
+  wchar_t* varname; int _ulfd_bts_err1 = _ulfd_str_to_wstr(&(varname), (str)); \
   if(ul_unlikely(_ulfd_bts_err1)) return _ulfd_bts_err1
 #define _ulfd_end_to_wstr(varname) ul_free((varname)); } while(0)
 
 #define _ulfd_begin_to_wstr2(varname, str, prev_varname) do { \
-  wchar_t* (varname); int _ulfd_bts_err2 = _ulfd_str_to_wstr(&(varname), (str)); \
+  wchar_t* varname; int _ulfd_bts_err2 = _ulfd_str_to_wstr(&(varname), (str)); \
   if(ul_unlikely(_ulfd_bts_err2)) { ul_free(prev_varname); return _ulfd_bts_err2; } (void)0
 #define _ulfd_end_to_wstr2(varname) ul_free((varname)); } while(0)
 
@@ -1504,7 +1514,7 @@ ul_hapi int _ulfd_wstr_to_str(char** pstr, const wchar_t* wstr) {
       else protect = PAGE_WRITECOPY;
     }
 
-    if(len == 0 && (flags & ~ULFD_PROT_EXEC) == ULFD_PROT_EXEC) return EINVAL;
+    if(len == 0 || (flags & (ULFD_PROT_READWRITE | ULFD_PROT_EXEC)) == ULFD_PROT_EXEC) return EINVAL;
     if(flags & ULFD_MAP_ANONYMOUS) fd = INVALID_HANDLE_VALUE;
 
     filemap = CreateFileMappingW(fd, &security_attributes, protect, maxsize_high, maxsize_low, NULL);
@@ -2712,7 +2722,7 @@ ul_hapi int _ulfd_wstr_to_str(char** pstr, const wchar_t* wstr) {
   #endif
 
   #define _ulfd_to_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
-  #define _ulfd_from_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
+  #define _ulfd_from_access_mode(mode) ul_static_cast(ulfd_mode_t, (mode) & ULFD_S_IMASK)
   ul_hapi mode_t _ulfd_to_full_mode(ulfd_mode_t mode) {
     mode_t ret = ul_static_cast(mode_t, mode & 0777);
     switch(mode & ULFD_S_IFMT) {
