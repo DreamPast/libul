@@ -4,7 +4,13 @@
 
 Some header-only utility files, no configuration required, ready to use.
 
-Most of the header files can be used under C89/C++98, some features require some platform support, these will be determined through macros.
+In the main directory, most of the header files can be used under C89/C++98, but some features may require some platform support, which will be determined through macros.
+
+The "hpp" directory includes some C++ header files to provide a simple wrapper for the header file in the main directory. These files won't deliberately reduce the demand for the standard C++ version.
+
+## Files Overview
+
+### Main Directory
 
 | Header Files | Introduction                                                 |
 | ------------ | ------------------------------------------------------------ |
@@ -22,6 +28,12 @@ Most of the header files can be used under C89/C++98, some features require some
 | ulsarr.h     | Read-only shared array (speeding up slicing, concatenating, etc.) |
 | ulstdint.h   | Compatibility header file for <stdint.h> (for some older compilers) |
 | ulutf.h      | UTF related operations                                       |
+
+### "hpp" Directory
+
+| File     | Minimum C++ version |
+| -------- | ------------------- |
+| ulfd.hpp | C++11               |
 
 ## License
 
