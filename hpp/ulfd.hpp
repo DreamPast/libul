@@ -280,6 +280,20 @@ namespace ul {
             return r;
         }
 
+        inline size_t copy_file_range(ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out, size_t len) {
+            size_t r;
+            _throw_if_error(ulfd_copy_file_range(fd_in, off_in, fd_out, off_out, len, &r));
+            return r;
+        }
+        inline size_t copy_file_range_user(
+            ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+            size_t len, void* buf = nullptr, size_t buf_len = 0
+        ) {
+            size_t r;
+            _throw_if_error(ulfd_copy_file_range_user(fd_in, off_in, fd_out, off_out, len, &r, buf, buf_len));
+            return r;
+        }
+
         inline void ffullsync(ulfd_t fd) { _throw_if_error(ulfd_ffullsync(fd)); }
         inline void fsync(ulfd_t fd) { _throw_if_error(ulfd_fsync(fd)); }
         inline void fdatasync(ulfd_t fd) { _throw_if_error(ulfd_fdatasync(fd)); }
