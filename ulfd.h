@@ -314,7 +314,6 @@ typedef ulfd_int64_t ulfd_time_t;
 #define ULFD_O_DENYWR    (1l << 25) /* Windows: deny share write access */
 #define ULFD_O_DENYRW    (ULFD_O_DENYRD | ULFD_O_DENYWR) /* Windows: deny share read and write access */
 #define ULFD_O_SECURE    (1l << 26) /* Winodws: set secure mode (share read access but exclude write access) */
-#define ULFD_O_HIDDEN    (1l << 27) /* Windows: create hidden file */
 
 ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, ulfd_int32_t oflag, ulfd_mode_t mode);
 ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, ulfd_mode_t mode);
@@ -334,6 +333,17 @@ ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t o
 ul_hapi int ulfd_seek(ulfd_t fd, ulfd_int64_t off, int origin, ulfd_int64_t* poff);
 ul_hapi int ulfd_tell(ulfd_t fd, ulfd_int64_t* poff);
 
+/* if `off_in` or `off_out` is NULL, use current pos */
+ul_hapi int ulfd_copy_file_range(
+  ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+  size_t len, size_t* pcopyed
+);
+/* if `off_in` or `off_out` is NULL, use current pos; if `buf` is NULL, the function will automatically allocate memory */
+ul_hapi int ulfd_copy_file_range_user(
+  ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+);
+
 ul_hapi int ulfd_ffullsync(ulfd_t fd);
 ul_hapi int ulfd_fsync(ulfd_t fd);
 ul_hapi int ulfd_fdatasync(ulfd_t fd);
@@ -346,12 +356,16 @@ ul_hapi int ulfd_lockw(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode);
 
 ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length);
 ul_hapi int ulfd_ffilelength(ulfd_t fd, ulfd_int64_t* plength);
-/* `mode` accepts ULFD_S_IRUSR, ULFD_S_IWUSR, ULFD_S_IXUSR or their union */
 ul_hapi int ulfd_fchmod(ulfd_t fd, ulfd_mode_t mode);
 ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid);
 ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime);
 
 ul_hapi int ulfd_isatty(ulfd_t fd, int* presult);
+
+#define ULFD_SET_STDIN  0
+#define ULFD_SET_STDOUT 1
+#define ULFD_SET_STDERR 2
+ul_hapi int ulfd_setstd(int which, ulfd_t fd);
 
 #include <stdio.h>
 ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd);
@@ -431,8 +445,8 @@ typedef struct ulfd_stat_t {
   ulfd_dev_t dev; /* ID of device containing file */
   ulfd_dev_t rdev; /* device ID (if special file) */
   ulfd_nlink_t nlink; /* number of hard links */
-  ulfd_ino_t ino; /* POSIX: inode number */
 
+  ulfd_ino_t ino; /* POSIX: inode number */
   ulfd_uid_t uid; /* POSIX: user ID of owner */
   ulfd_gid_t gid; /* POSIX: group ID of owner */
   ulfd_mode_t mode; /* file type and mode */
@@ -917,6 +931,76 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
 
 
 
+ul_hapi int ulfd_copy_file_range_user(
+  ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+) {
+  void* nbuf;
+  ulfd_int64_t nin, nout;
+  size_t nread, nwriten;
+  int err = 0;
+  size_t copyed = 0;
+
+  if(off_in) {
+    if(*off_in < 0) return EINVAL;
+    nin = *off_in;
+    if(ULFD_INT64_C(0x7FFFFFFFFFFFFFFF) - nin < ul_static_cast(ulfd_int64_t, len)) return EINVAL;
+  } else nin = -1;
+  if(off_out) {
+    if(*off_out < 0) return EINVAL;
+    nout = *off_out;
+    if(ULFD_INT64_C(0x7FFFFFFFFFFFFFFF) - nout < ul_static_cast(ulfd_int64_t, len)) return EINVAL;
+  } else nout = -1;
+
+  if(buf) {
+    if(buf_len == 0) return EINVAL;
+    else nbuf = buf;
+  } else {
+    if(buf_len == 0) {
+      buf_len = 16384;
+      do {
+        nbuf = ul_malloc(buf_len);
+        if(ul_likely(nbuf)) break;
+        buf_len >>= 1;
+      } while(buf_len > 0);
+    } else nbuf = ul_malloc(buf_len);
+    if(ul_unlikely(nbuf == NULL)) return ENOMEM;
+  }
+
+  while(len >= buf_len) {
+  go_back:
+    nwriten = 0;
+    if(nin >= 0) {
+      err = ulfd_pread(fd_in, nbuf, buf_len, nin, &nread);
+      nin += nread;
+    } else err = ulfd_read(fd_in, nbuf, buf_len, &nread);
+    if(err) goto do_return;
+
+    if(nread) {
+      if(nout >= 0) {
+        err = ulfd_pwrite(fd_out, nbuf, nread, nout, &nwriten);
+        nout += nwriten;
+      } else err = ulfd_write(fd_out, nbuf, buf_len, &nwriten);
+    }
+    if(err) goto do_return;
+
+    copyed += nwriten;
+    if(nwriten < buf_len) goto do_return;
+    len -= buf_len;
+  }
+  if(ul_unlikely(len != 0)) {
+    /* we set `buf_len` to smaller `len`, then we go back to the loop.
+     after it, `len` will be 0, as 0 < `buf_len`, the loop won't continue. */
+    buf_len = len; goto go_back;
+  }
+
+do_return:
+  *pcopyed = copyed;
+  if(buf) ul_free(nbuf);
+  return err;
+}
+
+
 #define _ulfd_begin_to_str(varname, wstr) do { \
   char* varname; int _ulfd_bts_err1 = ulfd_wstr_to_str_alloc(&(varname), (wstr)); \
   if(ul_unlikely(_ulfd_bts_err1)) return _ulfd_bts_err1
@@ -1168,7 +1252,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     #define INVALID_SET_FILE_POINTER ul_static_cast(DWORD, -1)
   #endif
   #ifndef FILE_MAP_EXECUTE
-    #define FILE_MAP_EXECUTE 0x0020
+    #define FILE_MAP_EXECUTE (0x0020)
   #endif
   #ifndef SYMBOLIC_LINK_FLAG_DIRECTORY
     #define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
@@ -1244,19 +1328,23 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     }
   #endif
 
+  ul_hapi HMODULE _ulfd_dll(HANDLE* hold, const wchar_t* name) {
+    HANDLE stored;
+    stored = _ulfd_compare_exchange(hold, NULL, NULL);
+    if(stored == INVALID_HANDLE_VALUE) return NULL;
+    if(stored != NULL) return ul_reinterpret_cast(HMODULE, stored);
+    stored = GetModuleHandleW(name);
+    if(stored == NULL) _ulfd_compare_exchange(hold, INVALID_HANDLE_VALUE, NULL);
+    else _ulfd_compare_exchange(hold, stored, NULL);
+    return ul_reinterpret_cast(HMODULE, stored);
+  }
+
   /* get kernel32 module */
   /* For any function supported since Windows Vista or higher, if _WIN32_WINNT is smaller,
     the library will dynamically load kernel32.dll to check available */
   ul_hapi HMODULE _ulfd_kernel32(void) {
-    static HANDLE _ulfd_kernel32_hold = NULL;
-    HANDLE stored;
-    stored = _ulfd_compare_exchange(&_ulfd_kernel32_hold, NULL, NULL);
-    if(stored == INVALID_HANDLE_VALUE) return NULL;
-    if(stored != NULL) return ul_reinterpret_cast(HMODULE, stored);
-    stored = GetModuleHandle(TEXT("kernel32.dll"));
-    if(stored == NULL) _ulfd_compare_exchange(&_ulfd_kernel32_hold, INVALID_HANDLE_VALUE, NULL);
-    else _ulfd_compare_exchange(&_ulfd_kernel32_hold, stored, NULL);
-    return ul_reinterpret_cast(HMODULE, stored);
+    static HANDLE hold = NULL;
+    return _ulfd_dll(&hold, L"kernel32.dll");
   }
   ul_hapi HANDLE _ulfd_kernel32_function(HANDLE* hold, const char* name) {
     HANDLE stored;
@@ -1321,7 +1409,6 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       access |= DELETE;
       flags_attr |= ul_static_cast(DWORD, FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_TEMPORARY);
     }
-    if(oflag & ULFD_O_HIDDEN) flags_attr |= FILE_ATTRIBUTE_HIDDEN;
 
     security_attributes.nLength = sizeof(security_attributes);
     security_attributes.lpSecurityDescriptor = NULL;
@@ -1500,6 +1587,11 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     return ulfd_seek(fd, 0, ULFD_SEEK_CUR, poff);
   }
 
+  ul_hapi int ulfd_copy_file_range(ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out, size_t len, size_t* pcopyed) {
+    (void)fd_in; (void)off_in; (void)fd_out; (void)off_out; (void)len; (void)pcopyed;
+    return ENOSYS;
+  }
+
   ul_hapi int ulfd_fsync(ulfd_t fd) {
     return FlushFileBuffers(fd) ? 0 : _ul_win32_toerrno(GetLastError());
   }
@@ -1619,11 +1711,22 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *presult = (ret == FILE_TYPE_CHAR); return 0;
   }
 
+  ul_hapi int ulfd_setstd(int which, ulfd_t fd) {
+    DWORD std_handle;
+    switch(which) {
+    case ULFD_SET_STDIN: std_handle = STD_INPUT_HANDLE; break;
+    case ULFD_SET_STDOUT: std_handle = STD_OUTPUT_HANDLE; break;
+    case ULFD_SET_STDERR: std_handle = STD_ERROR_HANDLE; break;
+    default: return EINVAL;
+    }
+    return SetStdHandle(std_handle, fd) ? 0 : _ul_win32_toerrno(GetLastError());
+  }
+
   ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd) {
     return DuplicateHandle(
         GetCurrentProcess(), ofd,
         GetCurrentProcess(), pnfd,
-        0L, TRUE, DUPLICATE_SAME_ACCESS
+        0, TRUE, DUPLICATE_SAME_ACCESS
       ) ? 0 : _ul_win32_toerrno(GetLastError());
   }
 
@@ -3131,6 +3234,33 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     return ulfd_seek(fd, 0, ULFD_SEEK_END, poff);
   }
 
+  ul_hapi int ulfd_copy_file_range(
+    ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+    size_t len, size_t* pcopyed
+  ) {
+  #if (_GNU_SOURCE+0) && (__GLIBC__+0)
+    off_t nin, nout;
+    off_t* pin, *pout;
+    ssize_t copyed;
+
+    if(off_in) {
+      nin = ul_static_cast(off_t, *off_in); pin = &nin;
+      if(ul_unlikely(nin != *off_in)) return EOVERFLOW;
+    } else pin = NULL;
+    if(off_out) {
+      nout = ul_static_cast(off_t, *off_out); pout = &nout;
+      if(ul_unlikely(nout != *off_out)) return EOVERFLOW;
+    } else pout = NULL;
+
+    copyed = copy_file_range(fd_in, pin, fd_out, pout, len, 0u);
+    if(copyed < 0) return errno;
+    *pcopyed = ul_static_cast(size_t, copyed); return 0;
+  #else
+    (void)fd_in; (void)off_in; (void)fd_out; (void)off_out; (void)len; (void)pcopyed;
+    return ENOSYS;
+  #endif
+  }
+
   ul_hapi int ulfd_ffullsync(ulfd_t fd) {
   #ifdef F_FULLFSYNC
     return fcntl(fd, F_FULLFSYNC, 0) < 0 ? errno : 0;
@@ -3281,6 +3411,17 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     int r = isatty(fd);
     if(r < 0) return errno;
     *presult = (r > 0); return 0;
+  }
+
+  ul_hapi int ulfd_setstd(int which, ulfd_t fd) {
+    ulfd_t nfd;
+    switch(which) {
+    case ULFD_SET_STDIN: nfd = STDIN_FILENO; break;
+    case ULFD_SET_STDOUT: nfd = STDOUT_FILENO; break;
+    case ULFD_SET_STDERR: nfd = STDERR_FILENO; break;
+    default: return EINVAL;
+    }
+    return dup2(fd, nfd) < 0 ? errno : 0;
   }
 
   ul_hapi int ulfd_dup(ulfd_t* pnfd, ulfd_t ofd) {
