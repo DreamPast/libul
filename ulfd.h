@@ -316,8 +316,8 @@ typedef ulfd_int64_t ulfd_time_t;
 #define ULFD_O_SECURE    (1l << 26) /* Winodws: set secure mode (share read access but exclude write access) */
 #define ULFD_O_HIDDEN    (1l << 27) /* Windows: create hidden file */
 
-ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, ulfd_mode_t mode);
-ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, ulfd_mode_t mode);
+ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, ulfd_int32_t oflag, ulfd_mode_t mode);
+ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, ulfd_mode_t mode);
 ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, ulfd_mode_t mode);
 ul_hapi int ulfd_close(ulfd_t fd);
@@ -431,8 +431,8 @@ typedef struct ulfd_stat_t {
   ulfd_dev_t dev; /* ID of device containing file */
   ulfd_dev_t rdev; /* device ID (if special file) */
   ulfd_nlink_t nlink; /* number of hard links */
-
   ulfd_ino_t ino; /* POSIX: inode number */
+
   ulfd_uid_t uid; /* POSIX: user ID of owner */
   ulfd_gid_t gid; /* POSIX: group ID of owner */
   ulfd_mode_t mode; /* file type and mode */
@@ -560,7 +560,7 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
   #define _ULFD_UTEXT(text) L##text
   #define ULFD_UTEXT(text) _ULFD_UTEXT(text)
 
-  ul_hapi int ulfd_open_u(ulfd_t* pfd, const ulfd_uchar_t* path, long oflag, ulfd_mode_t mode) {
+  ul_hapi int ulfd_open_u(ulfd_t* pfd, const ulfd_uchar_t* path, ulfd_int32_t oflag, ulfd_mode_t mode) {
     return ulfd_open_w(pfd, path, oflag, mode);
   }
   ul_hapi int ulfd_creat_u(ulfd_t* pfd, const ulfd_uchar_t* path, ulfd_mode_t mode) {
@@ -667,7 +667,7 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
   typedef char ulfd_uchar_t;
   #define ULFD_UTEXT(text) text
 
-  ul_hapi int ulfd_open_u(ulfd_t* pfd, const ulfd_uchar_t* path, long oflag, ulfd_mode_t mode) {
+  ul_hapi int ulfd_open_u(ulfd_t* pfd, const ulfd_uchar_t* path, ulfd_int32_t oflag, ulfd_mode_t mode) {
     return ulfd_open(pfd, path, oflag, mode);
   }
   ul_hapi int ulfd_creat_u(ulfd_t* pfd, const ulfd_uchar_t* path, ulfd_mode_t mode) {
@@ -1284,7 +1284,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     }
   #endif
 
-  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, int mode) {
+  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, int mode) {
     DWORD access = 0;
     DWORD share;
     DWORD create;
@@ -1345,7 +1345,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pfd = handle;
     return 0;
   }
-  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, int mode) {
+  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, ulfd_int32_t oflag, int mode) {
     int ret;
     _ulfd_begin_to_wstr(wpath, path);
     ret = ulfd_open_w(pfd, wpath, oflag, mode);
@@ -2987,7 +2987,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
   }
 
 
-  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, long oflag, ulfd_mode_t mode) {
+  ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, ulfd_int32_t oflag, ulfd_mode_t mode) {
     int flag = 0;
     int fd;
 
@@ -3026,7 +3026,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pfd = fd;
     return 0;
   }
-  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, long oflag, ulfd_mode_t mode) {
+  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, ulfd_mode_t mode) {
     int ret;
     _ulfd_begin_to_str(path, wpath);
     ret = ulfd_open(pfd, path, oflag, mode);
@@ -3081,6 +3081,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pread_bytes = ul_static_cast(size_t, ret);
     return 0;
   #else
+    (void)fd; (void)buf; (void)count; (void)off; (void)pread_bytes;
     return ENOSYS;
   #endif
   }
@@ -3098,6 +3099,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pwriten_bytes = ul_static_cast(size_t, ret);
     return 0;
   #else
+    (void)fd; (void)buf; (void)count; (void)off; (void)pwriten_bytes;
     return ENOSYS;
   #endif
   }
@@ -3214,7 +3216,8 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       return ftruncate(fd, ul_static_cast(off_t, length)) < 0 ? errno : 0;
     #endif
   #else
-    (void)fd; (void)length; return ENOSYS;
+    (void)fd; (void)length;
+    return ENOSYS;
   #endif
   }
   ul_hapi int ulfd_ffilelength(ulfd_t fd, ulfd_int64_t* plength) {
@@ -3238,6 +3241,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     return fchmod(fd, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
   #else
+    (void)fd; (void)mode;
     return ENOSYS;
   #endif
   }
@@ -3248,6 +3252,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
     return fchown(fd, uid, gid) < 0 ? errno : 0;
   #else
+    (void)fd; (void)uid; (void)gid;
     return ENOSYS;
   #endif
   }
@@ -3267,6 +3272,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     tv[1].tv_usec = ul_static_cast(suseconds_t, (mtime % 1000) * 1000000);
     return futimes(fd, tv) < 0 ? errno : 0;
   #else
+    (void)fd; (void)atime; (void)mtime;
     return ENOSYS;
   #endif
   }
@@ -3284,6 +3290,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
   #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
     return (*pfp = fdopen(fd, mode)) == NULL ? errno : 0;
   #else
+    (void)pfp; (void)fd; (void)mode;
     return ENOSYS;
   #endif
   }
@@ -3298,6 +3305,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
   #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
     return (*pfd = fileno(fp)) < 0 ? errno : 0;
   #else
+    (void)pfd; (void)fp;
     return ENOSYS;
   #endif
   }
@@ -3314,6 +3322,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       return truncate(path, ul_static_cast(off_t, length)) < 0 ? errno : 0;
     #endif
   #else
+    (void)path; (void)length;
     return ENOSYS;
   #endif
   }
@@ -3424,6 +3433,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     adv = posix_madvise(addr, len, adv);
     return adv;
   #else
+    (void)addr; (void)len; (void)advice;
     return ENOSYS;
   #endif
   }
@@ -3482,7 +3492,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     ul_free(path); return ret;
   }
   ul_hapi int ulfd_getcwd_alloc(char** ppath) {
-  #if (_GNU_SOURCE+0)
+  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
     char* path = get_current_dir_name();
     #ifdef UL_FREE_DEFAULT
       *ppath = path;
@@ -3511,7 +3521,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
   #endif
   }
   ul_hapi int ulfd_getcwd_alloc_w(wchar_t** pwpath) {
-  #if (_GNU_SOURCE+0)
+  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
     int err;
     char* path = get_current_dir_name();
     if(ul_unlikely(path == NULL)) return errno;
@@ -3563,6 +3573,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       (_ULFD_GLIBC_CHECK_BELOW(2, 10) && (_ATFILE_SOURCE+0))
     return fchmodat(AT_FDCWD, path, _ulfd_to_full_mode(mode), AT_SYMLINK_NOFOLLOW);
   #else
+    (void)path; (void)mode;
     return ENOSYS;
   #endif
   }
@@ -3589,6 +3600,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       (_ULFD_GLIBC_CHECK_BELOW(2, 10) && (_ATFILE_SOURCE+0))
     return fchownat(AT_FDCWD, path, uid, gid, AT_SYMLINK_NOFOLLOW);
   #else
+    (void)path; (void)uid; (void)gid;
     return ENOSYS;
   #endif
   }
@@ -3626,6 +3638,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     tv[1].tv_nsec = ul_static_cast(suseconds_t, (mtime % 1000) * 1000000);
     return utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW) < 0 ? errno : 0;
   #else
+    (void)path; (void)atime; (void)mtime;
     return ENOSYS;
   #endif
   }
@@ -3712,6 +3725,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     _ulfd_stat_parse(out, &state);
     return 0;
   #else
+    (void)path; (void)out;
     return ENOSYS;
   #endif
   }
@@ -3744,6 +3758,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pmode = _ulfd_from_full_mode(state.st_mode);
     return 0;
   #else
+    (void)path; (void)pmode;
     return ENOSYS;
   #endif
   }
@@ -3877,6 +3892,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
       (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0))
     return symlink(source, target) < 0 ? errno : 0;
   #else
+    (void)target; (void)source;
     return ENOSYS;
   #endif
   }
@@ -3921,6 +3937,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     *pbuf = buf;
     return 0;
   #else
+    (void)pbuf; (void)path;
     return ENOSYS;
   #endif
   }
@@ -3955,7 +3972,7 @@ ul_hapi int ulfd_wstr_to_str_alloc(char** pstr, const wchar_t* wstr) {
     return ret;
   }
   ul_hapi int ulfd_realpath_alloc(char** presolved, const char* path) {
-  #if (_GNU_SOURCE+0)
+  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
     char* resolved = canonicalize_file_name(path);
     #ifdef UL_FREE_DEFAULT
       *presolved = resolved;
