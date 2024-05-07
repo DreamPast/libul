@@ -787,6 +787,118 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
 #endif
 
 
+#ifdef _WIN32
+#else
+  #ifdef _POSIX_C_SOURCE
+    #if (_POSIX_C_SOURCE+0) >= 200809L
+      #define ULFD_POSIX_HAS_pread
+      #define ULFD_POSIX_HAS_pwrite
+      #define ULFD_POSIX_HAS_utimensat
+      #define ULFD_POSIX_HAS_fchmod
+      #define ULFD_POSIX_HAS_fchmodat
+      #define ULFD_POSIX_HAS_fchown
+      #define ULFD_POSIX_HAS_fchownat
+      #define ULFD_POSIX_HAS_truncate
+      #define ULFD_POSIX_STAT_HAS_TIM
+    #endif
+    #if (_POSIX_C_SOURCE+0) >= 200112L
+      #define ULFD_POSIX_HAS_fsync
+      #define ULFD_POSIX_HAS_readlink
+      #define ULFD_POSIX_HAS_lstat
+      #define ULFD_POSIX_HAS_symlink
+      #define ULFD_POSIX_HAS_ftruncate
+    #endif
+    #if (_POSIX_C_SOURCE+0) >= 199309L
+      #define ULFD_POSIX_HAS_fdatasync
+    #endif
+    #if (_POSIX_C_SOURCE+0) >= 1
+      #define ULFD_POSIX_HAS_fileno
+      #define ULFD_POSIX_HAS_fdopen
+    #endif
+  #endif
+
+  #if defined(_POSIX_SOURCE) && (_POSIX_SOURCE+0)
+    #define ULFD_POSIX_HAS_fileno
+    #define ULFD_POSIX_HAS_fdopen
+  #endif
+
+  #ifdef _XOPEN_SOURCE
+    #if (_XOPEN_SOURCE+0) >= 700
+      #define ULFD_POSIX_HAS_utimensat
+      #define ULFD_POSIX_HAS_fchownat
+      #define ULFD_POSIX_HAS_fchmodat
+    #endif
+    #if (_XOPEN_SOURCE+0) >= 500
+      #define ULFD_POSIX_HAS_pread
+      #define ULFD_POSIX_HAS_pwrite
+      #define ULFD_POSIX_HAS_realpath
+      #define ULFD_POSIX_HAS_readlink
+      #define ULFD_POSIX_HAS_lstat
+      #define ULFD_POSIX_HAS_symlink
+      #define ULFD_POSIX_HAS_truncate
+      #define ULFD_POSIX_HAS_fchmod
+      #define ULFD_POSIX_HAS_ftruncate
+      #define ULFD_POSIX_HAS_fchown
+      #define ULFD_POSIX_HAS_fdatasync
+    #endif
+    #ifdef _XOPEN_SOURCE_EXTENDED
+      #if (_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0)
+        #define ULFD_POSIX_HAS_realpath
+        #define ULFD_POSIX_HAS_readlink
+        #define ULFD_POSIX_HAS_lstat
+        #define ULFD_POSIX_HAS_truncate
+        #define ULFD_POSIX_HAS_fchmod
+        #define ULFD_POSIX_HAS_ftruncate
+        #define ULFD_POSIX_HAS_fchown
+      #endif
+    #endif
+  #endif
+
+  #if defined(_BSD_SOURCE) && (_BSD_SOURCE+0)
+    #define ULFD_POSIX_HAS_realpath
+    #define ULFD_POSIX_HAS_readlink
+    #define ULFD_POSIX_HAS_lstat
+    #define ULFD_POSIX_HAS_symlink
+    #define ULFD_POSIX_HAS_truncate
+    #define ULFD_POSIX_HAS_fchmod
+    #define ULFD_POSIX_HAS_ftruncate
+    #define ULFD_POSIX_HAS_futimes
+    #define ULFD_POSIX_HAS_fchown
+    #define ULFD_POSIX_HAS_fsync
+    #define ULFD_POSIX_STAT_HAS_TIM
+  #endif
+
+  #if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE+0)
+    #define ULFD_POSIX_HAS_fileno
+    #define ULFD_POSIX_HAS_fdopen
+    #define ULFD_POSIX_HAS_fsync
+  #endif
+
+  #if defined(_ATFILE_SOURCE) && (_ATFILE_SOURCE+0)
+    #define ULFD_POSIX_HAS_utimensat
+    #define ULFD_POSIX_HAS_fchownat
+    #define ULFD_POSIX_HAS_fchmodat
+  #endif
+
+  #if defined(_DEFAULT_SOURCE) && (_DEFAULT_SOURCE+0)
+    #define ULFD_POSIX_HAS_futimes
+  #endif
+
+  #if defined(_SVID_SOURCE) && (_SVID_SOURCE+0)
+    #define ULFD_POSIX_STAT_HAS_TIM
+  #endif
+
+  #ifdef __GLIBC__
+    #if defined(_GNU_SOURCE) && (_GNU_SOURCE+0)
+      #define ULFD_POSIX_HAS_canonicalize_file_name
+      #define ULFD_POSIX_HAS_get_current_dir_name
+      #define ULFD_POSIX_HAS_copy_file_range
+      #define ULFD_POSIX_STAT_HAS_TIM
+    #endif
+  #endif
+#endif
+
+
 #ifndef ULOS_STR_TO_WSTR_DEFINED
   #if UINT_MAX >= 0xFFFFFFFF
     typedef unsigned ulos_str_to_wstr_u32_t;
@@ -3048,16 +3160,6 @@ do_return:
   #include <fcntl.h>
   #include <sys/stat.h>
 
-  #ifdef __GLIBC__
-    #define _ULFD_GLIBC_CHECK(MAJOR, MINOR) \
-      (__GLIBC__ > (MAJOR) || (__GLIBC__ == (MAJOR) && __GLIBC_MINOR__ >= (MINOR)))
-    #define _ULFD_GLIBC_CHECK_BELOW(MAJOR, MINOR) \
-      (__GLIBC__ < (MAJOR) || (__GLIBC__ == (MAJOR) && __GLIBC_MINOR__ <= (MINOR)))
-  #else
-    #define _ULFD_GLIBC_CHECK(MAJOR, MINOR) (0)
-    #define _ULFD_GLIBC_CHECK_BELOW(MAJOR, MINOR) (0)
-  #endif
-
   #define _ulfd_to_access_mode(mode) ul_static_cast(mode_t, (mode) & ULFD_S_IMASK)
   #define _ulfd_from_access_mode(mode) ul_static_cast(ulfd_mode_t, (mode) & ULFD_S_IMASK)
   ul_hapi mode_t _ulfd_to_full_mode(ulfd_mode_t mode) {
@@ -3171,8 +3273,7 @@ do_return:
     return 0;
   }
   ul_hapi int ulfd_pread(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
-  #if (_XOPEN_SOURCE+0) >= 500 || \
-      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L)
+  #ifdef ULFD_POSIX_HAS_pread
     ssize_t ret;
     #ifdef ULFD_HAS_LFS
       ret = pread64(fd, buf, count, off);
@@ -3189,8 +3290,7 @@ do_return:
   #endif
   }
   ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
-  #if (_XOPEN_SOURCE+0) >= 500 || \
-      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L)
+  #ifdef ULFD_POSIX_HAS_pwrite
     ssize_t ret;
     #ifdef ULFD_HAS_LFS
       ret = pwrite64(fd, buf, count, off);
@@ -3238,7 +3338,7 @@ do_return:
     ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
     size_t len, size_t* pcopyed
   ) {
-  #if (_GNU_SOURCE+0) && (__GLIBC__+0)
+  #ifdef ULFD_POSIX_HAS_copy_file_range
     off_t nin, nout;
     off_t* pin, *pout;
     ssize_t copyed;
@@ -3261,24 +3361,22 @@ do_return:
   #endif
   }
 
-  ul_hapi int ulfd_ffullsync(ulfd_t fd) {
-  #ifdef F_FULLFSYNC
-    return fcntl(fd, F_FULLFSYNC, 0) < 0 ? errno : 0;
-  #else
-    (void)fd; return ENOSYS;
-  #endif
-  }
   ul_hapi int ulfd_fsync(ulfd_t fd) {
-  #if _ULFD_GLIBC_CHECK(2, 16) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 15) && \
-        ((BSD_SOURCE+0) || (_XOPEN_SOURCE+0) || (_ULFD_GLIBC_CHECK(2, 8) && (_POSIX_C_SOURCE+0) >= 200112L)))
+  #ifdef ULFD_POSIX_HAS_fsync
     return fsync(fd) < 0 ? errno : 0;
   #else
     (void)fd; return ENOSYS;
   #endif
   }
+  ul_hapi int ulfd_ffullsync(ulfd_t fd) {
+  #ifdef F_FULLFSYNC
+    return fcntl(fd, F_FULLFSYNC, 0) < 0 ? errno : 0;
+  #else
+    return ulfd_fsync(fd);
+  #endif
+  }
   ul_hapi int ulfd_fdatasync(ulfd_t fd) {
-  #if (_POSIX_C_SOURCE+0) >= 199309L || (_XOPEN_SOURCE+0) >= 500
+  #ifdef ULFD_POSIX_HAS_fdatasync
     return fdatasync(fd) < 0 ? errno : 0;
   #else
     (void)fd; return ENOSYS;
@@ -3335,10 +3433,7 @@ do_return:
   }
 
   ul_hapi int ulfd_ftruncate(ulfd_t fd, ulfd_int64_t length) {
-  #if (_XOPEN_SOURCE+0) >= 500 || \
-      (_ULFD_GLIBC_CHECK(2, 4) && (_POSIX_C_SOURCE+0) >= 200112L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) || (_BSD_SOURCE+0)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_ftruncate
     #ifdef ULFD_HAS_LFS
       return ftruncate64(fd, length) < 0 ? errno : 0;
     #else
@@ -3362,13 +3457,7 @@ do_return:
     return 0;
   }
   ul_hapi int ulfd_fchmod(ulfd_t fd, ulfd_mode_t mode) {
-  #if (_ULFD_GLIBC_CHECK(2, 24) && (_POSIX_C_SOURCE+0) >= 199309L) || \
-      (_ULFD_GLIBC_CHECK(2, 19) && _ULFD_GLIBC_CHECK_BELOW(2, 23) && (_POSIX_C_SOURCE+0)) || \
-      (_ULFD_GLIBC_CHECK(2, 16) && _ULFD_GLIBC_CHECK_BELOW(2, 19) && ((_BSD_SOURCE+0) || (_POSIX_C_SOURCE+0))) || \
-      (_ULFD_GLIBC_CHECK(2, 12) && _ULFD_GLIBC_CHECK_BELOW(2, 16) && \
-        ((_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200809L)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 11) && ((_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_fchmod
     return fchmod(fd, _ulfd_to_access_mode(mode)) < 0 ? errno : 0;
   #else
     (void)fd; (void)mode;
@@ -3376,10 +3465,7 @@ do_return:
   #endif
   }
   ul_hapi int ulfd_fchown(ulfd_t fd, ulfd_uid_t uid, ulfd_gid_t gid) {
-  #if (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L) || \
-      (_XOPEN_SOURCE+0) >= 500 || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_fchown
     return fchown(fd, uid, gid) < 0 ? errno : 0;
   #else
     (void)fd; (void)uid; (void)gid;
@@ -3393,8 +3479,7 @@ do_return:
   }
   #include <sys/time.h>
   ul_hapi int ulfd_futime(ulfd_t fd, ulfd_int64_t atime, ulfd_int64_t mtime) {
-  #if (_ULFD_GLIBC_CHECK(2, 19) && (_DEFAULT_SOURCE+0)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0))
+  #ifdef ULFD_POSIX_HAS_futimes
     struct timeval tv[2];
     tv[0].tv_sec = ul_static_cast(time_t, atime / 1000);
     tv[0].tv_usec = ul_static_cast(suseconds_t, (atime % 1000) * 1000000);
@@ -3428,7 +3513,7 @@ do_return:
     return (*pnfd = dup(ofd)) < 0 ? errno : 0;
   }
   ul_hapi int ulfd_fdopen(FILE** pfp, ulfd_t fd, const char* mode) {
-  #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
+  #ifdef ULFD_POSIX_HAS_fdopen
     return (*pfp = fdopen(fd, mode)) == NULL ? errno : 0;
   #else
     (void)pfp; (void)fd; (void)mode;
@@ -3443,7 +3528,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_fileno(ulfd_t* pfd, FILE* fp) {
-  #if (_POSIX_C_SOURCE+0) >= 1 || (_XOPEN_SOURCE+0) || (_POSIX_SOURCE+0)
+  #ifdef ULFD_POSIX_HAS_fileno
     return (*pfd = fileno(fp)) < 0 ? errno : 0;
   #else
     (void)pfd; (void)fp;
@@ -3452,10 +3537,7 @@ do_return:
   }
 
   ul_hapi int ulfd_truncate(const char* path, ulfd_int64_t length) {
-  #if (_XOPEN_SOURCE+0) >= 500 || \
-      (_ULFD_GLIBC_CHECK(2, 12) && (_POSIX_C_SOURCE+0) >= 200809L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_truncate
     #ifdef ULFD_HAS_LFS
       return truncate64(path, length) < 0 ? errno : 0;
     #else
@@ -3633,7 +3715,7 @@ do_return:
     ul_free(path); return ret;
   }
   ul_hapi int ulfd_getcwd_alloc(char** ppath) {
-  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
+  #ifdef ULFD_POSIX_HAS_get_current_dir_name
     char* path = get_current_dir_name();
     #ifdef UL_FREE_DEFAULT
       *ppath = path;
@@ -3662,7 +3744,7 @@ do_return:
   #endif
   }
   ul_hapi int ulfd_getcwd_alloc_w(wchar_t** pwpath) {
-  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
+  #ifdef ULFD_POSIX_HAS_get_current_dir_name
     int err;
     char* path = get_current_dir_name();
     if(ul_unlikely(path == NULL)) return errno;
@@ -3710,8 +3792,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_lchmod(const char* path, ulfd_mode_t mode) {
-  #if (_ULFD_GLIBC_CHECK(2, 10) && ((_XOPEN_SOURCE+0) >= 700 || (_POSIX_C_SOURCE+0) >= 200809L)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 10) && (_ATFILE_SOURCE+0))
+  #ifdef ULFD_POSIX_HAS_fchmodat
     return fchmodat(AT_FDCWD, path, _ulfd_to_full_mode(mode), AT_SYMLINK_NOFOLLOW);
   #else
     (void)path; (void)mode;
@@ -3737,8 +3818,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_lchown(const char* path, ulfd_uid_t uid, ulfd_gid_t gid) {
-  #if (_ULFD_GLIBC_CHECK(2, 10) && ((_XOPEN_SOURCE+0) >= 700 || (_POSIX_C_SOURCE+0) >= 200809L)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 10) && (_ATFILE_SOURCE+0))
+  #ifdef ULFD_POSIX_HAS_fchownat
     return fchownat(AT_FDCWD, path, uid, gid, AT_SYMLINK_NOFOLLOW);
   #else
     (void)path; (void)uid; (void)gid;
@@ -3770,8 +3850,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_lutime(const char* path, ulfd_int64_t atime, ulfd_int64_t mtime) {
-  #if (_ULFD_GLIBC_CHECK(2, 10) && ((_XOPEN_SOURCE+0) >= 700 || (_POSIX_C_SOURCE+0) >= 200809L)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 10) && (_ATFILE_SOURCE+0))
+  #ifdef ULFD_POSIX_HAS_utimensat
     struct timespec tv[2];
     tv[0].tv_sec = ul_static_cast(time_t, atime / 1000);
     tv[0].tv_nsec = ul_static_cast(suseconds_t, (atime % 1000) * 1000000);
@@ -3807,8 +3886,7 @@ do_return:
     out->uid = state->st_uid;
     out->gid = state->st_gid;
     out->size = ul_static_cast(ulfd_int64_t, state->st_size);
-  #if (_ULFD_GLIBC_CHECK(2, 12) && ((_POSIX_C_SOURCE+0) >= 200809L || (_XOPEN_SOURCE+0) >= 700)) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && ((_BSD_SOURCE+0) || (_SVID_SOURCE+0)))
+  #ifdef ULFD_POSIX_STAT_HAS_TIM
     out->atime = ul_static_cast(ulfd_time_t, state->st_atim.tv_sec) * 1000
       + ul_static_cast(ulfd_time_t, state->st_atim.tv_nsec / 1000000);
     out->mtime = ul_static_cast(ulfd_time_t, state->st_mtim.tv_sec) * 1000
@@ -3854,8 +3932,7 @@ do_return:
     return 0;
   }
   ul_hapi int ulfd_lstat(const char* path, ulfd_stat_t* out) {
-  #if (_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500 || ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0)) || \
-      (_ULFD_GLIBC_CHECK(2, 10) && (_POSIX_C_SOURCE+0) >= 200112L)
+  #ifdef ULFD_POSIX_HAS_lstat
     #ifdef ULFD_HAS_LFS
       struct stat64 state;
       if(lstat64(path, &state) < 0) return errno;
@@ -3892,8 +3969,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_ltype(const char* path, ulfd_mode_t* pmode) {
-  #if (_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500 || ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0)) || \
-      (_ULFD_GLIBC_CHECK(2, 10) && (_POSIX_C_SOURCE+0) >= 200112L)
+  #ifdef ULFD_POSIX_HAS_lstat
     struct stat state;
     if(lstat(path, &state) < 0) return errno;
     *pmode = _ulfd_from_full_mode(state.st_mode);
@@ -4029,8 +4105,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_symlink(const char* target, const char* source) {
-  #if (_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0))
+  #ifdef ULFD_POSIX_HAS_symlink
     return symlink(source, target) < 0 ? errno : 0;
   #else
     (void)target; (void)source;
@@ -4047,9 +4122,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_readlink(const char* path, char* buf, size_t len) {
-  #if ((_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_readlink
     ssize_t l;
     l = readlink(path, buf, len);
     if(l < 0) return errno;
@@ -4062,9 +4135,7 @@ do_return:
   #endif
   }
   ul_hapi int ulfd_readlink_alloc(char** pbuf, const char* path) {
-  #if ((_XOPEN_SOURCE+0) >= 500 || (_POSIX_C_SOURCE+0) >= 200112L) || \
-      (_ULFD_GLIBC_CHECK_BELOW(2, 19) && (_BSD_SOURCE+0)) || \
-      ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #ifdef ULFD_POSIX_HAS_readlink
     char* buf;
     ssize_t sret;
 
@@ -4113,7 +4184,7 @@ do_return:
     return ret;
   }
   ul_hapi int ulfd_realpath_alloc(char** presolved, const char* path) {
-  #if (__GLIBC__+0) && (_GNU_SOURCE+0)
+  #ifdef ULFD_POSIX_HAS_canonicalize_file_name
     char* resolved = canonicalize_file_name(path);
     #ifdef UL_FREE_DEFAULT
       *presolved = resolved;
@@ -4124,7 +4195,7 @@ do_return:
       free(resolved);
       return *presolved == NULL ? ENOMEM : 0;
     #endif
-  #elif (_BSD_SOURCE+0) || (_XOPEN_SOURCE+0) >= 500 || ((_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0))
+  #elif defined(ULFD_POSIX_HAS_realpath)
     #if (_POSIX_C_SOURCE+0) >= 200809L
       char* resolved = realpath(path, NULL);
       #ifdef UL_FREE_DEFAULT
