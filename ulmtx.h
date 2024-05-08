@@ -104,6 +104,14 @@ Mutex
   #endif
 #endif /* ul_restrict */
 
+#ifndef ul_reinterpret_cast
+  #ifdef __cplusplus
+    #define ul_reinterpret_cast(T, val) reinterpret_cast<T>(val)
+  #else
+    #define ul_reinterpret_cast(T, val) ((T)(val))
+  #endif
+#endif /* ul_reinterpret_cast */
+
 #if defined(__cplusplus) && __cplusplus >= 201103L && __STDCPP_THREADS__ /* C++11 */
   #define ULMTX_API_CXX11
 #endif
@@ -115,7 +123,7 @@ Mutex
 #endif
 #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE) /* pthread API */
   #include <unistd.h>
-  #if defined(_POSIX_THREADS) && (_POSIX_THREADS + 0 >= 0)
+  #if defined(_POSIX_THREADS) && (_POSIX_THREADS+0) >= 0
     #define ULMTX_API_PTHREADS
   #endif
 #endif
@@ -167,12 +175,10 @@ Mutex
       return -1;
     }
   }
-  ul_hapi int ulmtx_destroy(ulmtx_t* mtx) noexcept {
+  ul_hapi void ulmtx_destroy(ulmtx_t* mtx) noexcept {
     try {
-      mtx->destroy(); return 0;
-    } catch(const std::system_error&) {
-      return -1;
-    }
+      mtx->destroy();
+    } catch(const std::system_error&) { }
   }
   /* return 1 if not locked */
   ul_hapi int ulmtx_trylock(ulmtx_t* mtx) noexcept {
@@ -198,7 +204,6 @@ Mutex
   }
 
 
-
   typedef _ULMTX_WRAPPER<std::recursive_mutex> ulrmtx_t;
   #define ULRMTX_INIT _ULMTX_WRAPPER<std::recursive_mutex>::create()
   ul_hapi int ulrmtx_init(ulrmtx_t* mtx) noexcept {
@@ -208,12 +213,10 @@ Mutex
       return -1;
     }
   }
-  ul_hapi int ulrmtx_destroy(ulrmtx_t* mtx) noexcept {
+  ul_hapi void ulrmtx_destroy(ulrmtx_t* mtx) noexcept {
     try {
-      mtx->destroy(); return 0;
-    } catch(const std::system_error&) {
-      return -1;
-    }
+      mtx->destroy();
+    } catch(const std::system_error&) { }
   }
   /* return 1 if not locked */
   ul_hapi int ulrmtx_trylock(ulrmtx_t* mtx) noexcept {
@@ -239,7 +242,6 @@ Mutex
   }
 
 
-
   typedef _ULMTX_WRAPPER<std::timed_mutex> ultmtx_t;
   #define ULTMTX_INIT _ULMTX_WRAPPER<std::timed_mutex>::create()
   ul_hapi int ultmtx_init(ultmtx_t* mtx) noexcept {
@@ -249,12 +251,10 @@ Mutex
       return -1;
     }
   }
-  ul_hapi int ultmtx_destroy(ultmtx_t* mtx) noexcept {
+  ul_hapi void ultmtx_destroy(ultmtx_t* mtx) noexcept {
     try {
-      mtx->destroy(); return 0;
-    } catch(const std::system_error&) {
-      return -1;
-    }
+      mtx->destroy();
+    } catch(const std::system_error&) { }
   }
   /* return 1 if not locked */
   ul_hapi int ultmtx_trylock(ultmtx_t* mtx) noexcept {
@@ -288,7 +288,6 @@ Mutex
   }
 
 
-
   typedef _ULMTX_WRAPPER<std::recursive_timed_mutex> ulrtmtx_t;
   #define ULRTMTX_INIT _ULMTX_WRAPPER<std::recursive_timed_mutex>::create()
   ul_hapi int ulrtmtx_init(ulrtmtx_t* mtx) noexcept {
@@ -298,12 +297,10 @@ Mutex
       return -1;
     }
   }
-  ul_hapi int ulrtmtx_destroy(ulrtmtx_t* mtx) noexcept {
+  ul_hapi void ulrtmtx_destroy(ulrtmtx_t* mtx) noexcept {
     try {
-      mtx->destroy(); return 0;
-    } catch(const std::system_error&) {
-      return -1;
-    }
+      mtx->destroy();
+    } catch(const std::system_error&) { }
   }
   /* return 1 if not locked */
   ul_hapi int ulrtmtx_trylock(ulrtmtx_t* mtx) noexcept {
@@ -340,7 +337,7 @@ Mutex
   #include <time.h>
   #include <limits.h>
 
-  ul_hapi int __ulmtx_get_timepoint(struct timespec* tp, unsigned long ms) {
+  ul_hapi int _ulmtx_get_timepoint(struct timespec* tp, unsigned long ms) {
     if(timespec_get(tp, TIME_UTC) != TIME_UTC) return -1;
     tp->tv_nsec += (ms % 1000 * 1000000);
     if(tp->tv_nsec >= 1000000000) { tp->tv_nsec -= 1000000000; ++tp->tv_sec; }
@@ -348,7 +345,6 @@ Mutex
     if(tp->tv_sec < 0) return -1;
     return 0;
   }
-
 
 
   typedef struct ulmtx_t { mtx_t m; } ulmtx_t;
@@ -372,7 +368,6 @@ Mutex
   }
 
 
-
   typedef struct ulrmtx_t { mtx_t m; } ulrmtx_t;
   ul_hapi int ulrmtx_init(ulrmtx_t* mtx) {
     return mtx_init(&mtx->m, mtx_plain | mtx_recursive) == thrd_success ? 0 : -1;
@@ -394,7 +389,6 @@ Mutex
   }
 
 
-
   typedef struct ultmtx_t { mtx_t m; } ultmtx_t;
   ul_hapi int ultmtx_init(ultmtx_t* mtx) {
     return mtx_init(&mtx->m, mtx_timed) == thrd_success ? 0 : -1;
@@ -411,7 +405,7 @@ Mutex
   /* return 1 if timedout */
   ul_hapi int ultmtx_timedlock(ultmtx_t* mtx, unsigned long ms) {
     struct timespec tp;
-    if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+    if(_ulmtx_get_timepoint(&tp, ms)) return -1;
     switch(mtx_timedlock(&mtx->m, &tp)) {
     case thrd_success: return 0;
     case thrd_busy: return 1;
@@ -424,7 +418,6 @@ Mutex
   ul_hapi int ultmtx_unlock(ultmtx_t* mtx) {
     return mtx_unlock(&mtx->m) == thrd_success ? 0 : -1;
   }
-
 
 
   typedef struct ulrtmtx_t { mtx_t m; } ulrtmtx_t;
@@ -443,7 +436,7 @@ Mutex
   /* return 1 if timedout */
   ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) {
     struct timespec tp;
-    if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+    if(_ulmtx_get_timepoint(&tp, ms)) return -1;
     switch(mtx_timedlock(&mtx->m, &tp)) {
     case thrd_success: return 0;
     case thrd_busy: return 1;
@@ -469,69 +462,61 @@ Mutex
     #endif
   #endif /* ul_static_cast */
 
-  #ifndef ul_reinterpret_cast
-    #ifdef __cplusplus
-      #define ul_reinterpret_cast(T, val) reinterpret_cast<T>(val)
-    #else
-      #define ul_reinterpret_cast(T, val) ((T)(val))
-    #endif
-  #endif /* ul_reinterpret_cast */
-
   #ifdef _WIN64
-    typedef __int64 __ulmtx_iptr_t;
-    #define __ulmtx_InterlockedExchange InterlockedExchange64
-    #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange64
-    #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet64
-    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd64
+    typedef __int64 _ulmtx_iptr_t;
+    #define _ulmtx_InterlockedExchange InterlockedExchange64
+    #define _ulmtx_InterlockedCompareExchange InterlockedCompareExchange64
+    #define _ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet64
+    #define _ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd64
   #else
-    typedef LONG __ulmtx_iptr_t;
-    #define __ulmtx_InterlockedExchange InterlockedExchange
-    #if _MSC_VER >= 1300
-      #define __ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet
-      #define __ulmtx_InterlockedCompareExchange InterlockedCompareExchange
+    typedef LONG _ulmtx_iptr_t;
+    #define _ulmtx_InterlockedExchange InterlockedExchange
+    #if !defined(_MSC_VER) || (_MSC_VER+0) >= 1300
+      #define _ulmtx_InterlockedBitTestAndSet InterlockedBitTestAndSet
+      #define _ulmtx_InterlockedCompareExchange InterlockedCompareExchange
     #else
-      #define __ulmtx_InterlockedCompareExchange(ptr, nv, ov) \
+      #define _ulmtx_InterlockedCompareExchange(ptr, nv, ov) \
         ul_reinterpret_cast(LONG, InterlockedCompareExchange( \
           ul_reinterpret_cast(void**, ptr), \
           ul_reinterpret_cast(void*, nv), \
           ul_reinterpret_cast(void*, ov) \
         ))
-      BOOLEAN __ulmtx_InterlockedBitTestAndSet(LONG volatile* obj, LONG off) {
+      BOOLEAN _ulmtx_InterlockedBitTestAndSet(LONG volatile* obj, LONG off) {
         LONG ov, nv;
         do {
           ov = (LONG)*obj; nv = (LONG)(ov | (LONG)(1 << off));
-        } while(__ulmtx_InterlockedCompareExchange((LONG*)obj, nv, ov) != ov);
+        } while(_ulmtx_InterlockedCompareExchange((LONG*)obj, nv, ov) != ov);
         return !!(ov >> off);
       }
     #endif
-    #define __ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd
+    #define _ulmtx_InterlockedExchangeAdd InterlockedExchangeAdd
   #endif
 
   typedef struct ultmtx_t {
-    __ulmtx_iptr_t event;
-    __ulmtx_iptr_t count;
+    _ulmtx_iptr_t event;
+    _ulmtx_iptr_t count;
   } ultmtx_t;
 
-  #define __ULTMTX_LOCK_FLAG_BIT (sizeof(__ulmtx_iptr_t) - 1)
-  #define __ULTMTX_EVENT_FLAG_BIT (sizeof(__ulmtx_iptr_t) - 2)
-  #define __ULTMTX_LOCK_FLAG ul_static_cast(__ulmtx_iptr_t, ul_static_cast(__ulmtx_iptr_t, 1) << __ULTMTX_LOCK_FLAG_BIT)
-  #define __ULTMTX_EVENT_FLAG ul_static_cast(__ulmtx_iptr_t, ul_static_cast(__ulmtx_iptr_t, 1) << __ULTMTX_EVENT_FLAG_BIT)
+  #define _ULTMTX_LOCK_FLAG_BIT (sizeof(_ulmtx_iptr_t) - 1)
+  #define _ULTMTX_EVENT_FLAG_BIT (sizeof(_ulmtx_iptr_t) - 2)
+  #define _ULTMTX_LOCK_FLAG ul_static_cast(_ulmtx_iptr_t, ul_static_cast(_ulmtx_iptr_t, 1) << _ULTMTX_LOCK_FLAG_BIT)
+  #define _ULTMTX_EVENT_FLAG ul_static_cast(_ulmtx_iptr_t, ul_static_cast(_ulmtx_iptr_t, 1) << _ULTMTX_EVENT_FLAG_BIT)
 
   #define ULTMTX_INIT { 0, 0 }
   ul_hapi int ultmtx_init(ultmtx_t* mtx) {
     mtx->count = 0; mtx->event = 0; return 0;
   }
   ul_hapi void ultmtx_destroy(ultmtx_t* mtx) {
-    const HANDLE old_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedExchange(&mtx->event, 0));
+    const HANDLE old_event = ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedExchange(&mtx->event, 0));
     if(old_event) CloseHandle(old_event);
   }
 
-  ul_hapi void __ultmtx_mark_waiting_and_try_lock(ultmtx_t* ul_restrict mtx, __ulmtx_iptr_t* ul_restrict old_count) {
+  ul_hapi void _ultmtx_mark_waiting_and_try_lock(ultmtx_t* ul_restrict mtx, _ulmtx_iptr_t* ul_restrict old_count) {
     /* Loop until the number of waiter has been incremented or we've taken the lock flag. */
     for(;;) {
-      const __ulmtx_iptr_t was_locked = *old_count & __ULTMTX_LOCK_FLAG;
-      const __ulmtx_iptr_t new_count = was_locked ? (*old_count + 1) : (*old_count | __ULTMTX_LOCK_FLAG);
-      const __ulmtx_iptr_t current = __ulmtx_InterlockedCompareExchange(&mtx->count, new_count, *old_count);
+      const _ulmtx_iptr_t was_locked = *old_count & _ULTMTX_LOCK_FLAG;
+      const _ulmtx_iptr_t new_count = was_locked ? (*old_count + 1) : (*old_count | _ULTMTX_LOCK_FLAG);
+      const _ulmtx_iptr_t current = _ulmtx_InterlockedCompareExchange(&mtx->count, new_count, *old_count);
       if(current == *old_count) {
         if(was_locked) *old_count = new_count;
         /* else don't update old_count, outside function will check lock flag and know we've taken the lock flag */
@@ -540,25 +525,25 @@ Mutex
       *old_count = current;
     }
   }
-  ul_hapi void __ultmtx_clear_waiting_and_try_lock(ultmtx_t* ul_restrict mtx, __ulmtx_iptr_t* ul_restrict old_count) {
-    *old_count = (*old_count & ~__ULTMTX_LOCK_FLAG) | __ULTMTX_EVENT_FLAG;
+  ul_hapi void _ultmtx_clear_waiting_and_try_lock(ultmtx_t* ul_restrict mtx, _ulmtx_iptr_t* ul_restrict old_count) {
+    *old_count = (*old_count & ~_ULTMTX_LOCK_FLAG) | _ULTMTX_EVENT_FLAG;
     /*
     Loop until someone else has taken the lock flag and cleared the event set flag
     or until we've taken the lock flag and cleared the event set flag and decrease
     the number of waiters.
     */
     for(;;) {
-      const __ulmtx_iptr_t new_count = ((*old_count & __ULTMTX_LOCK_FLAG) ? *old_count : ((*old_count - 1) | __ULTMTX_LOCK_FLAG)) & ~__ULTMTX_EVENT_FLAG;
-      const __ulmtx_iptr_t current = __ulmtx_InterlockedCompareExchange(&mtx->count, new_count, *old_count);
+      const _ulmtx_iptr_t new_count = ((*old_count & _ULTMTX_LOCK_FLAG) ? *old_count : ((*old_count - 1) | _ULTMTX_LOCK_FLAG)) & ~_ULTMTX_EVENT_FLAG;
+      const _ulmtx_iptr_t current = _ulmtx_InterlockedCompareExchange(&mtx->count, new_count, *old_count);
       if(current == *old_count) break;
       *old_count = current;
     }
   }
-  ul_hapi HANDLE __ultmtx_get_event(ultmtx_t* mtx) {
-    const HANDLE current_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedCompareExchange(&mtx->event, 0, 0));
+  ul_hapi HANDLE _ultmtx_get_event(ultmtx_t* mtx) {
+    const HANDLE current_event = ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedCompareExchange(&mtx->event, 0, 0));
     if(!current_event) {
       const HANDLE new_event = CreateEvent(0, FALSE, FALSE, NULL);
-      const HANDLE old_event = ul_reinterpret_cast(HANDLE, __ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0));
+      const HANDLE old_event = ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0));
       if(!old_event) {
         CloseHandle(new_event);
         return old_event;
@@ -569,12 +554,12 @@ Mutex
 
   /* return 1 if not locked */
   ul_hapi int ultmtx_trylock(ultmtx_t* mtx) {
-    return !__ulmtx_InterlockedBitTestAndSet(&mtx->count, __ULTMTX_LOCK_FLAG_BIT) ? 0 : 1;
+    return !_ulmtx_InterlockedBitTestAndSet(&mtx->count, _ULTMTX_LOCK_FLAG_BIT) ? 0 : 1;
   }
   /* return 1 if timeout */
   ul_hapi int ultmtx_timedlock(ultmtx_t* mtx, unsigned long ms) {
     LARGE_INTEGER freq, target, now;
-    __ulmtx_iptr_t old_count;
+    _ulmtx_iptr_t old_count;
 
     if(ultmtx_trylock(mtx)) return 0;
     if(!QueryPerformanceFrequency(&freq)) return -1;
@@ -583,70 +568,69 @@ Mutex
     if(target.QuadPart < 0) return -1;
 
     old_count = mtx->count;
-    __ultmtx_mark_waiting_and_try_lock(mtx, &old_count);
-    if(old_count & __ULTMTX_LOCK_FLAG) {
-      const HANDLE event = __ultmtx_get_event(mtx);
+    _ultmtx_mark_waiting_and_try_lock(mtx, &old_count);
+    if(old_count & _ULTMTX_LOCK_FLAG) {
+      const HANDLE event = _ultmtx_get_event(mtx);
       do {
         if(!QueryPerformanceCounter(&now)) {
-          __ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
+          _ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
           return -1;
         }
         if(now.QuadPart >= target.QuadPart) {
-          __ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
+          _ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
           return 0;
         }
         ms -= ul_static_cast(unsigned long, (target.QuadPart - now.QuadPart) * 1000 / freq.QuadPart);
         switch(WaitForSingleObjectEx(event, ms, FALSE)) {
         case WAIT_OBJECT_0:
         case WAIT_ABANDONED:
-          __ultmtx_clear_waiting_and_try_lock(mtx, &old_count);
+          _ultmtx_clear_waiting_and_try_lock(mtx, &old_count);
           break;
         case WAIT_IO_COMPLETION:
         case WAIT_TIMEOUT:
           break;
         case WAIT_FAILED:
         default:
-          __ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
+          _ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
           return -1;
         }
-      } while(old_count & __ULTMTX_LOCK_FLAG);
+      } while(old_count & _ULTMTX_LOCK_FLAG);
     }
     return 0;
   }
   ul_hapi int ultmtx_lock(ultmtx_t* mtx) {
-    __ulmtx_iptr_t old_count;
+    _ulmtx_iptr_t old_count;
     if(ultmtx_trylock(mtx) == 0) return 0;
     old_count = mtx->count;
-    __ultmtx_mark_waiting_and_try_lock(mtx, &old_count);
-    if(old_count & __ULTMTX_LOCK_FLAG) {
-      const HANDLE event = __ultmtx_get_event(mtx);
+    _ultmtx_mark_waiting_and_try_lock(mtx, &old_count);
+    if(old_count & _ULTMTX_LOCK_FLAG) {
+      const HANDLE event = _ultmtx_get_event(mtx);
       do {
         switch(WaitForSingleObjectEx(event, INFINITE, FALSE)) {
         case WAIT_OBJECT_0:
         case WAIT_ABANDONED:
-          __ultmtx_clear_waiting_and_try_lock(mtx, &old_count);
+          _ultmtx_clear_waiting_and_try_lock(mtx, &old_count);
           break;
         case WAIT_IO_COMPLETION:
         case WAIT_TIMEOUT:
           break;
         case WAIT_FAILED:
         default:
-          __ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
+          _ulmtx_InterlockedExchangeAdd(&mtx->count, -1);
           return -1;
         }
-      } while(old_count & __ULTMTX_LOCK_FLAG);
+      } while(old_count & _ULTMTX_LOCK_FLAG);
     }
     return 0;
   }
   ul_hapi int ultmtx_unlock(ultmtx_t* mtx) {
-    const __ulmtx_iptr_t old_count = __ulmtx_InterlockedExchangeAdd(&mtx->count, __ULTMTX_LOCK_FLAG);
-    if(!(old_count & __ULTMTX_EVENT_FLAG) && (old_count > __ULTMTX_LOCK_FLAG)) {
-      if(!__ulmtx_InterlockedBitTestAndSet(&mtx->count, __ULTMTX_EVENT_FLAG_BIT))
-        SetEvent(__ultmtx_get_event(mtx));
+    const _ulmtx_iptr_t old_count = _ulmtx_InterlockedExchangeAdd(&mtx->count, _ULTMTX_LOCK_FLAG);
+    if(!(old_count & _ULTMTX_EVENT_FLAG) && (old_count > _ULTMTX_LOCK_FLAG)) {
+      if(!_ulmtx_InterlockedBitTestAndSet(&mtx->count, _ULTMTX_EVENT_FLAG_BIT))
+        SetEvent(_ultmtx_get_event(mtx));
     }
     return 0;
   }
-
 
 
   typedef struct ulmtx_t { ultmtx_t mtx; } ulmtx_t;
@@ -659,7 +643,6 @@ Mutex
   ul_hapi int ulmtx_trylock(ulmtx_t* mtx) { return ultmtx_trylock(&mtx->mtx); }
   ul_hapi int ulmtx_lock(ulmtx_t* mtx) { return ultmtx_lock(&mtx->mtx); }
   ul_hapi int ulmtx_unlock(ulmtx_t* mtx) { return ultmtx_unlock(&mtx->mtx); }
-
 
 
   typedef struct ulrtmtx_t {
@@ -679,7 +662,7 @@ Mutex
   ul_hapi int ulrtmtx_trylock(ulrtmtx_t* mtx) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-  #if _MSC_VER >= 1300L
+  #if !defined(_MSC_VER) || (_MSC_VER+0) < 1300L
     if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
   #else
     if(ul_reinterpret_cast(LONG,
@@ -698,7 +681,7 @@ Mutex
   ul_hapi int ulrtmtx_lock(ulrtmtx_t* mtx) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-  #if _MSC_VER >= 1300L
+  #if !defined(_MSC_VER) || (_MSC_VER+0) >= 1300L
     if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
   #else
     if(ul_reinterpret_cast(LONG,
@@ -717,7 +700,7 @@ Mutex
   ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-  #if _MSC_VER >= 1300L
+  #if !defined(_MSC_VER) || (_MSC_VER+0) >= 1300L
     if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
   #else
     if(ul_reinterpret_cast(LONG,
@@ -739,7 +722,6 @@ Mutex
     }
     return 0;
   }
-
 
 
   typedef struct ulrmtx_t { ulrtmtx_t mtx; } ulrmtx_t;
@@ -773,7 +755,7 @@ Mutex
     #define ULMTX_API_PTHREAD_USE_RECURSIVE_TIMEDLOCK
   #endif
 
-  ul_hapi int __ulmtx_get_timepoint(struct timespec* tp, unsigned long ms) {
+  ul_hapi int _ulmtx_get_timepoint(struct timespec* tp, unsigned long ms) {
     if(timespec_get(tp, TIME_UTC) != TIME_UTC) return -1;
     tp->tv_nsec += (ms % 1000 * 1000000);
     if(tp->tv_nsec >= 1000000000) { tp->tv_nsec -= 1000000000; ++tp->tv_sec; }
@@ -806,7 +788,6 @@ Mutex
   }
 
 
-
   #ifdef ULMTX_API_PTHREAD_USE_TIMEDLOCK
     typedef struct ultmtx_t { pthread_mutex_t m; } ultmtx_t;
     #define ULTMTX_INIT { PTHREAD_MUTEX_INITIALIZER }
@@ -827,7 +808,7 @@ Mutex
     /* return 1 if timedout */
     ul_hapi int ultmtx_timedlock(ultmtx_t* mtx, unsigned long ms) {
       struct timespec tp;
-      if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+      if(_ulmtx_get_timepoint(&tp, ms)) return -1;
       switch(pthread_mutex_timedlock(&mtx->m, &tp)) {
       case ETIMEDOUT: return 1;
       case 0: return 0;
@@ -874,7 +855,7 @@ Mutex
       struct timespec tp;
       int ret;
 
-      if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+      if(_ulmtx_get_timepoint(&tp, ms)) return -1;
       if(pthread_mutex_lock(&mtx->m)) return -1;
       while(mtx->locked) {
         ret = pthread_cond_timedwait(&mtx->cond, &mtx->m, &tp);
@@ -904,7 +885,6 @@ Mutex
       return 0;
     }
   #endif
-
 
 
   #ifdef ULMTX_API_PTHREAD_USE_MUTEXATTR_SETTYPE
@@ -1000,7 +980,6 @@ Mutex
   #endif
 
 
-
   #ifdef ULMTX_API_PTHREAD_USE_RECURSIVE_TIMEDLOCK
     typedef struct ulrtmtx_t { pthread_mutex_t m; } ulrtmtx_t;
 
@@ -1030,7 +1009,7 @@ Mutex
     /* return 1 if timedout */
     ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) {
       struct timespec tp;
-      if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+      if(_ulmtx_get_timepoint(&tp, ms)) return -1;
       switch(pthread_mutex_timedlock(&mtx->m, &tp)) {
       case ETIMEDOUT: return 1;
       case 0: return 0;
@@ -1084,7 +1063,7 @@ Mutex
       struct timespec tp;
       int ret;
 
-      if(__ulmtx_get_timepoint(&tp, ms)) return -1;
+      if(_ulmtx_get_timepoint(&tp, ms)) return -1;
       if(pthread_mutex_lock(&mtx->m)) return -1;
       if(mtx->locked && pthread_equal(mtx->owner, pthread_self())) {
         ++mtx->count; pthread_mutex_unlock(&mtx->m); return 0;
@@ -1129,5 +1108,104 @@ Mutex
   #endif
 
 #endif
+
+
+#ifndef ul_unreachable
+  #if defined(__GNUC__) || defined(__clang__)
+    #define ul_unreachable() __builtin_unreachable()
+  #elif defined(_MSC_VER)
+    #define ul_unreachable() __assume(0)
+  #else
+    #define ul_unreachable() ((void)0)
+  #endif
+#endif /* ul_unreachable */
+
+#define ULMTX_REF_PLAIN           0u
+#define ULMTX_REF_TIMED           1u
+#define ULMTX_REF_RECURSIVE       2u
+#define ULMTX_REF_RECURSIVE_TIMED 3u
+#define ULMTX_REF_TIMED_RECURSIVE 3u
+
+ul_hapi int ulmtx_ref_init(void* mtx, unsigned type) {
+  switch(type) {
+  case ULMTX_REF_PLAIN:
+    return ulmtx_init(ul_reinterpret_cast(ulmtx_t*, mtx));
+  case ULMTX_REF_TIMED:
+    return ultmtx_init(ul_reinterpret_cast(ultmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE:
+    return ulrmtx_init(ul_reinterpret_cast(ulrmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE_TIMED:
+    return ulrtmtx_init(ul_reinterpret_cast(ulrtmtx_t*, mtx));
+  default:
+    ul_unreachable(); return -1;
+  }
+}
+ul_hapi void ulmtx_ref_destroy(void* mtx, unsigned type) {
+  switch(type) {
+  case ULMTX_REF_PLAIN:
+    ulmtx_destroy(ul_reinterpret_cast(ulmtx_t*, mtx)); break;
+  case ULMTX_REF_TIMED:
+    ultmtx_destroy(ul_reinterpret_cast(ultmtx_t*, mtx)); break;
+  case ULMTX_REF_RECURSIVE:
+    ulrmtx_destroy(ul_reinterpret_cast(ulrmtx_t*, mtx)); break;
+  case ULMTX_REF_RECURSIVE_TIMED:
+    ulrtmtx_destroy(ul_reinterpret_cast(ulrtmtx_t*, mtx)); break;
+  default:
+    ul_unreachable();
+  }
+}
+ul_hapi int ulmtx_ref_lock(void* mtx, unsigned type) {
+  switch(type) {
+  case ULMTX_REF_PLAIN:
+    return ulmtx_lock(ul_reinterpret_cast(ulmtx_t*, mtx));
+  case ULMTX_REF_TIMED:
+    return ultmtx_lock(ul_reinterpret_cast(ultmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE:
+    return ulrmtx_lock(ul_reinterpret_cast(ulrmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE_TIMED:
+    return ulrtmtx_lock(ul_reinterpret_cast(ulrtmtx_t*, mtx));
+  default:
+    ul_unreachable(); return -1;
+  }
+}
+ul_hapi int ulmtx_ref_unlock(void* mtx, unsigned type) {
+  switch(type) {
+  case ULMTX_REF_PLAIN:
+    return ulmtx_unlock(ul_reinterpret_cast(ulmtx_t*, mtx));
+  case ULMTX_REF_TIMED:
+    return ultmtx_unlock(ul_reinterpret_cast(ultmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE:
+    return ulrmtx_unlock(ul_reinterpret_cast(ulrmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE_TIMED:
+    return ulrtmtx_unlock(ul_reinterpret_cast(ulrtmtx_t*, mtx));
+  default:
+    ul_unreachable(); return -1;
+  }
+}
+ul_hapi int ulmtx_ref_trylock(void* mtx, unsigned type) {
+  switch(type) {
+  case ULMTX_REF_PLAIN:
+    return ulmtx_trylock(ul_reinterpret_cast(ulmtx_t*, mtx));
+  case ULMTX_REF_TIMED:
+    return ultmtx_trylock(ul_reinterpret_cast(ultmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE:
+    return ulrmtx_trylock(ul_reinterpret_cast(ulrmtx_t*, mtx));
+  case ULMTX_REF_RECURSIVE_TIMED:
+    return ulrtmtx_trylock(ul_reinterpret_cast(ulrtmtx_t*, mtx));
+  default:
+    ul_unreachable(); return -1;
+  }
+}
+ul_hapi int ulmtx_ref_timedlock(void* mtx, unsigned type, unsigned long ms) {
+  switch(type) {
+  case ULMTX_REF_TIMED:
+    return ultmtx_timedlock(ul_reinterpret_cast(ultmtx_t*, mtx), ms);
+  case ULMTX_REF_RECURSIVE_TIMED:
+    return ulrtmtx_timedlock(ul_reinterpret_cast(ulrtmtx_t*, mtx), ms);
+  default:
+    ul_unreachable(); return -1;
+  }
+}
+
 
 #endif /* ULMTX_H */
