@@ -133,19 +133,43 @@ Mutex
   #include <mutex>
   #include <system_error>
   #include <utility>
+  #include <functional>
+  #include <cstring>
 
-  typedef struct ulmtx_t { std::mutex* m; } ulmtx_t;
-  #define ULMTX_INIT { new std::mutex{} }
+  template<class T>
+  struct _ULMTX_WRAPPER {
+    union {
+      char dummy;
+      T val;
+    };
+
+    _ULMTX_WRAPPER() { }
+    _ULMTX_WRAPPER(const _ULMTX_WRAPPER& o) { memcpy(reinterpret_cast<void*>(this), &o, sizeof(o)); }
+    ~_ULMTX_WRAPPER() { }
+    _ULMTX_WRAPPER& operator=(const _ULMTX_WRAPPER& o) { memcpy(reinterpret_cast<void*>(this), &o, sizeof(o)); return *this; }
+
+    template<class... Args>
+    static _ULMTX_WRAPPER create(Args&& ...args) {
+      _ULMTX_WRAPPER ret; new(&ret.val) T(std::forward<Args>(args)...); return ret;
+    }
+
+    template<class... Args>
+    void construct(Args&& ...args) { new(&val) T(std::forward<Args>(args)...); }
+    void destroy() { val.~T(); }
+  };
+
+  typedef _ULMTX_WRAPPER<std::mutex> ulmtx_t;
+  #define ULMTX_INIT _ULMTX_WRAPPER<std::mutex>::create()
   ul_hapi int ulmtx_init(ulmtx_t* mtx) noexcept {
     try {
-      mtx->m = new std::mutex{}; return 0;
+      mtx->construct(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulmtx_destroy(ulmtx_t* mtx) noexcept {
     try {
-      delete mtx->m; return 0;
+      mtx->destroy(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -153,21 +177,21 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ulmtx_trylock(ulmtx_t* mtx) noexcept {
     try {
-      return mtx->m->try_lock() ? 0 : 1;
+      return mtx->val.try_lock() ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulmtx_lock(ulmtx_t* mtx) noexcept {
     try {
-      mtx->m->lock(); return 0;
+      mtx->val.lock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulmtx_unlock(ulmtx_t* mtx) noexcept {
     try {
-      mtx->m->unlock(); return 0;
+      mtx->val.unlock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -175,18 +199,18 @@ Mutex
 
 
 
-  typedef struct ulrmtx_t { std::recursive_mutex* m; } ulrmtx_t;
-  #define ULRMTX_INIT { new std::recursive_mutex{} }
+  typedef _ULMTX_WRAPPER<std::recursive_mutex> ulrmtx_t;
+  #define ULRMTX_INIT _ULMTX_WRAPPER<std::recursive_mutex>::create()
   ul_hapi int ulrmtx_init(ulrmtx_t* mtx) noexcept {
     try {
-      mtx->m = new std::recursive_mutex{}; return 0;
+      mtx->construct(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrmtx_destroy(ulrmtx_t* mtx) noexcept {
     try {
-      delete mtx->m; return 0;
+      mtx->destroy(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -194,21 +218,21 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ulrmtx_trylock(ulrmtx_t* mtx) noexcept {
     try {
-      return mtx->m->try_lock() ? 0 : 1;
+      return mtx->val.try_lock() ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrmtx_lock(ulrmtx_t* mtx) noexcept {
     try {
-      mtx->m->lock(); return 0;
+      mtx->val.lock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrmtx_unlock(ulrmtx_t* mtx) noexcept {
     try {
-      mtx->m->unlock(); return 0;
+      mtx->val.unlock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -216,18 +240,18 @@ Mutex
 
 
 
-  typedef struct ultmtx_t { std::timed_mutex* m; } ultmtx_t;
-  #define ULTMTX_INIT { new std::timed_mutex{} }
+  typedef _ULMTX_WRAPPER<std::timed_mutex> ultmtx_t;
+  #define ULTMTX_INIT _ULMTX_WRAPPER<std::timed_mutex>::create()
   ul_hapi int ultmtx_init(ultmtx_t* mtx) noexcept {
     try {
-      mtx->m = new std::timed_mutex{}; return 0;
+      mtx->construct(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ultmtx_destroy(ultmtx_t* mtx) noexcept {
     try {
-      delete mtx->m; return 0;
+      mtx->destroy(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -235,7 +259,7 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ultmtx_trylock(ultmtx_t* mtx) noexcept {
     try {
-      return mtx->m->try_lock() ? 0 : 1;
+      return mtx->val.try_lock() ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -243,21 +267,21 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ultmtx_timedlock(ultmtx_t* mtx, unsigned long ms) noexcept {
     try {
-      return mtx->m->try_lock_for(std::chrono::milliseconds(ms)) ? 0 : 1;
+      return mtx->val.try_lock_for(std::chrono::milliseconds(ms)) ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ultmtx_lock(ultmtx_t* mtx) noexcept {
     try {
-      mtx->m->lock(); return 0;
+      mtx->val.lock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ultmtx_unlock(ultmtx_t* mtx) noexcept {
     try {
-      mtx->m->unlock(); return 0;
+      mtx->val.unlock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -265,18 +289,18 @@ Mutex
 
 
 
-  typedef struct ulrtmtx_t { std::recursive_timed_mutex* m; } ulrtmtx_t;
-  #define ULRTMTX_INIT { new std::recursive_timed_mutex{} }
+  typedef _ULMTX_WRAPPER<std::recursive_timed_mutex> ulrtmtx_t;
+  #define ULRTMTX_INIT _ULMTX_WRAPPER<std::recursive_timed_mutex>::create()
   ul_hapi int ulrtmtx_init(ulrtmtx_t* mtx) noexcept {
     try {
-      mtx->m = new std::recursive_timed_mutex{}; return 0;
+      mtx->construct(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrtmtx_destroy(ulrtmtx_t* mtx) noexcept {
     try {
-      delete mtx->m; return 0;
+      mtx->destroy(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -284,7 +308,7 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ulrtmtx_trylock(ulrtmtx_t* mtx) noexcept {
     try {
-      return mtx->m->try_lock() ? 0 : 1;
+      return mtx->val.try_lock() ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
@@ -292,21 +316,21 @@ Mutex
   /* return 1 if not locked */
   ul_hapi int ulrtmtx_timedlock(ulrtmtx_t* mtx, unsigned long ms) noexcept {
     try {
-      return mtx->m->try_lock_for(std::chrono::milliseconds(ms)) ? 0 : 1;
+      return mtx->val.try_lock_for(std::chrono::milliseconds(ms)) ? 0 : 1;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrtmtx_lock(ulrtmtx_t* mtx) noexcept {
     try {
-      mtx->m->lock(); return 0;
+      mtx->val.lock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
   }
   ul_hapi int ulrtmtx_unlock(ulrtmtx_t* mtx) noexcept {
     try {
-      mtx->m->unlock(); return 0;
+      mtx->val.unlock(); return 0;
     } catch(const std::system_error&) {
       return -1;
     }
