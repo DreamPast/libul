@@ -128,17 +128,26 @@ Date and time (like `Date` in Javascript)
   typedef long long uldate_int_t;
   typedef unsigned long long uldate_uint_t;
   #define ULDATE_INT_MIN LLONG_MIN
+  #define ULDATE_INT_MAX LLONG_MAX
+  #define ULDATE_UINT_MAX ULLONG_MAX
   #define ULDATE_INT_C(val) val ## ll
+  #define ULDATE_UINT_C(val) val ## ull
 #elif defined(_WIN32)
   typedef __int64 uldate_int_t;
   typedef unsigned __int64 uldate_uint_t;
   #define ULDATE_INT_MIN 0x8000000000000000i64
+  #define ULDATE_INT_MAX 0x7FFFFFFFFFFFFFFFi64
+  #define ULDATE_UINT_MAX 0xFFFFFFFFFFFFFFFFui64
   #define ULDATE_INT_C(val) val ## i64
+  #define ULDATE_UINT_C(val) val ## ui64
 #else
   typedef long uldate_int_t;
   typedef unsigned long uldate_uint_t;
   #define ULDATE_INT_MIN LONG_MIN
+  #define ULDATE_INT_MAX LONG_MAX
+  #define ULDATE_UINT_MAX ULONG_MAX
   #define ULDATE_INT_C(val) val ## l
+  #define ULDATE_UINT_C(val) val ## ul
 #endif
 
 typedef uldate_int_t uldate_t;
