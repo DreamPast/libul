@@ -3,7 +3,7 @@ Text decoder and encoder. (encoder is slow)
 
 
 # Dependences
-  <stdint.h>/"ulstdint.h"
+  8-bit integer, 16-bit integer, 32-bit integer
 
 
 # Config Macros
@@ -211,45 +211,26 @@ Text decoder and encoder. (encoder is slow)
   #define ULDECODE_NO_EUC_KR
 #endif
 
-#ifndef UL_HAS_STDINT_H
-  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
-    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
-      (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-    #include <unistd.h>
-    #if defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200100L)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
-      || (defined(__cplusplus) && __cplusplus >= 201103L)
-    #define UL_HAS_STDINT_H
-  #endif
-  #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(__has_include)
-    #if __has_include(<stdint.h>)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-#endif /* UL_HAS_STDINT_H */
-#ifdef UL_HAS_STDINT_H
-  #include <stdint.h>
-#else
-  #include "ulstdint.h" /* polyfill */
-#endif
-
 #include <stddef.h>
-typedef uint8_t  uldecode_u8_t;
-typedef uint16_t uldecode_u16_t;
-typedef uint32_t uldecode_u32_t;
+#include <limits.h>
+
+#if CHAR_BIT != 8 || CHAR_MAX != 0x7F
+  #error "uldecode.h: `char` is not 8-bit"
+#endif
+typedef unsigned char uldecode_u8_t;
+
+#if SHRT_MAX != 0x7FFF
+  #error "uldecode.h: `short` is not 16-bit"
+#endif
+typedef unsigned short uldecode_u16_t;
+
+#if INT_MAX == 0x7FFFFFFF
+  typedef unsigned uldecode_u32_t;
+#elif LONG_MAX == 0x7FFFFFFF
+  typedef unsigned long uldecode_u32_t;
+#else
+  #error "uldecode.h: neither `int` nor `long` is 32-bit"
+#endif
 
 #define ULDECODE_EOF -1
 #define ULENCODE_EOF ul_static_cast(uldecode_u32_t, -1)

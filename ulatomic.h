@@ -6,7 +6,7 @@ Atomic (32-bit, and optional 64-bit)
   - C++11 / C11 => full support if atomic is available
   - Visual Studio => 32-bit atomic, and 64-bit for newer versions
   - GNUC 4.7 => full support
-  - C89 + <stdint.h>/"ulstdint.h" => compatible support (by defining `ULATOMIC_NEEDED`)
+  - 32-bit integer, and optional 64-bit integer => compatible support (by defining `ULATOMIC_NEEDED`)
 
 
 # Config macro
@@ -223,45 +223,10 @@ Atomic (32-bit, and optional 64-bit)
   #define ULATOMIC_API_GNUC
 #endif
 
-#if !defined(ULATOMIC_API_MSVC) || defined(ULATOMIC_API_CXX11) || defined(ULATOMIC_API_C11)
-  #ifndef UL_HAS_STDINT_H
-    #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
-      #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
-        #define UL_HAS_STDINT_H
-      #endif
-    #endif
-    #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
-        (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
-      #define UL_HAS_STDINT_H
-    #endif
-    #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-      #include <unistd.h>
-      #if defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200100L)
-        #define UL_HAS_STDINT_H
-      #endif
-    #endif
-    #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103L)
-      #define UL_HAS_STDINT_H
-    #endif
-    #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
-      #define UL_HAS_STDINT_H
-    #endif
-    #if defined(__has_include)
-      #if __has_include(<stdint.h>)
-        #define UL_HAS_STDINT_H
-      #endif
-    #endif
-  #endif /* UL_HAS_STDINT_H */
-  #ifdef UL_HAS_STDINT_H
-    #include <stdint.h>
-  #else
-    #include "ulstdint.h" /* polyfill */
-  #endif
-#endif
 
 #if defined(ULATOMIC_API_C11)
   #include <stdatomic.h>
+  #include <stdint.h>
 
   typedef memory_order ulatomic_memory_order_t;
   #define ulatomic_memory_order_relaxed memory_order_relaxed
@@ -339,6 +304,7 @@ Atomic (32-bit, and optional 64-bit)
   #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         atomic_fetch_and_explicit(obj, val, ord)
 #elif defined(ULATOMIC_API_CXX11)
   #include <atomic>
+  #include <cstdint>
 
   typedef ::std::memory_order ulatomic_memory_order_t;
   #define ulatomic_memory_order_relaxed ::std::memory_order::memory_order_relaxed
@@ -852,6 +818,7 @@ Atomic (32-bit, and optional 64-bit)
   #endif
 #elif defined(ULATOMIC_API_GNUC)
   #include <limits.h>
+  #include <stdint.h>
 
   typedef int ulatomic_memory_order_t;
   #define ulatomic_memory_order_relaxed __ATOMIC_RELAXED
@@ -920,6 +887,33 @@ Atomic (32-bit, and optional 64-bit)
   #define ulatomic_flag_test_and_set(obj)               ul_static_cast(int, ulatomic_flag_test_and_set_explicit(obj, ulatomic_memory_order_seq_cst))
   #define ulatomic_flag_clear(obj)                      ulatomic_flag_clear_explicit(obj, ulatomic_memory_order_seq_cst)
 #elif defined(ULATOMIC_NEEDED)
+  #include <limits.h>
+
+  #if INT_MAX == 0x7FFFFFFF
+    typedef int _ulatomic_i32_t;
+  #elif LONG_MAX == 0x7FFFFFFF
+    typedef long _ulatomic_i32_t;
+  #else
+    #error "ulatomic.h: neither `int` nor `long` is 32-bit"
+  #endif
+
+  #if defined(LLONG_MAX) && (LLONG_MAX >> 62) >= 1
+    #if LLONG_MAX == 0x7FFFFFFFFFFFFFFF
+      typedef long long _ulatomic_i64_t;
+      #define _ULATOMIC_I64_DEFINED
+    #endif
+  #endif
+  #if !defined(_ULATOMIC_I64_DEFINED) && defined(LONG_MAX) && (LONG_MAX >> 62) >= 1
+    #if LONG_MAX == 0x7FFFFFFFFFFFFFFF
+      typedef long _ulatomic_i64_t;
+      #define _ULATOMIC_I64_DEFINED
+    #endif
+  #endif
+  #if !defined(_ULATOMIC_I64_DEFINED) && defined(_WIN32)
+    typedef __int64 _ulatomic_i64_t;
+    #define _ULATOMIC_I64_DEFINED
+  #endif
+
   #define ulatomic_memory_order_relaxed 0
   #define ulatomic_memory_order_consume 1
   #define ulatomic_memory_order_acquire 2
@@ -930,25 +924,25 @@ Atomic (32-bit, and optional 64-bit)
   #define ulatomic_thread_fence(ord) ((void)0)
   #define ulatomic_signal_fence(ord) ((void)0)
 
-  typedef int32_t ulatomic32_t;
-  typedef int32_t ulatomic32_raw_t;
+  typedef _ulatomic_i32_t ulatomic32_t;
+  typedef _ulatomic_i32_t ulatomic32_raw_t;
   #define ULATOMIC32_INIT (0)
   #define ulatomic_store_32(obj, val) (void)(*(obj) = (val))
   #define ulatomic_load_32(obj) (*(obj))
-  ul_hapi int32_t ulatomic_exchange_32(ulatomic32_t* obj, int32_t val) { int32_t old = *obj; *obj = val; return old; }
-  ul_hapi int ulatomic_compare_exchange_strong_32(ulatomic32_t* obj, int32_t* expected, int32_t val) {
+  ul_hapi _ulatomic_i32_t ulatomic_exchange_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj = val; return old; }
+  ul_hapi int ulatomic_compare_exchange_strong_32(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
     if(*obj == *expected) { *obj = val; return 1; }
     else { *expected = *obj; return 0; }
   }
-  ul_hapi int ulatomic_compare_exchange_weak_32(ulatomic32_t* obj, int32_t* expected, int32_t val) {
+  ul_hapi int ulatomic_compare_exchange_weak_32(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
     if(*obj == *expected) { *obj = val; return 1; }
     else { *expected = *obj; return 0; }
   }
-  ul_hapi int32_t ulatomic_fetch_add_32(ulatomic32_t* obj, int32_t val) { int32_t old = *obj; *obj += val; return old; }
-  ul_hapi int32_t ulatomic_fetch_sub_32(ulatomic32_t* obj, int32_t val) { int32_t old = *obj; *obj -= val; return old; }
-  ul_hapi int32_t ulatomic_fetch_or_32(ulatomic32_t* obj, int32_t val)  { int32_t old = *obj; *obj |= val; return old; }
-  ul_hapi int32_t ulatomic_fetch_xor_32(ulatomic32_t* obj, int32_t val) { int32_t old = *obj; *obj ^= val; return old; }
-  ul_hapi int32_t ulatomic_fetch_and_32(ulatomic32_t* obj, int32_t val) { int32_t old = *obj; *obj &= val; return old; }
+  ul_hapi _ulatomic_i32_t ulatomic_fetch_add_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj += val; return old; }
+  ul_hapi _ulatomic_i32_t ulatomic_fetch_sub_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj -= val; return old; }
+  ul_hapi _ulatomic_i32_t ulatomic_fetch_or_32(ulatomic32_t* obj, _ulatomic_i32_t val)  { _ulatomic_i32_t old = *obj; *obj |= val; return old; }
+  ul_hapi _ulatomic_i32_t ulatomic_fetch_xor_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj ^= val; return old; }
+  ul_hapi _ulatomic_i32_t ulatomic_fetch_and_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj &= val; return old; }
   #define ulatomic_store_explicit_32(obj, val, ord)                             ulatomic_store_32(obj, val)
   #define ulatomic_load_explicit_32(obj, ord)                                   ulatomic_load_32(obj)
   #define ulatomic_exchange_explicit_32(obj, val, ord)                          ulatomic_exchange_32(obj, val)
@@ -960,26 +954,26 @@ Atomic (32-bit, and optional 64-bit)
   #define ulatomic_fetch_xor_explicit_32(obj, val, ord)                         ulatomic_fetch_xor_32(obj, val)
   #define ulatomic_fetch_and_explicit_32(obj, val, ord)                         ulatomic_fetch_and_32(obj, val)
 
-  #ifdef INT64_MAX
-    typedef int64_t ulatomic64_t;
-    typedef int64_t ulatomic64_raw_t;
+  #ifdef _ULATOMIC_I64_DEFINED
+    typedef _ulatomic_i64_t ulatomic64_t;
+    typedef _ulatomic_i64_t ulatomic64_raw_t;
     #define ULATOMIC64_INIT (0)
     #define ulatomic_store_64(obj, val) (void)(*(obj) = (val))
     #define ulatomic_load_64(obj) (*(obj))
-    ul_hapi int64_t ulatomic_exchange_64(ulatomic64_t* obj, int64_t val) { int64_t old = *obj; *obj = val; return old; }
-    ul_hapi int ulatomic_compare_exchange_strong_64(ulatomic64_t* obj, int64_t* expected, int64_t val) {
+    ul_hapi _ulatomic_i64_t ulatomic_exchange_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj = val; return old; }
+    ul_hapi int ulatomic_compare_exchange_strong_64(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
       if(*obj == *expected) { *obj = val; return 1; }
       else { *expected = *obj; return 0; }
     }
-    ul_hapi int ulatomic_compare_exchange_weak_64(ulatomic64_t* obj, int64_t* expected, int64_t val) {
+    ul_hapi int ulatomic_compare_exchange_weak_64(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
       if(*obj == *expected) { *obj = val; return 1; }
       else { *expected = *obj; return 0; }
     }
-    ul_hapi int64_t ulatomic_fetch_add_64(ulatomic64_t* obj, int64_t val) { int64_t old = *obj; *obj += val; return old; }
-    ul_hapi int64_t ulatomic_fetch_sub_64(ulatomic64_t* obj, int64_t val) { int64_t old = *obj; *obj -= val; return old; }
-    ul_hapi int64_t ulatomic_fetch_or_64(ulatomic64_t* obj, int64_t val)  { int64_t old = *obj; *obj |= val; return old; }
-    ul_hapi int64_t ulatomic_fetch_xor_64(ulatomic64_t* obj, int64_t val) { int64_t old = *obj; *obj ^= val; return old; }
-    ul_hapi int64_t ulatomic_fetch_and_64(ulatomic64_t* obj, int64_t val) { int64_t old = *obj; *obj &= val; return old; }
+    ul_hapi _ulatomic_i64_t ulatomic_fetch_add_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj += val; return old; }
+    ul_hapi _ulatomic_i64_t ulatomic_fetch_sub_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj -= val; return old; }
+    ul_hapi _ulatomic_i64_t ulatomic_fetch_or_64(ulatomic64_t* obj, _ulatomic_i64_t val)  { _ulatomic_i64_t old = *obj; *obj |= val; return old; }
+    ul_hapi _ulatomic_i64_t ulatomic_fetch_xor_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj ^= val; return old; }
+    ul_hapi _ulatomic_i64_t ulatomic_fetch_and_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj &= val; return old; }
     #define ulatomic_store_explicit_64(obj, val, ord)                             ulatomic_store_64(obj, val)
     #define ulatomic_load_explicit_64(obj, ord)                                   ulatomic_load_64(obj)
     #define ulatomic_exchange_explicit_64(obj, val, ord)                          ulatomic_exchange_64(obj, val)
@@ -991,6 +985,8 @@ Atomic (32-bit, and optional 64-bit)
     #define ulatomic_fetch_xor_explicit_64(obj, val, ord)                         ulatomic_fetch_xor_64(obj, val)
     #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         ulatomic_fetch_and_64(obj, val)
   #endif
+
+  #undef _ULATOMIC_I64_DEFINED
 #endif
 
 #if !defined(ULATOMIC_FLAG_INIT) && defined(ULATOMIC32_INIT)

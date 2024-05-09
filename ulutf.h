@@ -3,7 +3,7 @@ UTF support
 
 
 # Dependences:
-  <stdint.h>/"ulstdint.h"
+  8-bit integer, 16-bit integer, 32-bit integer
 
 
 # License
@@ -108,41 +108,6 @@ UTF support
   #define ul_fallthrough ((void)0)
 #endif /* ul_fallthrough */
 
-#ifndef UL_HAS_STDINT_H
-  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
-    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
-      (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-    #include <unistd.h>
-    #if defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200100L)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
-      || (defined(__cplusplus) && __cplusplus >= 201103L)
-    #define UL_HAS_STDINT_H
-  #endif
-  #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(__has_include)
-    #if __has_include(<stdint.h>)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-#endif /* UL_HAS_STDINT_H */
-#ifdef UL_HAS_STDINT_H
-  #include <stdint.h>
-#else
-  #include "ulstdint.h" /* polyfill */
-#endif
-
 #ifndef ul_static_cast
   #ifdef __cplusplus
     #define ul_static_cast(T, val) static_cast<T>(val)
@@ -151,35 +116,55 @@ UTF support
   #endif
 #endif /* ul_static_cast */
 
-ul_hapi int ulutf16_is_first_surrogate(uint16_t c) {
+#include <limits.h>
+
+#if CHAR_BIT != 8 || CHAR_MAX != 0x7F
+  #error "uldecode.h: `char` is not 8-bit"
+#endif
+typedef unsigned char ulutf_u8_t;
+
+#if SHRT_MAX != 0x7FFF
+  #error "uldecode.h: `short` is not 16-bit"
+#endif
+typedef unsigned short ulutf_u16_t;
+
+#if INT_MAX == 0x7FFFFFFF
+  typedef unsigned ulutf_u32_t;
+#elif LONG_MAX == 0x7FFFFFFF
+  typedef unsigned long ulutf_u32_t;
+#else
+  #error "uldecode.h: neither `int` nor `long` is 32-bit"
+#endif
+
+ul_hapi int ulutf16_is_first_surrogate(ulutf_u16_t c) {
 	return 0xD800u <= c && c <= 0xDBFFu;
 }
-ul_hapi int ulutf16_is_second_surrogate(uint16_t c) {
+ul_hapi int ulutf16_is_second_surrogate(ulutf_u16_t c) {
 	return 0xDC00u <= c && c <= 0xDFFFu;
 }
-ul_hapi uint32_t ulutf16_combine_surrogate(uint16_t c0, uint16_t c1) {
-	return (ul_static_cast(uint32_t, c0 & 0x3FFu) << 10 | (c1 & 0x3FFu)) + 0x10000u;
+ul_hapi ulutf_u32_t ulutf16_combine_surrogate(ulutf_u16_t c0, ulutf_u16_t c1) {
+	return (ul_static_cast(ulutf_u32_t, c0 & 0x3FFu) << 10 | (c1 & 0x3FFu)) + 0x10000u;
 }
-ul_hapi int ulutf32_is_valid(uint32_t u) {
+ul_hapi int ulutf32_is_valid(ulutf_u32_t u) {
 	return !(u > 0x10FFFFu || (0xD800 <= u && u <= 0xDFFFu));
 }
-ul_hapi int ulutf16_width(uint32_t c) {
+ul_hapi int ulutf16_width(ulutf_u32_t c) {
   if(ul_unlikely(c >= 0xD800 && c <= 0xDFFF)) return -1;
   if(ul_likely(c < 0x10000u)) return 1;
   if(c <= 0x10FFFFu) return 2;
   return -1;
 }
-ul_hapi uint16_t ulutf16_make_first_surrogate(uint32_t u) {
-  return ul_static_cast(uint16_t, 0xD800 | ((u - 0x10000u) >> 10));
+ul_hapi ulutf_u16_t ulutf16_make_first_surrogate(ulutf_u32_t u) {
+  return ul_static_cast(ulutf_u16_t, 0xD800 | ((u - 0x10000u) >> 10));
 }
-ul_hapi uint16_t ulutf16_make_second_surrogate(uint32_t u) {
-  return ul_static_cast(uint16_t, 0xDC00 | (u & 0x3FFu));
+ul_hapi ulutf_u16_t ulutf16_make_second_surrogate(ulutf_u32_t u) {
+  return ul_static_cast(ulutf_u16_t, 0xDC00 | (u & 0x3FFu));
 }
 
-ul_hapi int ulutf8_is_trail(uint8_t c) { return (c & 0xC0u) == 0x80u; }
-ul_hapi int ulutf8_is_lead(uint8_t c) { return (c & 0xC0u) != 0x80u; }
+ul_hapi int ulutf8_is_trail(ulutf_u8_t c) { return (c & 0xC0u) == 0x80u; }
+ul_hapi int ulutf8_is_lead(ulutf_u8_t c) { return (c & 0xC0u) != 0x80u; }
 
-ul_hapi int ulutf8_trail_length(uint8_t c) {
+ul_hapi int ulutf8_trail_length(ulutf_u8_t c) {
   if(ul_likely(c <= 0x7Fu)) return 0;
 	switch(c) {
   case 0xC0: case 0xC1: case 0xC2: case 0xC3:
@@ -207,7 +192,7 @@ ul_hapi int ulutf8_trail_length(uint8_t c) {
     return -1;
 	}
 }
-ul_hapi int ulutf8_width(uint32_t u) {
+ul_hapi int ulutf8_width(ulutf_u32_t u) {
   if(ul_likely(u <= 0x7Fu)) return 1;
   if(u <= 0x7FFu) return 2;
   if(u <= 0xFFFFu) return 3;
@@ -218,42 +203,42 @@ ul_hapi int ulutf8_width(uint32_t u) {
 }
 
 /* return bytes writen */
-ul_hapi int ulutf8_encode(uint8_t* p, uint32_t u) {
-  uint8_t* q = p;
+ul_hapi int ulutf8_encode(ulutf_u8_t* p, ulutf_u32_t u) {
+  ulutf_u8_t* q = p;
   if(u <= 0x7Fu) {
-    *q++ = ul_static_cast(uint8_t, u);
+    *q++ = ul_static_cast(ulutf_u8_t, u);
   } else {
     if(u <= 0x7FFu) {
-      *q++ = ul_static_cast(uint8_t, (u >> 6) | 0xC0);
+      *q++ = ul_static_cast(ulutf_u8_t, (u >> 6) | 0xC0);
     } else {
       if(u <= 0xFFFFu) {
-        *q++ = ul_static_cast(uint8_t, (u >> 12) | 0xE0);
+        *q++ = ul_static_cast(ulutf_u8_t, (u >> 12) | 0xE0);
       } else {
         if(ul_likely(u <= 0x1FFFFF)) {
-          *q++ = ul_static_cast(uint8_t, (u >> 18) | 0xF0);
+          *q++ = ul_static_cast(ulutf_u8_t, (u >> 18) | 0xF0);
         } else {
           if(u <= 0x3FFFFFFu) {
-            *q++ = ul_static_cast(uint8_t, (u >> 24) | 0xF8);
+            *q++ = ul_static_cast(ulutf_u8_t, (u >> 24) | 0xF8);
           } else if(u <= 0x7FFFFFFFu) {
-            *q++ = ul_static_cast(uint8_t, (u >> 30) | 0xFC);
-            *q++ = ul_static_cast(uint8_t, ((u >> 24) & 0x3F) | 0x80);
+            *q++ = ul_static_cast(ulutf_u8_t, (u >> 30) | 0xFC);
+            *q++ = ul_static_cast(ulutf_u8_t, ((u >> 24) & 0x3F) | 0x80);
           } else {
             return 0;
           }
-          *q++ = ul_static_cast(uint8_t, ((u >> 18) & 0x3F) | 0x80);
+          *q++ = ul_static_cast(ulutf_u8_t, ((u >> 18) & 0x3F) | 0x80);
         }
-        *q++ = ul_static_cast(uint8_t, ((u >> 12) & 0x3F) | 0x80);
+        *q++ = ul_static_cast(ulutf_u8_t, ((u >> 12) & 0x3F) | 0x80);
       }
-      *q++ = ul_static_cast(uint8_t, ((u >> 6) & 0x3F) | 0x80);
+      *q++ = ul_static_cast(ulutf_u8_t, ((u >> 6) & 0x3F) | 0x80);
     }
-    *q++ = ul_static_cast(uint8_t, (u & 0x3F) | 0x80);
+    *q++ = ul_static_cast(ulutf_u8_t, (u & 0x3F) | 0x80);
   }
   return ul_static_cast(int, q - p);
 }
-ul_hapi uint32_t ulutf8_decode(const uint8_t* p, size_t n, const uint8_t** pp) {
-  uint32_t u, umin;
+ul_hapi ulutf_u32_t ulutf8_decode(const ulutf_u8_t* p, size_t n, const ulutf_u8_t** pp) {
+  ulutf_u32_t u, umin;
   int l;
-  uint8_t c;
+  ulutf_u8_t c;
 
   u = *p++;
   if(u < 0x7Fu) {
@@ -282,38 +267,38 @@ ul_hapi uint32_t ulutf8_decode(const uint8_t* p, size_t n, const uint8_t** pp) {
 	  l = 3; umin = 0x200000u; u &= 0x3; break;
   case 0xFC: case 0xFD:
 	  l = 4; umin = 0x4000000u; u &= 0x1; break;
-  default: return ul_static_cast(uint32_t, -1);
+  default: return ul_static_cast(ulutf_u32_t, -1);
 	}
 
-  if(ul_unlikely(ul_static_cast(size_t, l) >= n)) return ul_static_cast(uint32_t, -1);
+  if(ul_unlikely(ul_static_cast(size_t, l) >= n)) return ul_static_cast(ulutf_u32_t, -1);
   switch(l) {
   case 4:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(ulutf_u32_t, -1);
     u = (u << 6) | (c & 0x3F);
     ul_fallthrough;
   case 3:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(ulutf_u32_t, -1);
     u = (u << 6) | (c & 0x3F);
     ul_fallthrough;
   case 2:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(ulutf_u32_t, -1);
     u = (u << 6) | (c & 0x3F);
     ul_fallthrough;
   case 1:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(ulutf_u32_t, -1);
     u = (u << 6) | (c & 0x3F);
     ul_fallthrough;
   case 0:
     c = *p++;
-    if(c < 0x80 || c >= 0xC0) return ul_static_cast(uint32_t, -1);
+    if(c < 0x80 || c >= 0xC0) return ul_static_cast(ulutf_u32_t, -1);
     u = (u << 6) | (c & 0x3F);
   }
 
-  if(u < umin) return ul_static_cast(uint32_t, -1);
+  if(u < umin) return ul_static_cast(ulutf_u32_t, -1);
   *pp = p;
   return u;
 }

@@ -3,7 +3,7 @@ Red-Black Tree (fast but restricted version)
 
 
 # Dependence
-  <stdint.h>/"ulstdint.h"
+  C89 (if we cannot detect it correctly, we assume `size_t` is big enough to hold a pointer)
 
 
 # License
@@ -149,6 +149,43 @@ Red-Black Tree (fast but restricted version)
 
 #include <assert.h>
 #include <stdlib.h>
+#include <limits.h>
+
+#if defined(UINTPTR_MAX)
+  typedef uintptr_t ulrb_uptr_t;
+#elif defined(_WIN32) || defined(_WIN64)
+  #if defined(_WIN64)
+    typedef unsigned __int64 ulrb_uptr_t;
+  #else
+    typedef unsigned ulrb_uptr_t;
+  #endif
+#elif defined(__SIZEOF_POINTER__)
+  #if __SIZEOF_POINTER__ == 8
+    #define _ULRB_UPTR_MAX 0xFFFFFFFFFFFFFFFF
+  #elif __SIZEOF_POINTER__ == 4
+    #define _ULRB_UPTR_MAX 0xFFFFFFFF
+  #elif __SIZEOF_POINTER__ == 2
+    #define _ULRB_UPTR_MAX 0xFFFF
+  #elif __SIZEOF_POINTER__ == 1
+    #define _ULRB_UPTR_MAX 0xFF
+  #endif
+  #if defined(ULLONG_MAX) && ULLONG_MAX == _ULRB_UPTR_MAX
+    typedef unsigned long long ulrb_uptr_t;
+  #elif defined(ULONG_MAX) && ULONG_MAX == _ULRB_UPTR_MAX
+    typedef unsigned long ulrb_uptr_t;
+  #elif defined(UINT_MAX) && UINT_MAX == _ULRB_UPTR_MAX
+    typedef unsigned ulrb_uptr_t;
+  #elif defined(USHRT_MAX) && USHRT_MAX == _ULRB_UPTR_MAX
+    typedef unsigned short ulrb_uptr_t;
+  #elif defined(UCHAR_MAX) && UCHAR_MAX == _ULRB_UPTR_MAX
+    typedef unsigned char ulrb_uptr_t;
+  #else
+    typedef size_t ulrb_uptr_t; /* we assume `size_t` is big enough to hold a pointer */
+  #endif
+  #undef _ULRB_UPTR_MAX
+#else
+  typedef size_t ulrb_uptr_t; /* we assume `size_t` is big enough to hold a pointer */
+#endif
 
 /**
  * The node of Red-Black tree.
@@ -217,18 +254,18 @@ typedef int (*ulrb_comp_t)(void* opaque, const void* lhs, const void* rhs);
 
 #define ulrb_node_get_left(node) ((node)->left)
 #define ulrb_node_set_left(node, child) ((node)->left = (child))
-#define ulrb_node_get_right(node) ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(intptr_t, (node)->right) & ul_static_cast(intptr_t, ~1))
+#define ulrb_node_get_right(node) ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1))
 #define ulrb_node_set_right(node, child) ((node)->right = ul_reinterpret_cast(ulrb_node_t*, \
-  ul_reinterpret_cast(intptr_t, ul_reinterpret_cast(ulrb_node_t*, child)) | (ul_reinterpret_cast(intptr_t, (node)->right) & 1)))
-#define ulrb_node_get_color(node) (ul_reinterpret_cast(intptr_t, (node)->right) & 1)
+  ul_reinterpret_cast(ulrb_uptr_t, ul_reinterpret_cast(ulrb_node_t*, child)) | (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & 1)))
+#define ulrb_node_get_color(node) (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & 1)
 #define ulrb_node_set_color(node, color) ((node)->right = \
-  ul_reinterpret_cast(ulrb_node_t*, (ul_reinterpret_cast(intptr_t, (node)->right) & ul_static_cast(intptr_t, ~1)) | (color)))
-#define ulrb_node_set_red(node) ((node)->right = ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(intptr_t, (node)->right) | 1))
+  ul_reinterpret_cast(ulrb_node_t*, (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1)) | ul_static_cast(unsigned, color)))
+#define ulrb_node_set_red(node) ((node)->right = ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) | 1))
 #define ulrb_node_set_black(node) ((node)->right = \
-   ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(intptr_t, (node)->right) & ul_static_cast(intptr_t, ~1)))
+   ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1)))
 
 ul_hapi void ulrb_node_init(ulrb_node_t* node) {
-  assert((ul_reinterpret_cast(intptr_t, node) & 1) == 0);
+  assert((ul_reinterpret_cast(ulrb_uptr_t, node) & 1) == 0);
   node->left = 0;
   node->right = ul_reinterpret_cast(ulrb_node_t*, 1);
 }

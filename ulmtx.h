@@ -662,7 +662,7 @@ Mutex
   ul_hapi int ulrtmtx_trylock(ulrtmtx_t* mtx) {
     int ret;
     const LONG thread_id = ul_static_cast(LONG, GetCurrentThreadId());
-  #if !defined(_MSC_VER) || (_MSC_VER+0) < 1300L
+  #if !defined(_MSC_VER) || (_MSC_VER+0) >= 1300L
     if(InterlockedCompareExchange(&mtx->thread_id, 0, 0) == thread_id) { ++mtx->count; return 0; }
   #else
     if(ul_reinterpret_cast(LONG,
