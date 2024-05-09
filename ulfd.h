@@ -1376,6 +1376,8 @@ do_return:
     #define INVALID_FILE_ATTRIBUTES ul_static_cast(DWORD, -1)
   #endif
 
+  #define _ULFD_POINTER_TO_FUNCTION(T, val) ul_reinterpret_cast(T, ul_reinterpret_cast(UINT_PTR, (val)))
+
   #if (_WIN32_WINNT+0) >= 0x0500 /* Windows 2000 */
     #define _ulfd_SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer, dwMoveMethod) \
       SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer, dwMoveMethod)
@@ -1466,7 +1468,7 @@ do_return:
     stored = _ulfd_compare_exchange(hold, NULL, NULL);
     if(stored == INVALID_HANDLE_VALUE) return NULL;
     if(stored != NULL) return ul_reinterpret_cast(HANDLE, stored);
-    stored = ul_reinterpret_cast(HANDLE, GetProcAddress(_kernel32, name));
+    stored = ul_reinterpret_cast(HANDLE, ul_reinterpret_cast(UINT_PTR, GetProcAddress(_kernel32, name)));
     if(stored == NULL) _ulfd_compare_exchange(hold, INVALID_HANDLE_VALUE, NULL);
     else _ulfd_compare_exchange(hold, stored, NULL);
     return ul_reinterpret_cast(HANDLE, stored);
@@ -1475,12 +1477,12 @@ do_return:
   typedef DWORD (WINAPI *_ulfd_GetFinalPathNameByHandleW_t)(HANDLE hFile, LPWSTR lpszFilePath, DWORD cchFilePath, DWORD dwFlags);
   #if (_WIN32_WINNT+0) >= 0x0600 /* Windows Vista */
     ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
-      return ul_reinterpret_cast(_ulfd_GetFinalPathNameByHandleW_t, GetFinalPathNameByHandleW);
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_GetFinalPathNameByHandleW_t, GetFinalPathNameByHandleW);
     }
   #else
     ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
       static HANDLE hold = NULL;
-      return ul_reinterpret_cast(_ulfd_GetFinalPathNameByHandleW_t, _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_GetFinalPathNameByHandleW_t, _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
     }
   #endif
 
@@ -1997,10 +1999,10 @@ do_return:
     return FlushViewOfFile(addr, len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
   ul_hapi int ulfd_mlock(const void* addr, size_t len) {
-    return VirtualLock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
+    return VirtualLock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
-    return VirtualUnlock(ul_const_cast(LPVOID, addr), len) ? 0 : _ul_win32_toerrno(GetLastError());
+    return VirtualUnlock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
 
   typedef struct _ulfd_WIN32_MEMORY_RANGE_ENTRY {
@@ -2010,12 +2012,12 @@ do_return:
   typedef BOOL (WINAPI *_ulfd_PrefetchVirtualMemory_t)(HANDLE, unsigned __int3264, _ulfd_WIN32_MEMORY_RANGE_ENTRY*, ULONG);
   #if (_WIN32_WINNT+0) >= 0x0602 /* Windows 8 */
     ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
-      return ul_reinterpret_cast(_ulfd_PrefetchVirtualMemory_t, PrefetchVirtualMemory);
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_PrefetchVirtualMemory_t, PrefetchVirtualMemory);
     }
   #else
     ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
       static HANDLE hold = NULL;
-      return ul_reinterpret_cast(_ulfd_PrefetchVirtualMemory_t, _ulfd_kernel32_function(&hold, "PrefetchVirtualMemory"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_PrefetchVirtualMemory_t, _ulfd_kernel32_function(&hold, "PrefetchVirtualMemory"));
     }
   #endif
   ul_hapi int ulfd_madvise(void* addr, size_t len, int advice) {
@@ -2170,7 +2172,7 @@ do_return:
     );
     ul_hapi _ulfd_TzSpecificLocalTimeToSystemTime_t _ulfd_get_TzSpecificLocalTimeToSystemTime(void) {
       static HANDLE hold = NULL; /* Windows XP (but VC6 don't define it) */
-      return ul_reinterpret_cast(_ulfd_TzSpecificLocalTimeToSystemTime_t, _ulfd_kernel32_function(&hold, "TzSpecificLocalTimeToSystemTime"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_TzSpecificLocalTimeToSystemTime_t, _ulfd_kernel32_function(&hold, "TzSpecificLocalTimeToSystemTime"));
     }
   #endif
 
@@ -2789,7 +2791,7 @@ do_return:
     );
     ul_hapi _ulfd_CreateHardLinkW_t _ulfd_get_CreateHardLinkW(void) {
       static HANDLE hold = NULL;
-      return ul_reinterpret_cast(_ulfd_CreateHardLinkW_t, _ulfd_kernel32_function(&hold, "CreateHardLinkW"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateHardLinkW_t, _ulfd_kernel32_function(&hold, "CreateHardLinkW"));
     }
     ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
       _ulfd_CreateHardLinkW_t sysfunc = _ulfd_get_CreateHardLinkW();
@@ -2812,12 +2814,12 @@ do_return:
   );
   #if (_WIN32_WINNT+0) >= 0x0600 /* Windows Vista */
     ul_hapi _ulfd_CreateSymbolicLinkW_t _ulfd_get_CreateSymbolicLinkW(void) {
-      return ul_reinterpret_cast(_ulfd_CreateSymbolicLinkW_t, CreateSymbolicLinkW);
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateSymbolicLinkW_t, CreateSymbolicLinkW);
     }
   #else
     ul_hapi _ulfd_CreateSymbolicLinkW_t _ulfd_get_CreateSymbolicLinkW(void) {
       static HANDLE hold = NULL;
-      return ul_reinterpret_cast(_ulfd_CreateSymbolicLinkW_t, _ulfd_kernel32_function(&hold, "CreateSymbolicLinkW"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateSymbolicLinkW_t, _ulfd_kernel32_function(&hold, "CreateSymbolicLinkW"));
     }
   #endif
   ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source) {
