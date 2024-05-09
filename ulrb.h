@@ -303,7 +303,7 @@ ul_hapi void ulrb_node_init(ulrb_node_t* node) {
 /*
  * Red-Black Tree's height is <= 2log2(n + 1).
  */
-#define ULRB_MAX_DEPTH (sizeof(void*) << 3)
+#define ULRB_MAX_DEPTH (sizeof(void*) * (CHAR_BIT))
 
 ul_hapi ulrb_node_t* ulrb_leftmost(ulrb_node_t* x) {
   ulrb_node_t* y = NULL;
