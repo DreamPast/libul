@@ -18,11 +18,9 @@ Date and time (like `Date` in Javascript)
     - If year is 1582, 1582-10-5 ~ 1582-10-14 are removed.
     - If year < 1582, use julian calendar.
       In the calendar, a leap year is a year that is exactly divisible by 4.
-  - ULDATE_BASE_MS
-    The milliseconds of the "1" in `uldate_t`.
-    If we combine 32-bit integer and 1 millisecond, we can't even express a year.
-    So it's neccessary to decrease precision to increase range.
-    If higher precision is needed, modify all ULDATE_FROM_* and ULDATE_TO_* macros please.
+  - ULDATE_USE_USEC / ULDATE_USE_MSEC(default) / ULDATE_USE_SEC
+    Use 1 microsecond/millisecond(default)/second as "1" unit in `uldate_t`.
+    If 32-bit integer is using, select millisecond will make `uldate_t` not hold a year.
 
 
 # License
@@ -149,33 +147,41 @@ Date and time (like `Date` in Javascript)
 typedef uldate_int_t uldate_t;
 #define ULDATE_INVALID ULDATE_INT_MIN
 
-#if defined(ULDATE_BASE_MS)
-  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / (ULDATE_BASE_MS * 1000000))
-  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / (ULDATE_BASE_MS * 1000))
-  #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(3600000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(86400000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(604800000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746000) / ULDATE_BASE_MS)
-  #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952000) / ULDATE_BASE_MS)
+#if defined(ULDATE_USE_USEC) + defined(ULDATE_USE_MSEC) + defined(ULDATE_USE_SEC) != 1
+  #if defined(ULDATE_USE_USEC) + defined(ULDATE_USE_MSEC) + defined(ULDATE_USE_SEC) == 0
+    #define ULDATE_USE_MSEC
+  #else
+    #error "uldate.h: more than 2 macros of `ULDATE_USE_USEC`, `ULDATE_USE_MSEC`, `ULDATE_USE_SEC` are defined"
+  #endif
+#endif
 
-  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * (ULDATE_BASE_MS * 1000000))
-  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * (ULDATE_BASE_MS * 1000))
-  #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS)
-  #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(1000))
-  #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(60000))
-  #define ULDATE_TO_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(3600000))
-  #define ULDATE_TO_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(86400000))
-  #define ULDATE_TO_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(604800000))
-  #define ULDATE_TO_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(2629746000))
-  #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(31556952000))
+#if defined(ULDATE_USE_USEC) /* 64-bit: about 292277 years, 32-bit: error */
+  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000))
+  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000))
+  #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000000))
+  #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60000000))
+  #define ULDATE_FROM_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(3600000000))
+  #define ULDATE_FROM_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(86400000000))
+  #define ULDATE_FROM_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(604800000000))
+  #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746000000))
+  #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952000000))
 
-  #define ULDATE_MILLISECOND_DOUBLE (1.0 / ULDATE_BASE_MS)
-#else
-  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / 1000000)
-  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000)
+  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000))
+  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000))
+  #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000000))
+  #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(60000000))
+  #define ULDATE_TO_HOUR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(3600000000))
+  #define ULDATE_TO_DAY(x)         ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(86400000000))
+  #define ULDATE_TO_WEEK(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(604800000000))
+  #define ULDATE_TO_MONTH(x)       ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(2629746000000))
+  #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(31556952000000))
+
+  #define ULDATE_MILLISECOND_DOUBLE (1000.0)
+#elif defined(ULDATE_USE_MSEC) /* 64-bit: about 292277024 years, 32-bit: error */
+  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000000))
+  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000))
   #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x))
   #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000))
   #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60000))
@@ -185,8 +191,8 @@ typedef uldate_int_t uldate_t;
   #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746000))
   #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952000))
 
-  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * 1000000)
-  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * 1000)
+  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000000))
+  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000))
   #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x))
   #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000))
   #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(60000))
@@ -197,19 +203,43 @@ typedef uldate_int_t uldate_t;
   #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(31556952000))
 
   #define ULDATE_MILLISECOND_DOUBLE (1.0)
+#elif defined(ULDATE_USE_SEC) /* 64-bit: about 292277024626 years, 32-bit: about 68 years(the biggest year is 2038) */
+  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000000000))
+  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000000))
+  #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000000))
+  #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60))
+  #define ULDATE_FROM_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(3600))
+  #define ULDATE_FROM_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(86400))
+  #define ULDATE_FROM_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(604800))
+  #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746))
+  #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952))
+
+  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000000000))
+  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000000))
+  #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000000))
+  #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(60))
+  #define ULDATE_TO_HOUR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(3600))
+  #define ULDATE_TO_DAY(x)         ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(86400))
+  #define ULDATE_TO_WEEK(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(604800))
+  #define ULDATE_TO_MONTH(x)       ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(2629746))
+  #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(31556952))
+
+  #define ULDATE_MILLISECOND_DOUBLE (0.001)
 #endif
 
-#define ULDATE_FROM_NSEC ULDATE_FROM_NANOSECOND(x)
-#define ULDATE_FROM_USEC ULDATE_FROM_MICROSECOND(x)
-#define ULDATE_FROM_MSEC ULDATE_FROM_MILLISECOND(x)
-#define ULDATE_FROM_SEC ULDATE_FROM_SECOND(x)
-#define ULDATE_FROM_MIN ULDATE_FROM_MINUTE(x)
+#define ULDATE_FROM_NSEC(x) ULDATE_FROM_NANOSECOND(x)
+#define ULDATE_FROM_USEC(x) ULDATE_FROM_MICROSECOND(x)
+#define ULDATE_FROM_MSEC(x) ULDATE_FROM_MILLISECOND(x)
+#define ULDATE_FROM_SEC(x)  ULDATE_FROM_SECOND(x)
+#define ULDATE_FROM_MIN(x)  ULDATE_FROM_MINUTE(x)
 
-#define ULDATE_TO_NSEC ULDATE_TO_NANOSECOND(x)
-#define ULDATE_TO_USEC ULDATE_TO_MICROSECOND(x)
-#define ULDATE_TO_MSEC ULDATE_TO_MILLISECOND(x)
-#define ULDATE_TO_SEC ULDATE_TO_SECOND(x)
-#define ULDATE_TO_MIN ULDATE_TO_MINUTE(x)
+#define ULDATE_TO_NSEC(x) ULDATE_TO_NANOSECOND(x)
+#define ULDATE_TO_USEC(x) ULDATE_TO_MICROSECOND(x)
+#define ULDATE_TO_MSEC(x) ULDATE_TO_MILLISECOND(x)
+#define ULDATE_TO_SEC(x)  ULDATE_TO_SECOND(x)
+#define ULDATE_TO_MIN(x)  ULDATE_TO_MINUTE(x)
 
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
 ul_hapi int uldate_get_gmtoff_minutes(void);
@@ -265,6 +295,7 @@ typedef struct uldate_tm_t {
   int min; /* minutes after the hour, range [0, 59] */
   int sec; /* seconds after the minute, range [0, 59] (leap second not supported) */
   int msec; /* milliseconds after the second, range [0, 999] */
+  int usec; /* microseconds after the millisecond, range [0, 999] */
 
   int wday; /* days since Sunday, range [0, 6] */
   int yday; /* days since January 1, range [0, 365] */
@@ -390,7 +421,7 @@ ul_hapi uldate_t uldate_now_utc(void) {
 #else
   time_t sec = time(NULL);
   if(sec == ul_static_cast(time_t, -1)) return ULDATE_INVALID;
-  return ul_static_cast(uldate_int_t, sec) * ULDATE_SECOND;
+  return ULDATE_FROM_SECOND(ul_static_cast(uldate_int_t, sec));
 #endif
 }
 ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_now_utc()); }
@@ -585,8 +616,9 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   int ms, s, m, i, md;
 
   days = ULDATE_TO_DAY(date);
-  h = ULDATE_TO_MILLISECOND(date - ULDATE_FROM_DAY(days));
-  tm->wday = _uldate_wday_from_days(days);
+  date -= ULDATE_FROM_DAY(days);
+  h = ULDATE_TO_MILLISECOND(date);
+  tm->usec = ul_static_cast(int, ULDATE_TO_MICROSECOND(date - ULDATE_FROM_MILLISECOND(h)));
 
   y = _uldate_year_from_days(&days);
   for(i = 0; i < 11; ++i) {
@@ -597,6 +629,8 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   tm->year = y;
   tm->mon = i;
   tm->mday = ul_static_cast(int, days);
+  tm->wday = _uldate_wday_from_days(days);
+  tm->yday = _uldate_yday_from_mon_day(tm->year, i, ul_static_cast(int, days));
 
   ms = ul_static_cast(int, h % 1000); h = (h - ms) / 1000;
   s = ul_static_cast(int, h % 60); h = (h - s) / 60;
@@ -605,12 +639,10 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   tm->min = m;
   tm->sec = s;
   tm->msec = ms;
-
-  tm->yday = _uldate_yday_from_mon_day(tm->year, i, ul_static_cast(int, days));
 }
 ul_hapi uldate_t uldate_from_tm(const uldate_tm_t* tm) {
   return uldate_from_mday_time(tm->year, tm->mon, tm->mday,
-    tm->hour, tm->min, tm->sec, tm->msec);
+    tm->hour, tm->min, tm->sec, tm->msec) + ULDATE_FROM_MICROSECOND(tm->usec);
 }
 ul_hapi uldate_t uldate_from_tm_normalized(uldate_tm_t* tm) {
   uldate_t date;
@@ -1415,6 +1447,7 @@ fillback:
   tm->min = min;
   tm->sec = sec;
   tm->msec = msec;
+  tm->usec = 0;
 
   tm->year = year;
   tm->mon = mon;
@@ -1484,6 +1517,7 @@ ul_hapi void uldate_tm_from_ctm(const struct tm* ctm, uldate_tm_t* tm) {
   tm->min = ctm->tm_min;
   tm->sec = ctm->tm_sec;
   tm->msec = 0;
+  tm->usec = 0;
   tm->wday = ctm->tm_wday;
   tm->yday = ctm->tm_yday;
 }
