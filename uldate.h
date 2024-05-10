@@ -153,7 +153,10 @@ Date and time (like `Date` in Javascript)
 typedef uldate_int_t uldate_t;
 #define ULDATE_INVALID ULDATE_INT_MIN
 
-#define ULDATE_MICROSECOND ULDATE_INT_C(1)
+#define ULDATE_FROM_NANOSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000000)
+#define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000)
+
+#define ULDATE_MILLISECOND ULDATE_INT_C(1)
 #define ULDATE_SECOND      ULDATE_INT_C(1000)
 #define ULDATE_MINUTE      ULDATE_INT_C(60000)
 #define ULDATE_HOUR        ULDATE_INT_C(3600000)
