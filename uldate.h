@@ -18,6 +18,10 @@ Date and time (like `Date` in Javascript)
     - If year is 1582, 1582-10-5 ~ 1582-10-14 are removed.
     - If year < 1582, use julian calendar.
       In the calendar, a leap year is a year that is exactly divisible by 4.
+  - ULDATE_BASE_MS
+    The milliseconds of the "1" in `uldate_t`.
+    If we combine 32-bit integer and 1 millisecond, We can't even express a year.
+    So it's neccessary to decrease precision to increase range.
 
 
 # License
@@ -97,16 +101,6 @@ Date and time (like `Date` in Javascript)
   #endif
 #endif /* ul_static_cast */
 
-#if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-  #include <sys/time.h>
-  #define ULDATE_API_POSIX
-#elif defined(_WIN32)
-  #include <Windows.h>
-  #define ULDATE_API_WIN32
-#else
-  #define ULDATE_API_C89
-#endif
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */
   #define _uldate_trunc(v) trunc(v)
 #elif defined(__cplusplus) && __cplusplus >= 201103L /* C++11 */
@@ -116,6 +110,16 @@ Date and time (like `Date` in Javascript)
   #define _uldate_trunc(v) trunc(v)
 #else
   #define _uldate_trunc(v) ((v) > 0 ? floor(v) : ceil(v))
+#endif
+
+#if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
+  #include <sys/time.h>
+  #define ULDATE_API_POSIX
+#elif defined(_WIN32)
+  #include <Windows.h>
+  #define ULDATE_API_WIN32
+#else
+  #define ULDATE_API_C89
 #endif
 
 #include <math.h>
@@ -150,20 +154,72 @@ Date and time (like `Date` in Javascript)
   #define ULDATE_UINT_C(val) val ## ul
 #endif
 
+/* starts from "1970-01-01T00:00:00.000Z" */
 typedef uldate_int_t uldate_t;
 #define ULDATE_INVALID ULDATE_INT_MIN
 
-#define ULDATE_FROM_NANOSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000000)
-#define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000)
+#if defined(ULDATE_BASE_MS)
+  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / (ULDATE_BASE_MS * 1000000))
+  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / (ULDATE_BASE_MS * 1000))
+  #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(3600000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(86400000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(604800000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746000) / ULDATE_BASE_MS)
+  #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952000) / ULDATE_BASE_MS)
 
-#define ULDATE_MILLISECOND ULDATE_INT_C(1)
-#define ULDATE_SECOND      ULDATE_INT_C(1000)
-#define ULDATE_MINUTE      ULDATE_INT_C(60000)
-#define ULDATE_HOUR        ULDATE_INT_C(3600000)
-#define ULDATE_DAY         ULDATE_INT_C(86400000)
-#define ULDATE_WEEK        ULDATE_INT_C(604800000)
-#define ULDATE_MONTH       ULDATE_INT_C(2629746000)
-#define ULDATE_YEAR        ULDATE_INT_C(31556952000)
+  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * (ULDATE_BASE_MS * 1000000))
+  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * (ULDATE_BASE_MS * 1000))
+  #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS)
+  #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(1000))
+  #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(60000))
+  #define ULDATE_TO_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(3600000))
+  #define ULDATE_TO_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(86400000))
+  #define ULDATE_TO_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(604800000))
+  #define ULDATE_TO_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(2629746000))
+  #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_BASE_MS / ULDATE_INT_C(31556952000))
+
+  #define ULDATE_MILLISECOND_DOUBLE (1.0 / ULDATE_BASE_MS)
+#else
+  #define ULDATE_FROM_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) / 1000000)
+  #define ULDATE_FROM_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) / 1000)
+  #define ULDATE_FROM_MILLISECOND(x) ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_FROM_SECOND(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(1000))
+  #define ULDATE_FROM_MINUTE(x)      ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(60000))
+  #define ULDATE_FROM_HOUR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(3600000))
+  #define ULDATE_FROM_DAY(x)         ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(86400000))
+  #define ULDATE_FROM_WEEK(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(604800000))
+  #define ULDATE_FROM_MONTH(x)       ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(2629746000))
+  #define ULDATE_FROM_YEAR(x)        ul_static_cast(uldate_int_t, (x) * ULDATE_INT_C(31556952000))
+
+  #define ULDATE_TO_NANOSECOND(x)  ul_static_cast(uldate_int_t, (x) * 1000000)
+  #define ULDATE_TO_MICROSECOND(x) ul_static_cast(uldate_int_t, (x) * 1000)
+  #define ULDATE_TO_MILLISECOND(x) ul_static_cast(uldate_int_t, (x))
+  #define ULDATE_TO_SECOND(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(1000))
+  #define ULDATE_TO_MINUTE(x)      ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(60000))
+  #define ULDATE_TO_HOUR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(3600000))
+  #define ULDATE_TO_DAY(x)         ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(86400000))
+  #define ULDATE_TO_WEEK(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(604800000))
+  #define ULDATE_TO_MONTH(x)       ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(2629746000))
+  #define ULDATE_TO_YEAR(x)        ul_static_cast(uldate_int_t, (x) / ULDATE_INT_C(31556952000))
+
+  #define ULDATE_MILLISECOND_DOUBLE (1.0)
+#endif
+
+#define ULDATE_FROM_NSEC ULDATE_FROM_NANOSECOND(x)
+#define ULDATE_FROM_USEC ULDATE_FROM_MICROSECOND(x)
+#define ULDATE_FROM_MSEC ULDATE_FROM_MILLISECOND(x)
+#define ULDATE_FROM_SEC ULDATE_FROM_SECOND(x)
+#define ULDATE_FROM_MIN ULDATE_FROM_MINUTE(x)
+
+#define ULDATE_TO_NSEC ULDATE_TO_NANOSECOND(x)
+#define ULDATE_TO_USEC ULDATE_TO_MICROSECOND(x)
+#define ULDATE_TO_MSEC ULDATE_TO_MILLISECOND(x)
+#define ULDATE_TO_SEC ULDATE_TO_SECOND(x)
+#define ULDATE_TO_MIN ULDATE_TO_MINUTE(x)
+
 
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
 ul_hapi int uldate_get_gmtoff_minutes(void) {
@@ -188,17 +244,17 @@ ul_hapi int uldate_get_gmtoff_minutes(void) {
 }
 
 ul_hapi uldate_t uldate_utc_to_locale(uldate_t utc) {
-  return utc + uldate_get_gmtoff_minutes() * ULDATE_MINUTE;
+  return utc + ULDATE_FROM_MINUTE(uldate_get_gmtoff_minutes());
 }
 ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc) {
-  return loc - uldate_get_gmtoff_minutes() * ULDATE_MINUTE;
+  return loc - ULDATE_FROM_MINUTE(uldate_get_gmtoff_minutes());
 }
 
 ul_hapi uldate_t uldate_now_utc(void) {
 #if defined(ULDATE_API_POSIX)
   struct timeval tv;
   if(gettimeofday(&tv, NULL) == -1) return ULDATE_INVALID;
-  return ul_static_cast(uldate_int_t, tv.tv_sec) * 1000 + (tv.tv_usec / 1000);
+  return ULDATE_FROM_SECOND(ul_static_cast(uldate_int_t, tv.tv_sec)) + ULDATE_FROM_MICROSECOND(tv.tv_usec);
 #elif defined(ULDATE_API_WIN32)
   SYSTEMTIME system_time;
   FILETIME file_time;
@@ -210,11 +266,11 @@ ul_hapi uldate_t uldate_now_utc(void) {
   if(ul_unlikely(!success)) return ULDATE_INVALID;
   time = ul_static_cast(uldate_uint_t, file_time.dwLowDateTime)
     | (ul_static_cast(uldate_uint_t, file_time.dwHighDateTime) << 32);
-  return ul_static_cast(uldate_int_t, (time - ULDATE_INT_C(116444736000000000)) / 10000);
+  return ULDATE_FROM_MICROSECOND((time - ULDATE_INT_C(116444736000000000)) / 10);
 #elif defined(ULDATE_API_C89)
   time_t sec = time(NULL);
   if(sec < 0) return ULDATE_INVALID;
-  return ul_static_cast(uldate_int_t, sec) * 1000;
+  return ul_static_cast(uldate_int_t, sec) * ULDATE_SECOND;
 #endif
 }
 ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_now_utc()); }
@@ -332,7 +388,7 @@ ul_hapi uldate_int_t _uldate_yday_from_wday_monday(uldate_int_t year, uldate_int
   return week * 7 + wday - _uldate_week_mon_fix[_uldate_wday_from_days(_uldate_days_from_year(year))];
 }
 
-ul_hapi uldate_t uldate_from_ms(uldate_int_t ms_since_epoch) { return ms_since_epoch; }
+ul_hapi uldate_t uldate_from_ms(uldate_int_t ms_since_epoch) { return ULDATE_FROM_MILLISECOND(ms_since_epoch); }
 
 ul_hapi uldate_t uldate_from_mday(uldate_int_t year, uldate_int_t mon, uldate_int_t mday) {
   uldate_int_t yi = mon / 12;
@@ -341,19 +397,19 @@ ul_hapi uldate_t uldate_from_mday(uldate_int_t year, uldate_int_t mon, uldate_in
   if(ul_unlikely(mon < 0)) { mon += 12; --yi; }
   yi += year;
 
-  return (mday + _uldate_days_from_year_mon(yi, ul_static_cast(int, mon))) * ULDATE_DAY;
+  return ULDATE_FROM_DAY(mday + _uldate_days_from_year_mon(yi, ul_static_cast(int, mon)));
 }
 ul_hapi uldate_t uldate_from_yday(uldate_int_t year, uldate_int_t yday) {
-  return (yday + _uldate_days_from_year(year)) * ULDATE_DAY;
+  return ULDATE_FROM_DAY(yday + _uldate_days_from_year(year));
 }
 ul_hapi uldate_t uldate_from_wday_sunday(uldate_int_t year, uldate_int_t week, uldate_int_t wday) {
-  return (_uldate_days_from_year(year) + _uldate_yday_from_wday_sunday(year, week, wday)) * ULDATE_DAY;
+  return ULDATE_FROM_DAY(_uldate_days_from_year(year) + _uldate_yday_from_wday_sunday(year, week, wday));
 }
 ul_hapi uldate_t uldate_from_wday_monday(uldate_int_t year, uldate_int_t week, uldate_int_t wday) {
-  return (_uldate_days_from_year(year) + _uldate_yday_from_wday_monday(year, week, wday)) * ULDATE_DAY;
+  return ULDATE_FROM_DAY(_uldate_days_from_year(year) + _uldate_yday_from_wday_monday(year, week, wday));
 }
 ul_hapi uldate_t uldate_from_time(uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec) {
-  return hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
+  return ULDATE_FROM_HOUR(hour) + ULDATE_FROM_MINUTE(min) + ULDATE_FROM_SECOND(sec) + ULDATE_FROM_MILLISECOND(msec);
 }
 
 ul_hapi uldate_t uldate_from_mday_time(
@@ -385,8 +441,8 @@ ul_hapi uldate_t uldate_from_mday_time_double(
   if(ul_unlikely(m < 0)) m += 12;
   di = ul_static_cast(double,
     _uldate_days_from_year_mon(ul_static_cast(uldate_int_t, year + floor(mon / 12)), m)) + mday;
-  x = hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
-  ret = di * ULDATE_DAY;
+  x = (hour * 3600000 + min * 60000 + sec * 1000 + msec) * ULDATE_MILLISECOND_DOUBLE;
+  ret = di * 86400000 * ULDATE_MILLISECOND_DOUBLE;
   ret += x;
   return ul_static_cast(uldate_int_t, _uldate_trunc(ret));
 }
@@ -397,8 +453,8 @@ ul_hapi uldate_t uldate_from_yday_time_double(
   double di, x;
   volatile double ret;
   di = ul_static_cast(double, _uldate_days_from_year(ul_static_cast(uldate_int_t, year))) + yday;
-  x = hour * ULDATE_HOUR + min * ULDATE_MINUTE + sec * ULDATE_SECOND + msec;
-  ret = di * ULDATE_DAY;
+  x = (hour * 3600000 + min * 60000 + sec * 1000 + msec) * ULDATE_MILLISECOND_DOUBLE;
+  ret = di * 86400000 * ULDATE_MILLISECOND_DOUBLE;
   ret += x;
   return ul_static_cast(uldate_int_t, _uldate_trunc(ret));
 }
@@ -426,8 +482,8 @@ ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   uldate_int_t h, days, y;
   int ms, s, m, i, md;
 
-  h = date % ULDATE_DAY;
-  days = (date - h) / ULDATE_DAY;
+  days = ULDATE_TO_DAY(date);
+  h = ULDATE_TO_MILLISECOND(date - ULDATE_FROM_DAY(days));
   tm->wday = _uldate_wday_from_days(days);
 
   y = _uldate_year_from_days(&days);
@@ -1292,7 +1348,7 @@ ul_hapi size_t uldate_to_utc_string(char* dest, size_t len, uldate_t utc) { /* 3
   return uldate_format(dest, len, "%a, %d %b %Y %T GMT", utc);
 }
 ul_hapi size_t uldate_to_string(char* dest, size_t len, uldate_t utc) { /* 34 bytes */
-  return uldate_format(dest, len, "%a %b %d %Y %T GMT%z", utc + uldate_get_gmtoff_minutes() * ULDATE_MINUTE);
+  return uldate_format(dest, len, "%a %b %d %Y %T GMT%z", utc + ULDATE_FROM_MINUTE(uldate_get_gmtoff_minutes()));
 }
 ul_hapi size_t uldate_to_iso_string(char* dest, size_t len, uldate_t utc) { /* 25 bytes */
   return uldate_format(dest, len, "%FT%T.%+Z", utc);
@@ -1302,11 +1358,14 @@ ul_hapi size_t uldate_to_locale_string(char* dest, size_t len, uldate_t utc) { /
 }
 
 ul_hapi time_t uldate_to_ctime(uldate_t date) {
-  if(date < 0) return ul_static_cast(time_t, (date - 999) / 1000);
-  else return ul_static_cast(time_t, date / 1000);
+  /* round to -infinity */
+  if(ul_unlikely(date < 0)) {
+    uldate_t r = ULDATE_TO_SECOND(date);
+    return ul_static_cast(time_t, r - (ULDATE_FROM_SECOND(r) != date));
+  } else return ul_static_cast(time_t, ULDATE_TO_SECOND(date));
 }
 ul_hapi uldate_t uldate_from_ctime(time_t ctime) {
-  return ul_static_cast(uldate_t, ctime) * 1000;
+  return ULDATE_FROM_SECOND(ul_static_cast(uldate_t, ctime));
 }
 
 ul_hapi void uldate_tm_to_ctm(const uldate_tm_t* tm, struct tm* ctm) {
