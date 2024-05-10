@@ -295,6 +295,14 @@ uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, c
 uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
   const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
 
+
+
+/**************
+ * IMPLEMENTS *
+ **************/
+
+
+
 #ifndef ULDECODE_NO_IMPLE
 
 

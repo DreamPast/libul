@@ -113,13 +113,6 @@ Date and time (like `Date` in Javascript)
   #define _uldate_trunc(v) ((v) > 0 ? floor(v) : ceil(v))
 #endif
 
-#if defined(_WIN32)
-  #include <Windows.h>
-#endif
-#if (defined(_DEFAULT_SOURCE) && (_DEFAULT_SOURCE+0)) || (defined(_BSD_SOURCE) && (_BSD_SOURCE+0))
-  #include <sys/time.h>
-#endif
-
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
@@ -218,8 +211,123 @@ typedef uldate_int_t uldate_t;
 #define ULDATE_TO_SEC ULDATE_TO_SECOND(x)
 #define ULDATE_TO_MIN ULDATE_TO_MINUTE(x)
 
-
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
+ul_hapi int uldate_get_gmtoff_minutes(void);
+ul_hapi uldate_t uldate_utc_to_locale(uldate_t utc);
+ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc);
+ul_hapi uldate_t uldate_now_utc(void);
+ul_hapi uldate_t uldate_now_locale(void);
+
+ul_hapi uldate_t uldate_from_ms(uldate_int_t ms_since_epoch);
+ul_hapi uldate_t uldate_from_mday(uldate_int_t year, uldate_int_t mon, uldate_int_t mday);
+ul_hapi uldate_t uldate_from_yday(uldate_int_t year, uldate_int_t yday);
+ul_hapi uldate_t uldate_from_wday_sunday(uldate_int_t year, uldate_int_t week, uldate_int_t wday);
+ul_hapi uldate_t uldate_from_wday_monday(uldate_int_t year, uldate_int_t week, uldate_int_t wday);
+ul_hapi uldate_t uldate_from_time(uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec);
+
+ul_hapi uldate_t uldate_from_mday_time(
+  uldate_int_t year, uldate_int_t mon, uldate_int_t mday,
+  uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec
+);
+ul_hapi uldate_t uldate_from_yday_time(
+  uldate_int_t year, uldate_int_t yday,
+  uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec
+);
+ul_hapi uldate_t uldate_from_wday_sunday_time(
+  uldate_int_t year, uldate_int_t week, uldate_int_t wday,
+  uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec
+);
+ul_hapi uldate_t uldate_from_wday_monday_time(
+  uldate_int_t year, uldate_int_t week, uldate_int_t wday,
+  uldate_int_t hour, uldate_int_t min, uldate_int_t sec, uldate_int_t msec
+);
+
+ul_hapi uldate_t uldate_from_mday_time_double(
+  double year, double mon, double mday,
+  double hour, double min, double sec, double msec
+);
+ul_hapi uldate_t uldate_from_yday_time_double(
+  double year, double yday,
+  double hour, double min, double sec, double msec
+);
+
+/*
+  Structure holding date and time broken down into its components.
+  Note:
+  - `year` is different from `tm_year`, it's since year zero.
+  - `mday` is different from `tm_mday`, it counts from 0.
+*/
+typedef struct uldate_tm_t {
+  uldate_int_t year; /* years since year zero */
+  int mon; /* months since January, range [0, 11] */
+  int mday; /* day of the month, range [0, 30] */
+  int hour; /* hours since midnight, range [0, 23] */
+  int min; /* minutes after the hour, range [0, 59] */
+  int sec; /* seconds after the minute, range [0, 59] (leap second not supported) */
+  int msec; /* milliseconds after the second, range [0, 999] */
+
+  int wday; /* days since Sunday, range [0, 6] */
+  int yday; /* days since January 1, range [0, 365] */
+} uldate_tm_t;
+
+ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm);
+ul_hapi uldate_t uldate_from_tm(const uldate_tm_t* tm);
+ul_hapi uldate_t uldate_from_tm_normalized(uldate_tm_t* tm);
+
+ul_hapi int uldate_tm_get_week_sunday(const uldate_tm_t* tm);
+ul_hapi int uldate_tm_get_week_monday(const uldate_tm_t* tm);
+/* return -1 if failed, otherwise return the week index */
+ul_hapi int uldate_tm_get_iso8601_week(const uldate_tm_t* tm, uldate_int_t* p_year);
+
+ul_hapi int uldate_get_week_monday(uldate_t date);
+ul_hapi int uldate_get_week_sunday(uldate_t date);
+/* return -1 if failed, otherwise return the week index */
+ul_hapi int uldate_get_iso8601_week(uldate_t date, uldate_int_t* p_year);
+
+/* gets the length needed for the buffer (including tail '\0') to format `tm`. returns 0 if failed. */
+ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm);
+/* format `tm` into `dest`. returns length (including tail '\0'), or 0 if failed. */
+ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const uldate_tm_t* tm);
+/* parse `src` to get `tm`. return the end position of `src`, or NULL if failed. */
+ul_hapi const char* uldate_tm_parse(const char* src, const char* fmt, uldate_tm_t* tm);
+
+ul_hapi size_t uldate_format_len(const char* fmt, uldate_t date);
+ul_hapi size_t uldate_format(char* dest, size_t len, const char* fmt, uldate_t date);
+ul_hapi const char* uldate_parse(const char* src, const char* fmt, uldate_t* date);
+
+/* equivalent to "%a, %d %b %Y %T GMT" (30 bytes), for example, "Tue, 16 Apr 2024 07:16:47 GMT" */
+ul_hapi size_t uldate_to_utc_string(char* dest, size_t len, uldate_t utc);
+/*  equivalent to "%a %b %d %Y %T GMT%z" (34 bytes), for example, "Tue Apr 16 2024 15:16:47 GMT+0800" */
+ul_hapi size_t uldate_to_string(char* dest, size_t len, uldate_t utc);
+/* equivalent to "%FT%T.%+Z" (25 bytes), for example, "2024-04-16T07:16:47.000Z" */
+ul_hapi size_t uldate_to_iso_string(char* dest, size_t len, uldate_t utc);
+/* equivalent to "%D, %T %p" (22 bytes), for example, "04/16/24, 07:16:47 AM" */
+ul_hapi size_t uldate_to_locale_string(char* dest, size_t len, uldate_t utc);
+
+ul_hapi time_t uldate_to_ctime(uldate_t date);
+ul_hapi uldate_t uldate_from_ctime(time_t ctime);
+
+ul_hapi void uldate_tm_to_ctm(const uldate_tm_t* tm, struct tm* ctm);
+ul_hapi void uldate_tm_from_ctm(const struct tm* ctm, uldate_tm_t* tm);
+
+ul_hapi void uldate_to_ctm(uldate_t date, struct tm* ctm);
+ul_hapi uldate_t uldate_from_ctm(const struct tm* ctm);
+
+
+
+/**************
+ * IMPLEMENTS *
+ **************/
+
+
+
+#if defined(_WIN32)
+  #include <Windows.h>
+#endif
+#if (defined(_DEFAULT_SOURCE) && (_DEFAULT_SOURCE+0)) || (defined(_BSD_SOURCE) && (_BSD_SOURCE+0))
+  #include <sys/time.h>
+#endif
+
 ul_hapi int uldate_get_gmtoff_minutes(void) {
 #if defined(_WIN32)
   TIME_ZONE_INFORMATION info;
@@ -471,24 +579,6 @@ ul_hapi uldate_t uldate_from_yday_time_double(
   return ul_static_cast(uldate_int_t, _uldate_trunc(ret));
 }
 
-/*
-  Structure holding date and time broken down into its components.
-  Note:
-  - `year` is different from `tm_year`, it's since year zero.
-  - `mday` is different from `tm_mday`, it counts from 0.
-*/
-typedef struct uldate_tm_t {
-  uldate_int_t year; /* years since year zero */
-  int mon; /* months since January, range [0, 11] */
-  int mday; /* day of the month, range [0, 30] */
-  int hour; /* hours since midnight, range [0, 23] */
-  int min; /* minutes after the hour, range [0, 59] */
-  int sec; /* seconds after the minute, range [0, 59] (leap second not supported) */
-  int msec; /* milliseconds after the second, range [0, 999] */
-
-  int wday; /* days since Sunday, range [0, 6] */
-  int yday; /* days since January 1, range [0, 365] */
-} uldate_tm_t;
 
 ul_hapi void uldate_to_tm(uldate_t date, uldate_tm_t* tm) {
   uldate_int_t h, days, y;
@@ -541,7 +631,6 @@ ul_hapi int uldate_tm_get_week_monday(const uldate_tm_t* tm) {
   x = _uldate_wday_from_days(_uldate_days_from_year(tm->year));
   return ul_static_cast(int, (tm->yday + _uldate_week_mon_fix[x]) / 7);
 }
-/* return -1 if failed, otherwise return the week index */
 ul_hapi int uldate_tm_get_iso8601_week(const uldate_tm_t* tm, uldate_int_t* p_year) {
   static int iso8601_fix[] = { -1, 0, 1, 2, 3, -3, -2 };
   uldate_int_t year = tm->year;
@@ -575,7 +664,6 @@ ul_hapi int uldate_get_week_sunday(uldate_t date) {
   uldate_to_tm(date, &tm);
   return uldate_tm_get_week_sunday(&tm);
 }
-/* return -1 if failed, otherwise return the week index */
 ul_hapi int uldate_get_iso8601_week(uldate_t date, uldate_int_t* p_year) {
   uldate_tm_t tm;
   uldate_to_tm(date, &tm);
@@ -592,7 +680,6 @@ static const char _uldate_abbr_wday_names[] = "SunMonTueWedThuFriSat";
 static const char _uldate_wday_names[] = "SundayMondayTuesdayWednesdayThursdayFridaySaturday";
 static const int _uldate_wday_names_len[] = { 0, 6, 12, 19, 28, 36, 42, 50 };
 
-/* gets the length needed for the buffer (including tail '\0') to format `tm`. returns 0 if failed. */
 ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
   size_t len = 0;
   while(*fmt) {
@@ -686,7 +773,6 @@ ul_hapi size_t uldate_tm_format_len(const char* fmt, const uldate_tm_t* tm) {
   }
   return len + 1;
 }
-/* format `tm` into `dest`. returns length (including tail '\0'), or 0 if failed. */
 ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const uldate_tm_t* tm) {
   const size_t len_raw = len;
   int x = 0;
@@ -1064,7 +1150,6 @@ ul_hapi size_t uldate_tm_format(char* dest, size_t len, const char* fmt, const u
   *dest++ = 0; --len;
   return len_raw - len;
 }
-/* parse `src` to get `tm`. return the end position of `src`, or NULL if failed. */
 ul_hapi const char* uldate_tm_parse(const char* src, const char* fmt, uldate_tm_t* tm) {
   int i, j, x;
   int year = 0, mon = -1, mday = -1, yday = -1, wday = -1;
@@ -1356,16 +1441,16 @@ ul_hapi const char* uldate_parse(const char* src, const char* fmt, uldate_t* dat
   return src;
 }
 
-ul_hapi size_t uldate_to_utc_string(char* dest, size_t len, uldate_t utc) { /* 30 bytes */
+ul_hapi size_t uldate_to_utc_string(char* dest, size_t len, uldate_t utc) {
   return uldate_format(dest, len, "%a, %d %b %Y %T GMT", utc);
 }
-ul_hapi size_t uldate_to_string(char* dest, size_t len, uldate_t utc) { /* 34 bytes */
+ul_hapi size_t uldate_to_string(char* dest, size_t len, uldate_t utc) {
   return uldate_format(dest, len, "%a %b %d %Y %T GMT%z", utc + ULDATE_FROM_MINUTE(uldate_get_gmtoff_minutes()));
 }
-ul_hapi size_t uldate_to_iso_string(char* dest, size_t len, uldate_t utc) { /* 25 bytes */
+ul_hapi size_t uldate_to_iso_string(char* dest, size_t len, uldate_t utc) {
   return uldate_format(dest, len, "%FT%T.%+Z", utc);
 }
-ul_hapi size_t uldate_to_locale_string(char* dest, size_t len, uldate_t utc) { /* 22 bytes */
+ul_hapi size_t uldate_to_locale_string(char* dest, size_t len, uldate_t utc) {
   return uldate_format(dest, len, "%D, %T %p", utc);
 }
 
