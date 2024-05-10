@@ -20,8 +20,9 @@ Date and time (like `Date` in Javascript)
       In the calendar, a leap year is a year that is exactly divisible by 4.
   - ULDATE_BASE_MS
     The milliseconds of the "1" in `uldate_t`.
-    If we combine 32-bit integer and 1 millisecond, We can't even express a year.
+    If we combine 32-bit integer and 1 millisecond, we can't even express a year.
     So it's neccessary to decrease precision to increase range.
+    If higher precision is needed, modify all ULDATE_FROM_* and ULDATE_TO_* macros please.
 
 
 # License
@@ -112,14 +113,11 @@ Date and time (like `Date` in Javascript)
   #define _uldate_trunc(v) ((v) > 0 ? floor(v) : ceil(v))
 #endif
 
-#if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-  #include <sys/time.h>
-  #define ULDATE_API_POSIX
-#elif defined(_WIN32)
+#if defined(_WIN32)
   #include <Windows.h>
-  #define ULDATE_API_WIN32
-#else
-  #define ULDATE_API_C89
+#endif
+#if (defined(_DEFAULT_SOURCE) && (_DEFAULT_SOURCE+0)) || (defined(_BSD_SOURCE) && (_BSD_SOURCE+0))
+  #include <sys/time.h>
 #endif
 
 #include <math.h>
@@ -223,23 +221,37 @@ typedef uldate_int_t uldate_t;
 
 /* Return GMT offset minutes of timezone. For example, UTC+8 will return +480 minutes. */
 ul_hapi int uldate_get_gmtoff_minutes(void) {
-#if defined(ULDATE_API_WIN32)
+#if defined(_WIN32)
   TIME_ZONE_INFORMATION info;
-  GetTimeZoneInformation(&info);
+  if(ul_unlikely(GetTimeZoneInformation(&info) == TIME_ZONE_ID_INVALID)) return 0;
   return -info.Bias;
-#elif defined(ULDATE_API_C89)
+#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || \
+    (defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE+0) >= 1) || \
+    (defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE+0)) || \
+    (defined(_BSD_SOURCE) && (_BSD_SOURCE+0)) || \
+    (defined(_SVID_SOURCE) && (_SVID_SOURCE+0)) || \
+    (defined(_POSIX_SOURCE) && (_POSIX_SOURCE+0))
+  time_t ti = 100000;
+  struct tm tm;
+  if(ul_unlikely(localtime_r(&ti, &tm) == NULL)) return 0;
+  return tm.tm_gmtoff / 60;
+#else
   time_t ti = 100000;
   time_t gm_ti, loc_ti;
   struct tm* tm;
 
-  tm = gmtime(&ti); gm_ti = mktime(tm);
-  tm = localtime(&ti); loc_ti = mktime(tm);
+  tm = gmtime(&ti);
+  if(ul_unlikely(tm == NULL)) return 0;
+  gm_ti = mktime(tm);
+  if(ul_unlikely(gm_ti == -1)) return 0;
+
+
+  tm = localtime(&ti);
+  if(ul_unlikely(tm == NULL)) return 0;
+  loc_ti = mktime(tm);
+  if(ul_unlikely(loc_ti == -1)) return 0;
+
   return (loc_ti - gm_ti) / 60;
-#else
-  time_t ti = 100000;
-  struct tm tm;
-  localtime_r(&ti, &tm);
-  return tm.tm_gmtoff / 60;
 #endif
 }
 
@@ -251,11 +263,7 @@ ul_hapi uldate_t uldate_locale_to_utc(uldate_t loc) {
 }
 
 ul_hapi uldate_t uldate_now_utc(void) {
-#if defined(ULDATE_API_POSIX)
-  struct timeval tv;
-  if(gettimeofday(&tv, NULL) == -1) return ULDATE_INVALID;
-  return ULDATE_FROM_SECOND(ul_static_cast(uldate_int_t, tv.tv_sec)) + ULDATE_FROM_MICROSECOND(tv.tv_usec);
-#elif defined(ULDATE_API_WIN32)
+#if defined(_WIN32)
   SYSTEMTIME system_time;
   FILETIME file_time;
   BOOL success;
@@ -267,9 +275,13 @@ ul_hapi uldate_t uldate_now_utc(void) {
   time = ul_static_cast(uldate_uint_t, file_time.dwLowDateTime)
     | (ul_static_cast(uldate_uint_t, file_time.dwHighDateTime) << 32);
   return ULDATE_FROM_MICROSECOND((time - ULDATE_INT_C(116444736000000000)) / 10);
-#elif defined(ULDATE_API_C89)
+#elif (defined(_DEFAULT_SOURCE) && (_DEFAULT_SOURCE+0)) || (defined(_BSD_SOURCE) && (_BSD_SOURCE+0))
+  struct timeval tv;
+  if(gettimeofday(&tv, NULL) == -1) return ULDATE_INVALID;
+  return ULDATE_FROM_SECOND(ul_static_cast(uldate_int_t, tv.tv_sec)) + ULDATE_FROM_MICROSECOND(tv.tv_usec);
+#else
   time_t sec = time(NULL);
-  if(sec < 0) return ULDATE_INVALID;
+  if(sec == ul_static_cast(time_t, -1)) return ULDATE_INVALID;
   return ul_static_cast(uldate_int_t, sec) * ULDATE_SECOND;
 #endif
 }
@@ -472,7 +484,7 @@ typedef struct uldate_tm_t {
   int hour; /* hours since midnight, range [0, 23] */
   int min; /* minutes after the hour, range [0, 59] */
   int sec; /* seconds after the minute, range [0, 59] (leap second not supported) */
-  int msec; /* milliseconds after the second, range [0, 9999] */
+  int msec; /* milliseconds after the second, range [0, 999] */
 
   int wday; /* days since Sunday, range [0, 6] */
   int yday; /* days since January 1, range [0, 365] */
