@@ -12,6 +12,38 @@ File descriptor (Unix style)
   In POSIX, if `_LARGEFILE64_SOURCE` is not defined, functions will test if `off_t` can hold offset and size,
     which means you can also setting `_FILE_OFFSET_BITS` to 64 to make functions work right.
 
+  This header will define following macros to indicate that some funtions **MAY BE** invalid.
+  Note: All functions are always defined, and when they're invalid, they will always return `ENOSYS`.
+  Note: Even if the macros are defined, some functions **MAY** still work successfully (especially in Windows).
+  | Macro                   | Functions                                                    |
+  | ----------------------- | ------------------------------------------------------------ |
+  | ULFD_NO_CHOWN           | ulfd_chown, ulfd_chown_w, ulfd_chown_u                       |
+  | ULFD_NO_LCHOWN          | ulfd_lchown, ulfd_lchown_w, ulfd_lchown_w                    |
+  | ULFD_NO_FCHOWN          | ulfd_fchown                                                  |
+  | ULFD_NO_LINK            | ulfd_link, ulfd_link_w, ulfd_link_u                          |
+  | ULFD_NO_SYMLINK         | ulfd_symlink, ulfd_symlink_w, ulfd_symlink_u                 |
+  | ULFD_NO_READLINK        | ulfd_readlink, ulfd_readlink_w, ulfd_readlink_u              |
+  | ULFD_NO_READLINK        | ulfd_readlink_alloc, ulfd_readlink_alloc_w, ulfd_readlink_alloc_u |
+  | ULFD_NO_LCHMOD          | ulfd_lchmod, ulfd_lchmod_w, ulfd_lchmod_u                    |
+  | ULFD_NO_FCHMOD          | ulfd_fchmod                                                  |
+  | ULFD_NO_FUTIME          | ulfd_futime                                                  |
+  | ULFD_NO_FSTAT           | ulfd_fstat                                                   |
+  | ULFD_NO_FTYPE           | ulfd_ftype                                                   |
+  | ULFD_NO_PREAD           | ulfd_pread                                                   |
+  | ULFD_NO_PWRITE          | ulfd_pwrite                                                  |
+  | ULFD_NO_COPY_FILE_RANGE | ulfd_copy_file_range                                         |
+  | ULFD_NO_FSYNC           | ulfd_fsync                                                   |
+  | ULFD_NO_FFULLSYNC       | ulfd_ffullsync                                               |
+  | ULFD_NO_FDATASYNC       | ulfd_fdatasync                                               |
+  | ULFD_NO_FTRUNCATE       | ulfd_ftruncate                                               |
+  | ULFD_NO_FDOPEN          | ulfd_fdopen, ulfd_fdopen_w, ulfd_fdopen_u                    |
+  | ULFD_NO_FILENO          | ulfd_fileno                                                  |
+  | ULFD_NO_TRUNCATE        | ulfd_truncate, ulfd_truncate_w, ulfd_truncate_u              |
+  | ULFD_NO_LUTIME          | ulfd_lutime, ulfd_lutime_w, ulfd_lutime_u                    |
+  | ULFD_NO_LSTAT           | ulfd_lstat, ulfd_lstat_w, ulfd_lstat_u                       |
+  | ULFD_NO_LTYPE           | ulfd_ltype, ulfd_ltype_w, ulfd_ltype_u                       |
+  | ULFD_NO_REALPATH        | ulfd_realpath_alloc, ulfd_realpath_alloc_w, ulfd_realpath_alloc_u |
+
 
 # License
   The MIT License (MIT)
@@ -302,12 +334,11 @@ typedef ulfd_int64_t ulfd_time_t;
 #define ULFD_O_CLOEXEC   (1l << 8) /* enable close-on-exec(In Windows, it will prevent inherting the file) */
 #define ULFD_O_NOINHERIT ULFD_O_CLOEXEC /* prevent inherting the file(In POSIX, it will enable close-on-exec) */
 
-/*
-  POSIX: sets nonblocking I/O mode.
-  (In windows, asynchronous IO needs to use different APIs, so it's ignored in Windows)
-*/
+/* POSIX: sets nonblocking I/O mode.
+  (In windows, asynchronous IO needs to use different APIs, so it's ignored in Windows) */
 #define ULFD_O_NONBLOCK  (1l << 16)
-/* POSIX: prevent the OS from assigning the opened file as the process's controlling terminal when opening a TTY device file */
+/* POSIX: prevent the OS from assigning the opened file
+  as the process's controlling terminal when opening a TTY device file */
 #define ULFD_O_NOCTTY    (1l << 17)
 
 #define ULFD_O_DENYRD    (1l << 24) /* Windows: deny share read access */
@@ -338,8 +369,21 @@ ul_hapi int ulfd_copy_file_range(
   ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
   size_t len, size_t* pcopyed
 );
-/* if `off_in` or `off_out` is NULL, use current pos; if `buf` is NULL, the function will automatically allocate memory */
+
+ul_hapi int ulfd_pread_user(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes);
+ul_hapi int ulfd_pwrite_user(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes);
+/* if `off_in` or `off_out` is NULL, use current pos;
+  if `buf` is NULL, the function will automatically allocate memory */
 ul_hapi int ulfd_copy_file_range_user(
+  ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+);
+
+ul_hapi int ulfd_pread_allowuser(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes);
+ul_hapi int ulfd_pwrite_allowuser(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes);
+/* if `off_in` or `off_out` is NULL, use current pos;
+  if `buf` is NULL, the function will automatically allocate memory */
+ul_hapi int ulfd_copy_file_range_allowuser(
   ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
   size_t len, size_t* pcopyed, void* buf, size_t buf_len
 );
@@ -788,6 +832,16 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
 
 
 #ifdef _WIN32
+  #if (_WIN32_WINNT+0) >= 0x0501 /* Windows XP */
+    #define ULFD_WIN32_HAS_CreateHardLink
+    #define ULFD_WIN32_HAS_CreateSymbolicLink
+  #endif
+  #if (_WIN32_WINNT+0) >= 0x0600 /* Windows Vista */
+    #define ULFD_WIN32_HAS_GetFinalPathNameByHandle
+  #endif
+  #if (_WIN32_WINNT+0) >= 0x0602 /* Windows 8 */
+    #define ULFD_WIN32_HAS_PrefetchVirtualMemory
+  #endif
 #else
   #ifdef _POSIX_C_SOURCE
     #if (_POSIX_C_SOURCE+0) >= 200809L
@@ -899,6 +953,91 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
 #endif
 
 
+#ifdef _WIN32
+  #define ULFD_NO_COPY_FILE_RANGE
+  #define ULFD_NO_CHOWN
+  #define ULFD_NO_LCHOWN
+  #define ULFD_NO_FCHOWN
+
+  #ifndef ULFD_WIN32_HAS_CreateHardLink
+    #define ULFD_NO_LINK
+  #endif
+  #ifndef ULFD_WIN32_HAS_CreateSymbolicLink
+    #define ULFD_NO_SYMLINK
+  #endif
+  #ifndef ULFD_WIN32_HAS_GetFinalPathNameByHandle
+    #define ULFD_NO_READLINK
+    #define ULFD_NO_FCHMOD
+    #define ULFD_NO_FUTIME
+    #define ULFD_NO_FSTAT
+    #define ULFD_NO_FTYPE
+  #endif
+#else
+  #ifndef ULFD_POSIX_HAS_pread
+    #define ULFD_NO_PREAD
+  #endif
+  #ifndef ULFD_POSIX_HAS_pwrite
+    #define ULFD_NO_PWRITE
+  #endif
+  #ifndef ULFD_POSIX_HAS_copy_file_range
+    #define ULFD_NO_COPY_FILE_RANGE
+  #endif
+  #ifndef ULFD_POSIX_HAS_fsync
+    #define ULFD_NO_FSYNC
+    #define ULFD_NO_FFULLSYNC
+    #define ULFD_NO_FDATASYNC
+  #endif
+  #ifndef ULFD_POSIX_HAS_fdatasync
+    #define ULFD_NO_FDATASYNC
+  #else
+    #undef ULFD_NO_FDATASYNC /* nearly impossible */
+  #endif
+  #ifndef ULFD_POSIX_HAS_ftruncate
+    #define ULFD_NO_FTRUNCATE
+  #endif
+  #ifndef ULFD_POSIX_HAS_fchmod
+    #define ULFD_NO_FCHMOD
+  #endif
+  #ifndef ULFD_POSIX_HAS_fchown
+    #define ULFD_NO_FCHOWN
+  #endif
+  #ifndef ULFD_POSIX_HAS_futimes
+    #define ULFD_NO_FUTIME
+  #endif
+  #ifndef ULFD_POSIX_HAS_fdopen
+    #define ULFD_NO_FDOPEN
+  #endif
+  #ifndef ULFD_POSIX_HAS_fileno
+    #define ULFD_NO_FILENO
+  #endif
+  #ifndef ULFD_POSIX_HAS_truncate
+    #define ULFD_NO_TRUNCATE
+  #endif
+  #ifndef ULFD_POSIX_HAS_fchmodat
+    #define ULFD_NO_LCHMOD
+  #endif
+  #ifndef ULFD_POSIX_HAS_fchownat
+    #define ULFD_NO_LCHOWN
+  #endif
+  #ifndef ULFD_POSIX_HAS_utimensat
+    #define ULFD_NO_LUTIME
+  #endif
+  #ifndef ULFD_POSIX_HAS_lstat
+    #define ULFD_NO_LSTAT
+    #define ULFD_NO_LTYPE
+  #endif
+  #ifndef ULFD_POSIX_HAS_symlink
+    #define ULFD_NO_SYMLINK
+  #endif
+  #ifndef ULFD_POSIX_HAS_readlink
+    #define ULFD_NO_READLINK
+  #endif
+  #if !defined(ULFD_POSIX_HAS_canonicalize_file_name) && !defined(ULFD_POSIX_HAS_realpath)
+    #define ULFD_NO_REALPATH
+  #endif
+#endif
+
+
 #ifndef ULOS_STR_TO_WSTR_DEFINED
   #if UINT_MAX >= 0xFFFFFFFF
     typedef unsigned ulos_str_to_wstr_u32_t;
@@ -924,7 +1063,9 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
       else if(u < 240u) { l = 2; u &= 0xFu; }
       else if(u < 245u) { l = 3; u &= 0x7u; }
       else return 0;
-      for(i = l; i-- && (ul_static_cast(unsigned, *s) & 0xC0u) == 0x80u; u = (u << 6) | (ul_static_cast(unsigned, *s++) & 0x3Fu)) { }
+      for(i = l;
+        i-- && (ul_static_cast(unsigned, *s) & 0xC0u) == 0x80u;
+        u = (u << 6) | (ul_static_cast(unsigned, *s++) & 0x3Fu)) { }
       if(u > 0x10FFFFu || (0xD800u <= u && u <= 0xDFFFu) || u < MINLIM[l]) return 0;
     #ifdef _WIN32
       r += (u >= 0x10000u) + 1;
@@ -1110,6 +1251,57 @@ do_return:
   *pcopyed = copyed;
   if(buf) ul_free(nbuf);
   return err;
+}
+ul_hapi int ulfd_pread_user(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
+  ulfd_int64_t pos, npos;
+  int err;
+
+  err = ulfd_tell(fd, &pos);
+  if(err) return err;
+  err = ulfd_seek(fd, off, ULFD_SEEK_SET, &npos);
+  if(err) return err;
+  err = ulfd_read(fd, buf, count, pread_bytes);
+  if(err) return err;
+  err = ulfd_seek(fd, off, ULFD_SEEK_SET, &npos);
+  return err;
+}
+ul_hapi int ulfd_pwrite_user(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
+  ulfd_int64_t pos, npos;
+  int err;
+
+  err = ulfd_tell(fd, &pos);
+  if(err) return err;
+  err = ulfd_seek(fd, off, ULFD_SEEK_SET, &npos);
+  if(err) return err;
+  err = ulfd_write(fd, buf, count, pwriten_bytes);
+  if(err) return err;
+  err = ulfd_seek(fd, off, ULFD_SEEK_SET, &npos);
+  return err;
+}
+
+ul_hapi int ulfd_pread_allowuser(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off, size_t* pread_bytes) {
+#ifndef ULFD_NO_PREAD
+  return ulfd_pread(fd, buf, count, off, pread_bytes);
+#else
+  return ulfd_pread_user(fd, buf, count, off, pread_bytes);
+#endif
+}
+ul_hapi int ulfd_pwrite_allowuser(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
+#ifndef ULFD_NO_PREAD
+  return ulfd_pwrite(fd, buf, count, off, pwriten_bytes);
+#else
+  return ulfd_pwrite_user(fd, buf, count, off, pwriten_bytes);
+#endif
+}
+ul_hapi int ulfd_copy_file_range_allowuser(
+  ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+) {
+#ifndef ULFD_NO_COPY_FILE_RANGE
+  return ulfd_copy_file_range(fd_in, off_in, fd_out, off_out, len, pcopyed, buf, buf_len);
+#else
+  return ulfd_copy_file_range_user(fd_in, off_in, fd_out, off_out, len, pcopyed, buf, buf_len);
+#endif
 }
 
 
@@ -1474,15 +1666,18 @@ do_return:
     return ul_reinterpret_cast(HANDLE, stored);
   }
 
-  typedef DWORD (WINAPI *_ulfd_GetFinalPathNameByHandleW_t)(HANDLE hFile, LPWSTR lpszFilePath, DWORD cchFilePath, DWORD dwFlags);
-  #if (_WIN32_WINNT+0) >= 0x0600 /* Windows Vista */
+  typedef DWORD (WINAPI *_ulfd_GetFinalPathNameByHandleW_t)(
+    HANDLE hFile, LPWSTR lpszFilePath, DWORD cchFilePath, DWORD dwFlags
+  );
+  #ifdef ULFD_WIN32_HAS_GetFinalPathNameByHandle
     ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
       return _ULFD_POINTER_TO_FUNCTION(_ulfd_GetFinalPathNameByHandleW_t, GetFinalPathNameByHandleW);
     }
   #else
     ul_hapi _ulfd_GetFinalPathNameByHandleW_t _ulfd_get_GetFinalPathNameByHandleW(void) {
       static HANDLE hold = NULL;
-      return _ULFD_POINTER_TO_FUNCTION(_ulfd_GetFinalPathNameByHandleW_t, _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_GetFinalPathNameByHandleW_t,
+        _ulfd_kernel32_function(&hold, "GetFinalPathNameByHandleW"));
     }
   #endif
 
@@ -1701,7 +1896,10 @@ do_return:
     return ulfd_seek(fd, 0, ULFD_SEEK_CUR, poff);
   }
 
-  ul_hapi int ulfd_copy_file_range(ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out, size_t len, size_t* pcopyed) {
+  ul_hapi int ulfd_copy_file_range(
+    ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+    size_t len, size_t* pcopyed
+  ) {
     (void)fd_in; (void)off_in; (void)fd_out; (void)off_out; (void)len; (void)pcopyed;
     return ENOSYS;
   }
@@ -1987,9 +2185,9 @@ do_return:
     else {
       if((prot & ULFD_PROT_READ) == 0) return EINVAL;
       if(prot & ULFD_PROT_EXEC)
-        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) != 0 ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ);
       else
-        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) != 0 ? PAGE_READWRITE : PAGE_READONLY);
+        new_protect = ul_static_cast(DWORD, (prot & ULFD_PROT_WRITE) ? PAGE_READWRITE : PAGE_READONLY);
     }
 
     return VirtualProtect(addr, len, new_protect, &old_protect) ? 0 : _ul_win32_toerrno(GetLastError());
@@ -1999,25 +2197,30 @@ do_return:
     return FlushViewOfFile(addr, len) ? 0 : _ul_win32_toerrno(GetLastError());
   }
   ul_hapi int ulfd_mlock(const void* addr, size_t len) {
-    return VirtualLock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len) ? 0 : _ul_win32_toerrno(GetLastError());
+    return VirtualLock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len)
+      ? 0 : _ul_win32_toerrno(GetLastError());
   }
   ul_hapi int ulfd_munlock(const void* addr, size_t len) {
-    return VirtualUnlock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len) ? 0 : _ul_win32_toerrno(GetLastError());
+    return VirtualUnlock(ul_reinterpret_cast(LPVOID, ul_reinterpret_cast(UINT_PTR, addr)), len)
+      ? 0 : _ul_win32_toerrno(GetLastError());
   }
 
   typedef struct _ulfd_WIN32_MEMORY_RANGE_ENTRY {
     PVOID VirtualAddress;
     SIZE_T NumberOfBytes;
   } _ulfd_WIN32_MEMORY_RANGE_ENTRY;
-  typedef BOOL (WINAPI *_ulfd_PrefetchVirtualMemory_t)(HANDLE, unsigned __int3264, _ulfd_WIN32_MEMORY_RANGE_ENTRY*, ULONG);
-  #if (_WIN32_WINNT+0) >= 0x0602 /* Windows 8 */
+  typedef BOOL (WINAPI *_ulfd_PrefetchVirtualMemory_t)(
+    HANDLE hProcess, unsigned __int3264 NumberOfEntries, _ulfd_WIN32_MEMORY_RANGE_ENTRY* VirtualAddresses, ULONG Flags
+  );
+  #ifdef ULFD_WIN32_HAS_PrefetchVirtualMemory
     ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
       return _ULFD_POINTER_TO_FUNCTION(_ulfd_PrefetchVirtualMemory_t, PrefetchVirtualMemory);
     }
   #else
     ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
       static HANDLE hold = NULL;
-      return _ULFD_POINTER_TO_FUNCTION(_ulfd_PrefetchVirtualMemory_t, _ulfd_kernel32_function(&hold, "PrefetchVirtualMemory"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_PrefetchVirtualMemory_t,
+        _ulfd_kernel32_function(&hold, "PrefetchVirtualMemory"));
     }
   #endif
   ul_hapi int ulfd_madvise(void* addr, size_t len, int advice) {
@@ -2075,7 +2278,8 @@ do_return:
     /*
       After chdir(), we need set current directory for every drive.
       For exchange, if the current directory is "D:\onedir\anotherdir", we need to set "=D:" to "D:\onedir\anotherdir".
-      It aims to be compatible with old MS-DOS behaviour(more details can be found in https://devblogs.microsoft.com/oldnewthing/20100506-00).
+      It aims to be compatible with old MS-DOS behaviour.
+      (more details can be found in https://devblogs.microsoft.com/oldnewthing/20100506-00)
       If any error occurs, ignore it and still return 0.
     */
 
@@ -2172,7 +2376,8 @@ do_return:
     );
     ul_hapi _ulfd_TzSpecificLocalTimeToSystemTime_t _ulfd_get_TzSpecificLocalTimeToSystemTime(void) {
       static HANDLE hold = NULL; /* Windows XP (but VC6 don't define it) */
-      return _ULFD_POINTER_TO_FUNCTION(_ulfd_TzSpecificLocalTimeToSystemTime_t, _ulfd_kernel32_function(&hold, "TzSpecificLocalTimeToSystemTime"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_TzSpecificLocalTimeToSystemTime_t,
+        _ulfd_kernel32_function(&hold, "TzSpecificLocalTimeToSystemTime"));
     }
   #endif
 
@@ -2183,7 +2388,7 @@ do_return:
   #if (_WIN32_WINNT+0) < 0x0501 /* Windows XP */
     _ulfd_TzSpecificLocalTimeToSystemTime_t sysfunc;
     sysfunc = _ulfd_get_TzSpecificLocalTimeToSystemTime();
-    if(sysfunc == NULL) return -1; /* It shouldn't happen */
+    if(sysfunc == NULL) return -1; /* it shouldn't happen */
   #endif
 
     time = (time + EPOCH) * 10000;
@@ -2780,7 +2985,7 @@ do_return:
     return ret;
   }
 
-  #if _WIN32_WINNT >= 0x0501 /* Windows XP */
+  #ifdef ULFD_WIN32_HAS_CreateHardLink
     ul_hapi int ulfd_link_w(const wchar_t* newpath, const wchar_t* oldpath) {
       return CreateHardLinkW(newpath, oldpath, NULL) ? 0 : _ul_win32_toerrno(GetLastError());
     }
@@ -2812,14 +3017,15 @@ do_return:
   typedef BOOLEAN (WINAPI *_ulfd_CreateSymbolicLinkW_t)(
     LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags
   );
-  #if (_WIN32_WINNT+0) >= 0x0600 /* Windows Vista */
+  #ifdef ULFD_WIN32_HAS_CreateSymbolicLink
     ul_hapi _ulfd_CreateSymbolicLinkW_t _ulfd_get_CreateSymbolicLinkW(void) {
       return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateSymbolicLinkW_t, CreateSymbolicLinkW);
     }
   #else
     ul_hapi _ulfd_CreateSymbolicLinkW_t _ulfd_get_CreateSymbolicLinkW(void) {
       static HANDLE hold = NULL;
-      return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateSymbolicLinkW_t, _ulfd_kernel32_function(&hold, "CreateSymbolicLinkW"));
+      return _ULFD_POINTER_TO_FUNCTION(_ulfd_CreateSymbolicLinkW_t,
+        _ulfd_kernel32_function(&hold, "CreateSymbolicLinkW"));
     }
   #endif
   ul_hapi int ulfd_symlink_w(const wchar_t* target, const wchar_t* source) {
@@ -3381,7 +3587,7 @@ do_return:
   #ifdef ULFD_POSIX_HAS_fdatasync
     return fdatasync(fd) < 0 ? errno : 0;
   #else
-    (void)fd; return ENOSYS;
+    return ulfd_fsync(fd);
   #endif
   }
 
