@@ -41,6 +41,39 @@ Polyfill for C99 <stdint.h>
 #include <stddef.h>
 #include <limits.h>
 
+#ifndef UL_HAS_STDINT_H
+  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
+    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+  #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
+      (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
+    #define UL_HAS_STDINT_H
+  #endif
+  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
+    #include <unistd.h>
+    #if defined(_POSIX_VERSION) && ((_POSIX_VERSION+0) >= 200100L)
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+  #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+      || (defined(__cplusplus) && __cplusplus >= 201103L)
+    #define UL_HAS_STDINT_H
+  #endif
+  #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
+    #define UL_HAS_STDINT_H
+  #endif
+  #if defined(__has_include)
+    #if __has_include(<stdint.h>)
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+#endif /* UL_HAS_STDINT_H */
+#ifdef UL_HAS_STDINT_H
+  #include <stdint.h>
+#endif
+
 #if CHAR_BIT != 8
   #error "ulstdint.h: the platform is not 8 bits per byte"
 #endif
