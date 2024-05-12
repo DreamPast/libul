@@ -260,7 +260,7 @@ typedef int (*uldecode_func_t)(uldecode_u32_t* p, int c, void* _state);
 typedef int (*ulencode_func_t)(uldecode_u8_t* p, uldecode_u32_t u, void* _state);
 
 typedef struct uldecode_t {
-  /* Names, ended with `NULL`. */
+  /* names (ends with `NULL`) */
   const char* const* names;
 
   size_t decode_state_size;
@@ -280,7 +280,7 @@ uldecode_api const uldecode_t* ul_get_decode(const char* name);
  * - length of `dest` is not enough;
  * - illegal character in `src`.
  *
- * \return Bytes writen. If any errors occur, this will return 0.
+ * \return Bytes writen. If any error occurs, this will return 0.
 */
 uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
   const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
@@ -291,8 +291,39 @@ uldecode_api size_t ul_decode_between(void* ul_restrict dest, size_t dest_len, c
  * This function will return 0 if following situationsn happen:
  * - text encoding is not supported;
  * - illegal character in `src`.
+ *
+ * \return Bytes needed. If any error occurs, this will return 0.
 */
 uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
+
+/**
+ * Allocate a memory and convert text encoding.
+ * NOTE: Destroy it with custom allocator.
+ *
+ * This function will return NULL if following situationsn happen:
+ * - allocations
+ * - text encoding is not supported;
+ * - illegal character in `src`.
+ *
+ * \return Memory allocated. If any error occurs, this will return NULL.
+*/
+uldecode_api char* ul_decode_between_alloc_ex(size_t* pwriten, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding,
+  void* (*alloc)(void* opaque, void* ptr, size_t on, size_t nn), void* opaque);
+
+/**
+ * Allocate a memory and convert text encoding.
+ * NOTE: Destroy it with `free`.
+ *
+ * This function will return NULL if following situationsn happen:
+ * - allocations
+ * - text encoding is not supported;
+ * - illegal character in `src`.
+ *
+ * \return Memory allocated. If any error occurs, this will return NULL.
+*/
+uldecode_api char* ul_decode_between_alloc(size_t* pwriten, const char* ul_restrict dest_encoding,
   const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding);
 
 
@@ -325,7 +356,9 @@ uldecode_api size_t ul_decode_between_len(const char* ul_restrict dest_encoding,
   #endif
 #endif /* ul_assume */
 
-ul_unused static ul_inline int _uldecode_single(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static ul_inline int _uldecode_single(
+  uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE
+) {
   uldecode_u32_t u;
   if(ul_unlikely(c == ULDECODE_EOF)) return 0;
   if(ul_unlikely(c < 0 || c > 0xFF)) return -1;
@@ -334,7 +367,9 @@ ul_unused static ul_inline int _uldecode_single(uldecode_u32_t* ul_restrict p, i
   if(ul_unlikely(u == 0)) return -1;
   p[0] = u; return 1;
 }
-ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+ul_unused static ul_inline int _ulencode_single(
+  uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE
+) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF)) return 0;
   if(u <= 0x7F) { p[0] = ul_static_cast(uldecode_u8_t, u); return 1; }
@@ -438,7 +473,7 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 #ifndef ULDECODE_NO_UTF_16BE
   static const char* uldecode_utf_16be_name[] = {
     "utf-16be",
-    NULL
+    "utf16be", NULL
   };
 
   struct _uldecode_utf_16be_state_t {
@@ -509,7 +544,7 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 #ifndef ULDECODE_NO_UTF_16LE
   static const char* uldecode_utf_16le_name[] = {
     "utf-16le",
-    /* "utf-16", */ NULL
+    /* "utf-16", */ "utf16le", NULL
   };
 
   struct _uldecode_utf_16le_state_t {
@@ -580,7 +615,7 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 #ifndef ULDECODE_NO_UTF_32BE
   static const char* uldecode_utf_32be_name[] = {
     "utf-32be",
-    NULL
+    "utf32be", NULL
   };
 
   struct _uldecode_utf_32be_state_t {
@@ -637,7 +672,7 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 #ifndef ULDECODE_NO_UTF_32LE
   static const char* uldecode_utf_32le_name[] = {
     "utf-32le",
-    NULL
+    "utf32le", NULL
   };
 
   struct _uldecode_utf_32le_state_t {
@@ -3035,7 +3070,8 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
       if(!((0x40 <= c && c <= 0x7E) || (0x80 <= c && c <= 0xFE)))
         return -1;
 
-      *p = _uldecode_gb18030_table[(state->c[0] - 0x81) * 190u + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40 : 0x41)];
+      *p = _uldecode_gb18030_table[(state->c[0] - 0x81) * 190u
+        + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40 : 0x41)];
       state->c[0] = 0;
       return 1;
     }
@@ -5755,7 +5791,9 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 
     if(ul_unlikely(c < 0)) return -1;
     if(ul_likely(c <= 0x7F)) { *p = ul_static_cast(uldecode_u32_t, c); return 1; }
-    if(c == 0x8E || c == 0x8F || (0xA1 <= c && c <= 0xFE)) { state->lead = ul_static_cast(uldecode_u8_t, c); return 0; }
+    if(c == 0x8E || c == 0x8F || (0xA1 <= c && c <= 0xFE)) {
+      state->lead = ul_static_cast(uldecode_u8_t, c); return 0;
+    }
     return -1;
   }
   #define ulencode_euc_jp_state_size 0
@@ -5985,7 +6023,8 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
       uldecode_u32_t u;
 
       if((0x40 <= c && c <= 0x7E) || (0x80 <= c && c <= 0xFC)) {
-        u = (state->lead - (state->lead < 0xA0 ? 0x81 : 0xC1)) * 188 + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40u : 0x41u);
+        u = (state->lead - (state->lead < 0xA0 ? 0x81 : 0xC1)) * 188
+          + ul_static_cast(uldecode_u8_t, c) - (c < 0x7F ? 0x40u : 0x41u);
         if(8836 <= u && u <= 10715) u = 0xE000 - 8835 + u;
         else u = _uldecode_jis0208_table[u];
       } else u = 0;
@@ -7581,143 +7620,314 @@ ul_unused static ul_inline int _ulencode_single(uldecode_u8_t* ul_restrict p, ul
 
 static const uldecode_t uldecoder_list[] = {
 #ifndef ULDECODE_NO_UTF_8
-  { uldecode_utf_8_name, uldecode_utf_8_state_size, uldecode_utf_8, ulencode_utf_8_state_size, ulencode_utf_8 },
+  {
+    uldecode_utf_8_name,
+    uldecode_utf_8_state_size, uldecode_utf_8,
+    ulencode_utf_8_state_size, ulencode_utf_8
+  },
 #endif
 #ifndef ULDECODE_NO_UTF_16BE
-  { uldecode_utf_16be_name, uldecode_utf_16be_state_size, uldecode_utf_16be, ulencode_utf_16be_state_size, ulencode_utf_16be },
+  {
+    uldecode_utf_16be_name,
+    uldecode_utf_16be_state_size, uldecode_utf_16be,
+    ulencode_utf_16be_state_size, ulencode_utf_16be
+  },
 #endif
 #ifndef ULDECODE_NO_UTF_16LE
-  { uldecode_utf_16le_name, uldecode_utf_16le_state_size, uldecode_utf_16le, ulencode_utf_16le_state_size, ulencode_utf_16le },
+  {
+    uldecode_utf_16le_name,
+    uldecode_utf_16le_state_size, uldecode_utf_16le,
+    ulencode_utf_16le_state_size, ulencode_utf_16le
+  },
 #endif
 #ifndef ULDECODE_NO_UTF_32BE
-  { uldecode_utf_32be_name, uldecode_utf_32be_state_size, uldecode_utf_32be, ulencode_utf_32be_state_size, ulencode_utf_32be },
+  {
+    uldecode_utf_32be_name,
+    uldecode_utf_32be_state_size, uldecode_utf_32be,
+    ulencode_utf_32be_state_size, ulencode_utf_32be
+  },
 #endif
 #ifndef ULDECODE_NO_UTF_32LE
-  { uldecode_utf_32le_name, uldecode_utf_32le_state_size, uldecode_utf_32le, ulencode_utf_32le_state_size, ulencode_utf_32le },
+  {
+    uldecode_utf_32le_name,
+    uldecode_utf_32le_state_size, uldecode_utf_32le,
+    ulencode_utf_32le_state_size, ulencode_utf_32le
+  },
 #endif
 #ifndef ULDECODE_NO_X_USER_DEFINED
-  { uldecode_x_user_defined_name, uldecode_x_user_defined_state_size, uldecode_x_user_defined, ulencode_x_user_defined_state_size, ulencode_x_user_defined },
+  {
+    uldecode_x_user_defined_name,
+    uldecode_x_user_defined_state_size, uldecode_x_user_defined,
+    ulencode_x_user_defined_state_size, ulencode_x_user_defined
+  },
 #endif
 
 #ifndef ULDECODE_NO_IBM866
-  { uldecode_ibm866_name, uldecode_ibm866_state_size, uldecode_ibm866, ulencode_ibm866_state_size, ulencode_ibm866 },
+  {
+    uldecode_ibm866_name,
+    uldecode_ibm866_state_size, uldecode_ibm866,
+    ulencode_ibm866_state_size, ulencode_ibm866
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_2
-  { uldecode_iso_8859_2_name, uldecode_iso_8859_2_state_size, uldecode_iso_8859_2, ulencode_iso_8859_2_state_size, ulencode_iso_8859_2 },
+  {
+    uldecode_iso_8859_2_name,
+    uldecode_iso_8859_2_state_size, uldecode_iso_8859_2,
+    ulencode_iso_8859_2_state_size, ulencode_iso_8859_2
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_3
-  { uldecode_iso_8859_3_name, uldecode_iso_8859_3_state_size, uldecode_iso_8859_3, ulencode_iso_8859_3_state_size, ulencode_iso_8859_3 },
+  {
+    uldecode_iso_8859_3_name,
+    uldecode_iso_8859_3_state_size, uldecode_iso_8859_3,
+    ulencode_iso_8859_3_state_size, ulencode_iso_8859_3
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_4
-  { uldecode_iso_8859_4_name, uldecode_iso_8859_4_state_size, uldecode_iso_8859_4, ulencode_iso_8859_4_state_size, ulencode_iso_8859_4 },
+  {
+    uldecode_iso_8859_4_name,
+    uldecode_iso_8859_4_state_size, uldecode_iso_8859_4,
+    ulencode_iso_8859_4_state_size, ulencode_iso_8859_4
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_5
-  { uldecode_iso_8859_5_name, uldecode_iso_8859_5_state_size, uldecode_iso_8859_5, ulencode_iso_8859_5_state_size, ulencode_iso_8859_5 },
+  {
+    uldecode_iso_8859_5_name,
+    uldecode_iso_8859_5_state_size, uldecode_iso_8859_5,
+    ulencode_iso_8859_5_state_size, ulencode_iso_8859_5
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_6
-  { uldecode_iso_8859_6_name, uldecode_iso_8859_6_state_size, uldecode_iso_8859_6, ulencode_iso_8859_6_state_size, ulencode_iso_8859_6 },
+  {
+    uldecode_iso_8859_6_name,
+    uldecode_iso_8859_6_state_size, uldecode_iso_8859_6,
+    ulencode_iso_8859_6_state_size, ulencode_iso_8859_6
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_7
-  { uldecode_iso_8859_7_name, uldecode_iso_8859_7_state_size, uldecode_iso_8859_7, ulencode_iso_8859_7_state_size, ulencode_iso_8859_7 },
+  {
+    uldecode_iso_8859_7_name,
+    uldecode_iso_8859_7_state_size, uldecode_iso_8859_7,
+    ulencode_iso_8859_7_state_size, ulencode_iso_8859_7
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_8
-  { uldecode_iso_8859_8_name, uldecode_iso_8859_8_state_size, uldecode_iso_8859_8, ulencode_iso_8859_8_state_size, ulencode_iso_8859_8 },
+  {
+    uldecode_iso_8859_8_name,
+    uldecode_iso_8859_8_state_size, uldecode_iso_8859_8,
+    ulencode_iso_8859_8_state_size, ulencode_iso_8859_8
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_8I
-  { uldecode_iso_8859_8i_name, uldecode_iso_8859_8i_state_size, uldecode_iso_8859_8i, ulencode_iso_8859_8i_state_size, ulencode_iso_8859_8i },
+  {
+    uldecode_iso_8859_8i_name,
+    uldecode_iso_8859_8i_state_size, uldecode_iso_8859_8i,
+    ulencode_iso_8859_8i_state_size, ulencode_iso_8859_8i
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_10
-  { uldecode_iso_8859_10_name, uldecode_iso_8859_10_state_size, uldecode_iso_8859_10, ulencode_iso_8859_10_state_size, ulencode_iso_8859_10 },
+  {
+    uldecode_iso_8859_10_name,
+    uldecode_iso_8859_10_state_size, uldecode_iso_8859_10,
+    ulencode_iso_8859_10_state_size, ulencode_iso_8859_10
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_13
-  { uldecode_iso_8859_13_name, uldecode_iso_8859_13_state_size, uldecode_iso_8859_13, ulencode_iso_8859_13_state_size, ulencode_iso_8859_13 },
+  {
+    uldecode_iso_8859_13_name,
+    uldecode_iso_8859_13_state_size, uldecode_iso_8859_13,
+    ulencode_iso_8859_13_state_size, ulencode_iso_8859_13
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_14
-  { uldecode_iso_8859_14_name, uldecode_iso_8859_14_state_size, uldecode_iso_8859_14, ulencode_iso_8859_14_state_size, ulencode_iso_8859_14 },
+  {
+    uldecode_iso_8859_14_name,
+    uldecode_iso_8859_14_state_size, uldecode_iso_8859_14,
+    ulencode_iso_8859_14_state_size, ulencode_iso_8859_14
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_15
-  { uldecode_iso_8859_15_name, uldecode_iso_8859_15_state_size, uldecode_iso_8859_15, ulencode_iso_8859_15_state_size, ulencode_iso_8859_15 },
+  {
+    uldecode_iso_8859_15_name,
+    uldecode_iso_8859_15_state_size, uldecode_iso_8859_15,
+    ulencode_iso_8859_15_state_size, ulencode_iso_8859_15
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_8859_16
-  { uldecode_iso_8859_16_name, uldecode_iso_8859_16_state_size, uldecode_iso_8859_16, ulencode_iso_8859_16_state_size, ulencode_iso_8859_16 },
+  {
+    uldecode_iso_8859_16_name,
+    uldecode_iso_8859_16_state_size, uldecode_iso_8859_16,
+    ulencode_iso_8859_16_state_size, ulencode_iso_8859_16
+  },
 #endif
 #ifndef ULDECODE_NO_KOI8_R
-  { uldecode_koi8_r_name, uldecode_koi8_r_state_size, uldecode_koi8_r, ulencode_koi8_r_state_size, ulencode_koi8_r },
+  {
+    uldecode_koi8_r_name,
+    uldecode_koi8_r_state_size, uldecode_koi8_r,
+    ulencode_koi8_r_state_size, ulencode_koi8_r
+  },
 #endif
 #ifndef ULDECODE_NO_KOI8_U
-  { uldecode_koi8_u_name, uldecode_koi8_u_state_size, uldecode_koi8_u, ulencode_koi8_u_state_size, ulencode_koi8_u },
+  {
+    uldecode_koi8_u_name,
+    uldecode_koi8_u_state_size, uldecode_koi8_u,
+    ulencode_koi8_u_state_size, ulencode_koi8_u
+  },
 #endif
 #ifndef ULDECODE_NO_MACINTOSH
-  { uldecode_macintosh_name, uldecode_macintosh_state_size, uldecode_macintosh, ulencode_macintosh_state_size, ulencode_macintosh },
+  {
+    uldecode_macintosh_name,
+    uldecode_macintosh_state_size, uldecode_macintosh,
+    ulencode_macintosh_state_size, ulencode_macintosh
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_874
-  { uldecode_windows_874_name, uldecode_windows_874_state_size, uldecode_windows_874, ulencode_windows_874_state_size, ulencode_windows_874 },
+  {
+    uldecode_windows_874_name,
+    uldecode_windows_874_state_size, uldecode_windows_874,
+    ulencode_windows_874_state_size, ulencode_windows_874
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1250
-  { uldecode_windows_1250_name, uldecode_windows_1250_state_size, uldecode_windows_1250, ulencode_windows_1250_state_size, ulencode_windows_1250 },
+  {
+    uldecode_windows_1250_name,
+    uldecode_windows_1250_state_size, uldecode_windows_1250,
+    ulencode_windows_1250_state_size, ulencode_windows_1250
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1251
-  { uldecode_windows_1251_name, uldecode_windows_1251_state_size, uldecode_windows_1251, ulencode_windows_1251_state_size, ulencode_windows_1251 },
+  {
+    uldecode_windows_1251_name,
+    uldecode_windows_1251_state_size, uldecode_windows_1251,
+    ulencode_windows_1251_state_size, ulencode_windows_1251
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1252
-  { uldecode_windows_1252_name, uldecode_windows_1252_state_size, uldecode_windows_1252, ulencode_windows_1252_state_size, ulencode_windows_1252 },
+  {
+    uldecode_windows_1252_name,
+    uldecode_windows_1252_state_size, uldecode_windows_1252,
+    ulencode_windows_1252_state_size, ulencode_windows_1252
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1253
-  { uldecode_windows_1253_name, uldecode_windows_1253_state_size, uldecode_windows_1253, ulencode_windows_1253_state_size, ulencode_windows_1253 },
+  {
+    uldecode_windows_1253_name,
+    uldecode_windows_1253_state_size, uldecode_windows_1253,
+    ulencode_windows_1253_state_size, ulencode_windows_1253
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1254
-  { uldecode_windows_1254_name, uldecode_windows_1254_state_size, uldecode_windows_1254, ulencode_windows_1254_state_size, ulencode_windows_1254 },
+  {
+    uldecode_windows_1254_name,
+    uldecode_windows_1254_state_size, uldecode_windows_1254,
+    ulencode_windows_1254_state_size, ulencode_windows_1254
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1255
-  { uldecode_windows_1255_name, uldecode_windows_1255_state_size, uldecode_windows_1255, ulencode_windows_1255_state_size, ulencode_windows_1255 },
+  {
+    uldecode_windows_1255_name,
+    uldecode_windows_1255_state_size, uldecode_windows_1255,
+    ulencode_windows_1255_state_size, ulencode_windows_1255
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1256
-  { uldecode_windows_1256_name, uldecode_windows_1256_state_size, uldecode_windows_1256, ulencode_windows_1256_state_size, ulencode_windows_1256 },
+  {
+    uldecode_windows_1256_name,
+    uldecode_windows_1256_state_size, uldecode_windows_1256,
+    ulencode_windows_1256_state_size, ulencode_windows_1256
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1257
-  { uldecode_windows_1257_name, uldecode_windows_1257_state_size, uldecode_windows_1257, ulencode_windows_1257_state_size, ulencode_windows_1257 },
+  {
+    uldecode_windows_1257_name,
+    uldecode_windows_1257_state_size, uldecode_windows_1257,
+    ulencode_windows_1257_state_size, ulencode_windows_1257
+  },
 #endif
 #ifndef ULDECODE_NO_WINDOWS_1258
-  { uldecode_windows_1258_name, uldecode_windows_1258_state_size, uldecode_windows_1258, ulencode_windows_1258_state_size, ulencode_windows_1258 },
+  {
+    uldecode_windows_1258_name,
+    uldecode_windows_1258_state_size, uldecode_windows_1258,
+    ulencode_windows_1258_state_size, ulencode_windows_1258
+  },
 #endif
 #ifndef ULDECODE_NO_X_MAC_CYRILLIC
-  { uldecode_x_mac_cyrillic_name, uldecode_x_mac_cyrillic_state_size, uldecode_x_mac_cyrillic, ulencode_x_mac_cyrillic_state_size, ulencode_x_mac_cyrillic },
+  {
+    uldecode_x_mac_cyrillic_name,
+    uldecode_x_mac_cyrillic_state_size, uldecode_x_mac_cyrillic,
+    ulencode_x_mac_cyrillic_state_size, ulencode_x_mac_cyrillic
+  },
 #endif
 #ifndef ULDECODE_NO_GBK
-  { uldecode_gbk_name, uldecode_gbk_state_size, uldecode_gbk, ulencode_gbk_state_size, ulencode_gbk },
+  {
+    uldecode_gbk_name,
+    uldecode_gbk_state_size, uldecode_gbk,
+    ulencode_gbk_state_size, ulencode_gbk
+  },
 #endif
 #ifndef ULDECODE_NO_GB18030
-  { uldecode_gb18030_name, uldecode_gb18030_state_size, uldecode_gb18030, ulencode_gb18030_state_size, ulencode_gb18030 },
+  {
+    uldecode_gb18030_name,
+    uldecode_gb18030_state_size, uldecode_gb18030,
+    ulencode_gb18030_state_size, ulencode_gb18030
+  },
 #endif
 /*
 #ifndef ULDECODE_NO_HZ_GB_2312
-  { uldecode_hz_gb_2312_name, uldecode_hz_gb_2312_state_size, uldecode_hz_gb_2312, ulencode_hz_gb_2312 },
+  {
+    uldecode_hz_gb_2312_name,
+    uldecode_hz_gb_2312_state_size, uldecode_hz_gb_2312,
+    ulencode_hz_gb_2312 },
 #endif
 */
 #ifndef ULDECODE_NO_BIG5
-  { uldecode_big5_name, uldecode_big5_state_size, uldecode_big5, ulencode_big5_state_size, ulencode_big5 },
+  {
+    uldecode_big5_name,
+    uldecode_big5_state_size, uldecode_big5,
+    ulencode_big5_state_size, ulencode_big5
+  },
 #endif
 #ifndef ULDECODE_NO_EUC_JP
-  { uldecode_euc_jp_name, uldecode_euc_jp_state_size, uldecode_euc_jp, ulencode_euc_jp_state_size, ulencode_euc_jp },
+  {
+    uldecode_euc_jp_name,
+    uldecode_euc_jp_state_size, uldecode_euc_jp,
+    ulencode_euc_jp_state_size, ulencode_euc_jp
+  },
 #endif
 #ifndef ULDECODE_NO_ISO_2022_JP
-  { uldecode_iso_2022_jp_name, uldecode_iso_2022_jp_state_size, uldecode_iso_2022_jp, ulencode_iso_2022_jp_state_size, ulencode_iso_2022_jp },
+  {
+    uldecode_iso_2022_jp_name,
+    uldecode_iso_2022_jp_state_size, uldecode_iso_2022_jp,
+    ulencode_iso_2022_jp_state_size, ulencode_iso_2022_jp
+  },
 #endif
 #ifndef ULDECODE_NO_SHIFT_JIS
-  { uldecode_shift_jis_name, uldecode_shift_jis_state_size, uldecode_shift_jis, ulencode_shift_jis_state_size, ulencode_shift_jis },
+  {
+    uldecode_shift_jis_name,
+    uldecode_shift_jis_state_size, uldecode_shift_jis,
+    ulencode_shift_jis_state_size, ulencode_shift_jis
+  },
 #endif
 #ifndef ULDECODE_NO_EUC_KR
-  { uldecode_euc_kr_name, uldecode_euc_kr_state_size, uldecode_euc_kr, ulencode_euc_kr_state_size, ulencode_euc_kr },
+  {
+    uldecode_euc_kr_name,
+    uldecode_euc_kr_state_size, uldecode_euc_kr,
+    ulencode_euc_kr_state_size, ulencode_euc_kr
+  },
 #endif
 /*
 #ifndef ULDECODE_NO_ISO_2022_KR
-  { uldecode_iso_2022_kr_name, uldecode_iso_2022_kr_state_size, uldecode_iso_2022_kr, ulencode_iso_2022_kr_state_size, ulencode_iso_2022_kr },
+  {
+    uldecode_iso_2022_kr_name,
+    uldecode_iso_2022_kr_state_size, uldecode_iso_2022_kr,
+    ulencode_iso_2022_kr_state_size, ulencode_iso_2022_kr
+  },
 #endif
 */
 };
 #define uldecoder_list_len (sizeof(uldecoder_list) / sizeof(uldecoder_list[0]))
 
-static int uldecode_iequal(const char* ul_restrict lhs, const char* ul_restrict rhs) {
+static int _uldecode_iequal(const char* ul_restrict lhs, const char* ul_restrict rhs) {
   int lc, rc;
 
   while(*lhs) {
@@ -7734,133 +7944,186 @@ uldecode_api const uldecode_t* ul_get_decode(const char* name) {
 
   if(name == 0) return ul_reinterpret_cast(const uldecode_t*, 0);
   for(i = 0; i < uldecoder_list_len; ++i)
-    if(uldecode_iequal(name, uldecoder_list[i].names[0]))
+    if(_uldecode_iequal(name, uldecoder_list[i].names[0]))
       return &uldecoder_list[i];
   for(i = 0; i < uldecoder_list_len; ++i)
     for(ptr = uldecoder_list[i].names + 1; *ptr; ++ptr)
-      if(uldecode_iequal(name, *ptr))
+      if(_uldecode_iequal(name, *ptr))
         return &uldecoder_list[i];
   return ul_reinterpret_cast(const uldecode_t*, 0);
 }
 
 #include <string.h>
-uldecode_api size_t ul_decode_between(
-  void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
-  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
+
+static size_t _ul_decode_between(
+  uldecode_u8_t* ul_restrict dest, size_t dest_len, ulencode_func_t encoder,
+  const uldecode_u8_t* ul_restrict src, size_t src_len, uldecode_func_t decoder
 ) {
   uldecode_u32_t _encoder_state[(ULENCODE_STATE_MAX + 3) / 4];
   uldecode_u32_t _decoder_state[(ULDECODE_STATE_MAX + 3) / 4];
-  ulencode_func_t _encoder;
-  uldecode_func_t _decoder;
   uldecode_u32_t _ucode[ULDECODE_RETURN_MAX];
   uldecode_u8_t _dest_cache[ULENCODE_RETURN_MAX];
-  uldecode_u8_t* ul_restrict _dest;
-  const uldecode_u8_t* ul_restrict _src;
   int _di, _ei;
   int _dr, _er;
   const size_t _dest_len_raw = dest_len;
 
-  _dest = ul_reinterpret_cast(uldecode_u8_t*, dest);
-  _src = ul_reinterpret_cast(const uldecode_u8_t*, src);
   memset(_encoder_state, 0, sizeof(_encoder_state));
   memset(_decoder_state, 0, sizeof(_decoder_state));
-  do {
-    const uldecode_t* _tmp;
-    _tmp = ul_get_decode(src_encoding);
-    if(_tmp == NULL) return 0;
-    _decoder = _tmp->decode;
-    _tmp = ul_get_decode(dest_encoding);
-    if(_tmp == NULL) return 0;
-    _encoder = _tmp->encode;
-  } while(0);
 
   while(src_len-- > 0) {
-    _dr = _decoder(_ucode, *_src++, _decoder_state);
+    _dr = decoder(_ucode, *src++, _decoder_state);
     if(_dr < 0) return 0;
     ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
     for(_di = 0; _di < _dr; ++_di) {
-      _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
+      _er = encoder(_dest_cache, _ucode[_di], _encoder_state);
       if(_er < 0 || dest_len < ul_static_cast(size_t, _er)) return 0;
       ul_assume(ul_static_cast(size_t, _er) < (sizeof(_dest_cache) / sizeof(_dest_cache[0])));
-      for(_ei = 0; _ei < _er; ++_ei) *_dest++ = _dest_cache[_ei];
+      for(_ei = 0; _ei < _er; ++_ei) *dest++ = _dest_cache[_ei];
       dest_len -= ul_static_cast(size_t, _er);
     }
   }
 
-  _dr = _decoder(_ucode, ULDECODE_EOF, _decoder_state);
+  _dr = decoder(_ucode, ULDECODE_EOF, _decoder_state);
   if(_dr < 0) return 0;
   ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
   for(_di = 0; _di < _dr; ++_di) {
-    _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
+    _er = encoder(_dest_cache, _ucode[_di], _encoder_state);
     if(_er < 0 || dest_len < ul_static_cast(size_t, _er)) return 0;
     ul_assume(ul_static_cast(size_t, _er) < (sizeof(_dest_cache) / sizeof(_dest_cache[0])));
-    for(_ei = 0; _ei < _er; ++_ei) *_dest++ = _dest_cache[_ei];
+    for(_ei = 0; _ei < _er; ++_ei) *dest++ = _dest_cache[_ei];
     dest_len -= ul_static_cast(size_t, _er);
   }
 
-  _er = _encoder(_dest_cache, ULENCODE_EOF, _encoder_state);
+  _er = encoder(_dest_cache, ULENCODE_EOF, _encoder_state);
   if(_er < 0 || dest_len < ul_static_cast(size_t, _er)) return 0;
   ul_assume(ul_static_cast(size_t, _er) < (sizeof(_dest_cache) / sizeof(_dest_cache[0])));
-  for(_ei = 0; _ei < _er; ++_ei) *_dest++ = _dest_cache[_ei];
+  for(_ei = 0; _ei < _er; ++_ei) *dest++ = _dest_cache[_ei];
   dest_len -= ul_static_cast(size_t, _er);
 
   return _dest_len_raw - dest_len;
+}
+
+static size_t _ul_decode_between_len(
+  ulencode_func_t encoder, const uldecode_u8_t* ul_restrict src, size_t src_len, uldecode_func_t decoder
+) {
+  uldecode_u32_t _encoder_state[(ULENCODE_STATE_MAX + 3) / 4];
+  uldecode_u32_t _decoder_state[(ULDECODE_STATE_MAX + 3) / 4];
+  uldecode_u32_t _ucode[ULDECODE_RETURN_MAX];
+  uldecode_u8_t _dest_cache[ULENCODE_RETURN_MAX];
+  int _di;
+  int _dr, _er;
+  size_t ret;
+
+  memset(_encoder_state, 0, sizeof(_encoder_state));
+  memset(_decoder_state, 0, sizeof(_decoder_state));
+  ret = 0;
+
+  while(src_len-- > 0) {
+    _dr = decoder(_ucode, *src++, _decoder_state);
+    if(_dr < 0) return 0;
+    ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
+    for(_di = 0; _di < _dr; ++_di) {
+      _er = encoder(_dest_cache, _ucode[_di], _encoder_state);
+      if(_er < 0) return 0;
+      ret += ul_static_cast(size_t, _er);
+    }
+  }
+
+  _dr = decoder(_ucode, ULDECODE_EOF, _decoder_state);
+  if(_dr < 0) return 0;
+  ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
+  for(_di = 0; _di < _dr; ++_di) {
+    _er = encoder(_dest_cache, _ucode[_di], _encoder_state);
+    if(_er < 0) return 0;
+    ret += ul_static_cast(size_t, _er);
+  }
+
+  _er = encoder(_dest_cache, ULENCODE_EOF, _encoder_state);
+  if(_er < 0) return 0;
+  ret += ul_static_cast(size_t, _er);
+
+  return ret;
+}
+
+uldecode_api size_t ul_decode_between(
+  void* ul_restrict dest, size_t dest_len, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
+) {
+  ulencode_func_t _encoder;
+  uldecode_func_t _decoder;
+  const uldecode_t* _tmp;
+
+  _tmp = ul_get_decode(src_encoding);
+  if(_tmp == NULL) return 0;
+  _decoder = _tmp->decode;
+  _tmp = ul_get_decode(dest_encoding);
+  if(_tmp == NULL) return 0;
+  _encoder = _tmp->encode;
+
+  return _ul_decode_between(ul_reinterpret_cast(uldecode_u8_t*, dest), dest_len, _encoder,
+    ul_reinterpret_cast(const uldecode_u8_t*, src), src_len, _decoder);
 }
 
 uldecode_api size_t ul_decode_between_len(
   const char* ul_restrict dest_encoding,
   const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
 ) {
-  uldecode_u32_t _encoder_state[(ULENCODE_STATE_MAX + 3) / 4];
-  uldecode_u32_t _decoder_state[(ULDECODE_STATE_MAX + 3) / 4];
   ulencode_func_t _encoder;
   uldecode_func_t _decoder;
-  uldecode_u32_t _ucode[ULDECODE_RETURN_MAX];
-  uldecode_u8_t _dest_cache[ULENCODE_RETURN_MAX];
-  const uldecode_u8_t* ul_restrict _src;
-  int _di;
-  int _dr, _er;
-  size_t ret;
+  const uldecode_t* _tmp;
 
-  _src = ul_reinterpret_cast(const uldecode_u8_t*, src);
-  memset(_encoder_state, 0, sizeof(_encoder_state));
-  memset(_decoder_state, 0, sizeof(_decoder_state));
-  ret = 0;
-  do {
-    const uldecode_t* _tmp;
-    _tmp = ul_get_decode(src_encoding);
-    if(_tmp == NULL) return 0;
-    _decoder = _tmp->decode;
-    _tmp = ul_get_decode(dest_encoding);
-    if(_tmp == NULL) return 0;
-    _encoder = _tmp->encode;
-  } while(0);
+  _tmp = ul_get_decode(src_encoding);
+  if(_tmp == NULL) return 0;
+  _decoder = _tmp->decode;
+  _tmp = ul_get_decode(dest_encoding);
+  if(_tmp == NULL) return 0;
+  _encoder = _tmp->encode;
 
-  while(src_len-- > 0) {
-    _dr = _decoder(_ucode, *_src++, _decoder_state);
-    if(_dr < 0) return 0;
-    ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
-    for(_di = 0; _di < _dr; ++_di) {
-      _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
-      if(_er < 0) return 0;
-      ret += ul_static_cast(size_t, _er);
-    }
-  }
+  return _ul_decode_between_len(_encoder, ul_reinterpret_cast(const uldecode_u8_t*, src), src_len, _decoder);
+}
 
-  _dr = _decoder(_ucode, ULDECODE_EOF, _decoder_state);
-  if(_dr < 0) return 0;
-  ul_assume(ul_static_cast(size_t, _dr) < (sizeof(_ucode) / sizeof(_ucode[0])));
-  for(_di = 0; _di < _dr; ++_di) {
-    _er = _encoder(_dest_cache, _ucode[_di], _encoder_state);
-    if(_er < 0) return 0;
-    ret += ul_static_cast(size_t, _er);
-  }
+uldecode_api char* ul_decode_between_alloc_ex(size_t* pwriten, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding,
+  void* (*alloc)(void* opaque, void* ptr, size_t on, size_t nn), void* opaque
+) {
+  ulencode_func_t _encoder;
+  uldecode_func_t _decoder;
+  const uldecode_t* _tmp;
+  uldecode_u8_t* _ptr = NULL;
+  size_t _len_need;
+  size_t _len_writen = 0;
 
-  _er = _encoder(_dest_cache, ULENCODE_EOF, _encoder_state);
-  if(_er < 0) return 0;
-  ret += ul_static_cast(size_t, _er);
+  _tmp = ul_get_decode(src_encoding);
+  if(_tmp == NULL) goto do_return;
+  _decoder = _tmp->decode;
+  _tmp = ul_get_decode(dest_encoding);
+  if(_tmp == NULL) goto do_return;
+  _encoder = _tmp->encode;
 
-  return ret;
+  _len_need = _ul_decode_between_len(_encoder, ul_reinterpret_cast(const uldecode_u8_t*, src), src_len, _decoder);
+  if(_len_need == 0) goto do_return;
+  if(ul_unlikely(alloc == NULL)) goto do_return;
+  _ptr = ul_reinterpret_cast(uldecode_u8_t*, alloc(opaque, NULL, 0, _len_need));
+  if(ul_unlikely(_ptr == NULL)) goto do_return;
+
+  _len_writen = _ul_decode_between(_ptr, _len_need, _encoder,
+    ul_reinterpret_cast(const uldecode_u8_t*, src), src_len, _decoder);
+  if(ul_unlikely(_len_writen == 0)) { alloc(opaque, _ptr, _len_need, 0); _ptr = NULL; }
+
+do_return:
+  if(ul_likely(pwriten)) *pwriten = _len_writen;
+  return ul_reinterpret_cast(char*, _ptr);
+}
+
+#include <stdlib.h>
+static void* _uldecode_allocator(void* opaque, void* ptr, size_t on, size_t nn) {
+  (void)opaque; (void)on;
+  return nn ? realloc(ptr, nn) : (free(ptr), ul_reinterpret_cast(void*, 0));
+}
+uldecode_api char* ul_decode_between_alloc(size_t* pwriten, const char* ul_restrict dest_encoding,
+  const void* ul_restrict src, size_t src_len, const char* ul_restrict src_encoding
+) {
+  return ul_decode_between_alloc_ex(pwriten, dest_encoding, src, src_len, src_encoding, _uldecode_allocator, NULL);
 }
 
 #endif /* ULDECODE_NO_IMPLE */
