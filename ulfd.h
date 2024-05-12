@@ -385,7 +385,7 @@ ul_hapi int ulfd_pwrite_allowuser(ulfd_t fd, const void* buf, size_t count, ulfd
   if `buf` is NULL, the function will automatically allocate memory */
 ul_hapi int ulfd_copy_file_range_allowuser(
   ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
-  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+  size_t len, size_t* pcopyed
 );
 
 ul_hapi int ulfd_ffullsync(ulfd_t fd);
@@ -895,6 +895,11 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
       #define ULFD_POSIX_HAS_fchown
       #define ULFD_POSIX_HAS_fdatasync
     #endif
+    #if (_XOPEN_SOURCE+0)
+      #define ULFD_POSIX_HAS_fileno
+      #define ULFD_POSIX_HAS_fdopen
+      #define ULFD_POSIX_HAS_fsync
+    #endif
     #ifdef _XOPEN_SOURCE_EXTENDED
       #if (_XOPEN_SOURCE+0) && (_XOPEN_SOURCE_EXTENDED+0)
         #define ULFD_POSIX_HAS_realpath
@@ -920,12 +925,6 @@ ul_hapi wchar_t* ulfd_wcsdup(const wchar_t* wstr) {
     #define ULFD_POSIX_HAS_fchown
     #define ULFD_POSIX_HAS_fsync
     #define ULFD_POSIX_STAT_HAS_TIM
-  #endif
-
-  #if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE+0)
-    #define ULFD_POSIX_HAS_fileno
-    #define ULFD_POSIX_HAS_fdopen
-    #define ULFD_POSIX_HAS_fsync
   #endif
 
   #if defined(_ATFILE_SOURCE) && (_ATFILE_SOURCE+0)
@@ -1295,12 +1294,12 @@ ul_hapi int ulfd_pwrite_allowuser(ulfd_t fd, const void* buf, size_t count, ulfd
 }
 ul_hapi int ulfd_copy_file_range_allowuser(
   ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
-  size_t len, size_t* pcopyed, void* buf, size_t buf_len
+  size_t len, size_t* pcopyed
 ) {
 #ifndef ULFD_NO_COPY_FILE_RANGE
-  return ulfd_copy_file_range(fd_in, off_in, fd_out, off_out, len, pcopyed, buf, buf_len);
+  return ulfd_copy_file_range(fd_in, off_in, fd_out, off_out, len, pcopyed);
 #else
-  return ulfd_copy_file_range_user(fd_in, off_in, fd_out, off_out, len, pcopyed, buf, buf_len);
+  return ulfd_copy_file_range_user(fd_in, off_in, fd_out, off_out, len, pcopyed, NULL, 0);
 #endif
 }
 
