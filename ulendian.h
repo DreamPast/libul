@@ -325,7 +325,7 @@ ul_hapi unsigned char ul_bswap_uchar(unsigned char c) { return c; }
   ul_hapi unsigned long ul_bswap_ulong(unsigned long val) {
     return ul_static_cast(unsigned long, ul_bswap32(ul_static_cast(uint32_t, val)));
   }
-#elif LONG_MAX == long64_MAX
+#elif LONG_MAX == INT64_MAX
   ul_hapi signed long ul_bswap_long(signed long val) {
     return ul_static_cast(signed long, ul_bswap64(ul_static_cast(uint64_t, val)));
   }
