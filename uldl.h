@@ -180,7 +180,9 @@ Dynamic library
         else if(u < 240u) { l = 2; u &= 0xFu; }
         else if(u < 245u) { l = 3; u &= 0x7u; }
         else return 0;
-        for(i = l; i-- && (ul_static_cast(unsigned, *s) & 0xC0u) == 0x80u; u = (u << 6) | (ul_static_cast(unsigned, *s++) & 0x3Fu)) { }
+        for(i = l;
+          i-- && (ul_static_cast(unsigned, *s) & 0xC0u) == 0x80u;
+          u = (u << 6) | (ul_static_cast(unsigned, *s++) & 0x3Fu)) { }
         if(u > 0x10FFFFu || (0xD800u <= u && u <= 0xDFFFu) || u < MINLIM[l]) return 0;
       #ifdef _WIN32
         r += (u >= 0x10000u) + 1;

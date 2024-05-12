@@ -154,7 +154,9 @@ Mutex
     _ULMTX_WRAPPER() { }
     _ULMTX_WRAPPER(const _ULMTX_WRAPPER& o) { memcpy(reinterpret_cast<void*>(this), &o, sizeof(o)); }
     ~_ULMTX_WRAPPER() { }
-    _ULMTX_WRAPPER& operator=(const _ULMTX_WRAPPER& o) { memcpy(reinterpret_cast<void*>(this), &o, sizeof(o)); return *this; }
+    _ULMTX_WRAPPER& operator=(const _ULMTX_WRAPPER& o) {
+      memcpy(reinterpret_cast<void*>(this), &o, sizeof(o)); return *this;
+    }
 
     template<class... Args>
     static _ULMTX_WRAPPER create(Args&& ...args) {
@@ -533,7 +535,8 @@ Mutex
     the number of waiters.
     */
     for(;;) {
-      const _ulmtx_iptr_t new_count = ((*old_count & _ULTMTX_LOCK_FLAG) ? *old_count : ((*old_count - 1) | _ULTMTX_LOCK_FLAG)) & ~_ULTMTX_EVENT_FLAG;
+      const _ulmtx_iptr_t new_count =
+        ((*old_count & _ULTMTX_LOCK_FLAG) ? *old_count : ((*old_count - 1) | _ULTMTX_LOCK_FLAG)) & ~_ULTMTX_EVENT_FLAG;
       const _ulmtx_iptr_t current = _ulmtx_InterlockedCompareExchange(&mtx->count, new_count, *old_count);
       if(current == *old_count) break;
       *old_count = current;
@@ -543,7 +546,8 @@ Mutex
     const HANDLE current_event = ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedCompareExchange(&mtx->event, 0, 0));
     if(!current_event) {
       const HANDLE new_event = CreateEvent(0, FALSE, FALSE, NULL);
-      const HANDLE old_event = ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0));
+      const HANDLE old_event =
+        ul_reinterpret_cast(HANDLE, _ulmtx_InterlockedCompareExchange(&mtx->event, PtrToUlong(new_event), 0));
       if(!old_event) {
         CloseHandle(new_event);
         return old_event;

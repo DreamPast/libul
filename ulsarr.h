@@ -118,7 +118,9 @@ union ulsarr_t;
 typedef union ulsarr_t ulsarr_t;
 
 ul_hapi ulsarr_t* ulsarr_new_copy(ulsarr_alloc_t* alloc, const void* src, ulsarr_len_t len);
-ul_hapi ulsarr_t* ulsarr_new_span_ex(ulsarr_alloc_t* alloc, const void* span, size_t len, void* opaque, void (*finalizer)(void* opaque));
+ul_hapi ulsarr_t* ulsarr_new_span_ex(
+  ulsarr_alloc_t* alloc, const void* span, size_t len, void* opaque, void (*finalizer)(void* opaque)
+);
 ul_hapi ulsarr_t* ulsarr_new_span(ulsarr_alloc_t* alloc, const void* span, size_t len);
 ul_hapi ulsarr_t* ulsarr_new_reserve(ulsarr_alloc_t* alloc, ulsarr_len_t len, void* pptr);
 ul_hapi ulsarr_t* ulsarr_copy(ulsarr_t* obj);
@@ -152,8 +154,10 @@ ul_hapi ulsarr_t* ulsarr_resize(ulsarr_alloc_t* alloc, ulsarr_t* obj, size_t new
 #define ulsarr_assert(cond) assert(cond)
 
 #define _ulsarr_malloc(alloc, num) (ul_unlikely(alloc) ? (alloc)->fn((alloc)->opaque, NULL, 0, (num)) : malloc(num))
-#define _ulsarr_realloc(alloc, ptr, on, nn) (ul_unlikely(alloc) ? (alloc)->fn((alloc)->opaque, (ptr), (on), (nn)) : realloc((ptr), (nn)))
-#define _ulsarr_free(alloc, ptr, on) (ul_unlikely(alloc) ? (alloc)->fn((alloc)->opaque, (ptr), (on), 0) : (free((ptr)), ul_reinterpret_cast(void*, 0)))
+#define _ulsarr_realloc(alloc, ptr, on, nn) (ul_unlikely(alloc) \
+  ? (alloc)->fn((alloc)->opaque, (ptr), (on), (nn)) : realloc((ptr), (nn)))
+#define _ulsarr_free(alloc, ptr, on) (ul_unlikely(alloc) \
+  ? (alloc)->fn((alloc)->opaque, (ptr), (on), 0) : (free((ptr)), ul_reinterpret_cast(void*, 0)))
 
 enum {
   ULSARR_TAG_SEQ,
@@ -214,7 +218,9 @@ ul_hapi ulsarr_t* ulsarr_new_copy(ulsarr_alloc_t* alloc, const void* src, ulsarr
   memcpy(obj->seq.b, src, len);
   return obj;
 }
-ul_hapi ulsarr_t* ulsarr_new_span_ex(ulsarr_alloc_t* alloc, const void* span, size_t len, void* opaque, void (*finalizer)(void* opaque)) {
+ul_hapi ulsarr_t* ulsarr_new_span_ex(
+  ulsarr_alloc_t* alloc, const void* span, size_t len, void* opaque, void (*finalizer)(void* opaque)
+) {
   ulsarr_t* obj;
   _ULSARR_NEW_SPAN(obj, len);
   obj->span.ptr = ul_reinterpret_cast(const ulsarr_byte_t*, span);
@@ -471,7 +477,8 @@ ul_hapi ulsarr_t* ulsarr_resize(ulsarr_alloc_t* alloc, ulsarr_t* obj, size_t new
   ulsarr_t* nobj;
   if(obj->head.tag != ULSARR_TAG_SEQ) return NULL;
   if(obj->head.cnt != 1) return NULL;
-  nobj = ul_reinterpret_cast(ulsarr_t*, _ulsarr_realloc(alloc, obj, sizeof(_ulsarr_head_t) + obj->head.len, sizeof(_ulsarr_head_t) + new_len));
+  nobj = ul_reinterpret_cast(ulsarr_t*,
+    _ulsarr_realloc(alloc, obj, sizeof(_ulsarr_head_t) + obj->head.len, sizeof(_ulsarr_head_t) + new_len));
   if(ul_unlikely(!nobj)) return NULL;
   nobj->head.len = new_len;
   return nobj;
