@@ -112,41 +112,6 @@ Red-Black Tree (fast but restricted version)
   #endif
 #endif /* ul_static_cast */
 
-#ifndef UL_HAS_STDINT_H
-  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
-    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
-      (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
-    #include <unistd.h>
-    #if defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200100L)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-  #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
-      || (defined(__cplusplus) && __cplusplus >= 201103L)
-    #define UL_HAS_STDINT_H
-  #endif
-  #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
-    #define UL_HAS_STDINT_H
-  #endif
-  #if defined(__has_include)
-    #if __has_include(<stdint.h>)
-      #define UL_HAS_STDINT_H
-    #endif
-  #endif
-#endif /* UL_HAS_STDINT_H */
-#ifdef UL_HAS_STDINT_H
-  #include <stdint.h>
-#else
-  #include "ulstdint.h" /* polyfill */
-#endif
-
 #include <assert.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -254,15 +219,20 @@ typedef int (*ulrb_comp_t)(void* opaque, const void* lhs, const void* rhs);
 
 #define ulrb_node_get_left(node) ((node)->left)
 #define ulrb_node_set_left(node, child) ((node)->left = (child))
-#define ulrb_node_get_right(node) ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1))
+#define ulrb_node_get_right(node) \
+  ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1))
 #define ulrb_node_set_right(node, child) ((node)->right = ul_reinterpret_cast(ulrb_node_t*, \
-  ul_reinterpret_cast(ulrb_uptr_t, ul_reinterpret_cast(ulrb_node_t*, child)) | (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & 1)))
+  ul_reinterpret_cast(ulrb_uptr_t, ul_reinterpret_cast(ulrb_node_t*, child)) | \
+    (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & 1)))
 #define ulrb_node_get_color(node) (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & 1)
 #define ulrb_node_set_color(node, color) ((node)->right = \
-  ul_reinterpret_cast(ulrb_node_t*, (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1)) | ul_static_cast(unsigned, color)))
-#define ulrb_node_set_red(node) ((node)->right = ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) | 1))
+  ul_reinterpret_cast(ulrb_node_t*, (ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & \
+    ul_static_cast(ulrb_uptr_t, ~1)) | ul_static_cast(unsigned, color)))
+#define ulrb_node_set_red(node) \
+  ((node)->right = ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) | 1))
 #define ulrb_node_set_black(node) ((node)->right = \
-   ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & ul_static_cast(ulrb_uptr_t, ~1)))
+  ul_reinterpret_cast(ulrb_node_t*, ul_reinterpret_cast(ulrb_uptr_t, (node)->right) & \
+    ul_static_cast(ulrb_uptr_t, ~1)))
 
 ul_hapi void ulrb_node_init(ulrb_node_t* node) {
   assert((ul_reinterpret_cast(ulrb_uptr_t, node) & 1) == 0);
