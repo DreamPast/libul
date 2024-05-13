@@ -268,6 +268,26 @@ namespace ul {
             _throw_if_error(ulfd_pwrite(fd, buf, count, off, &write_bytes));
             return write_bytes;
         }
+        inline size_t pread_user(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off) {
+            size_t read_bytes;
+            _throw_if_error(ulfd_pread_user(fd, buf, count, off, &read_bytes));
+            return read_bytes;
+        }
+        inline size_t pwrite_user(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off) {
+            size_t write_bytes;
+            _throw_if_error(ulfd_pwrite_user(fd, buf, count, off, &write_bytes));
+            return write_bytes;
+        }
+        inline size_t pread_allowuser(ulfd_t fd, void* buf, size_t count, ulfd_int64_t off) {
+            size_t read_bytes;
+            _throw_if_error(ulfd_pread_allowuser(fd, buf, count, off, &read_bytes));
+            return read_bytes;
+        }
+        inline size_t pwrite_allowuser(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off) {
+            size_t write_bytes;
+            _throw_if_error(ulfd_pwrite_allowuser(fd, buf, count, off, &write_bytes));
+            return write_bytes;
+        }
 
         inline ulfd_int64_t seek(ulfd_t fd, ulfd_int64_t off, int origin = ULFD_SEEK_SET) {
             ulfd_int64_t r;
@@ -291,6 +311,14 @@ namespace ul {
         ) {
             size_t r;
             _throw_if_error(ulfd_copy_file_range_user(fd_in, off_in, fd_out, off_out, len, &r, buf, buf_len));
+            return r;
+        }
+        inline size_t copy_file_range_allowuser(
+            ulfd_t fd_in, ulfd_int64_t* off_in, ulfd_t fd_out, ulfd_int64_t* off_out,
+            size_t len
+        ) {
+            size_t r;
+            _throw_if_error(ulfd_copy_file_range_allowuser(fd_in, off_in, fd_out, off_out, len, &r));
             return r;
         }
 
