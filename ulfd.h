@@ -2209,7 +2209,7 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     SIZE_T NumberOfBytes;
   } _ulfd_WIN32_MEMORY_RANGE_ENTRY;
   typedef BOOL (WINAPI *_ulfd_PrefetchVirtualMemory_t)(
-    HANDLE hProcess, unsigned __int3264 NumberOfEntries, _ulfd_WIN32_MEMORY_RANGE_ENTRY* VirtualAddresses, ULONG Flags
+    HANDLE hProcess, unsigned __int64 NumberOfEntries, _ulfd_WIN32_MEMORY_RANGE_ENTRY* VirtualAddresses, ULONG Flags
   );
   #ifdef ULFD_WIN32_HAS_PrefetchVirtualMemory
     ul_hapi _ulfd_PrefetchVirtualMemory_t _ulfd_get_PrefetchVirtualMemory(void) {
