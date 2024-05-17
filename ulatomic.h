@@ -12,7 +12,8 @@ Atomic (32-bit, and optional 64-bit)
 # Config macro
   - ULATOMIC_NEEDED
     Define atomic macro even if atomic APIs not found, to ensure compatibility with atomic operations.
-
+  - ULATOMIC_SINGLE_THREAD
+    Disbale multi-thread support. It's often used with `ULATOMIC_NEEDED`.
 
 # APIs
   Macros are similar to C11, but you need to add suffixes because C89 does not support generics.
@@ -223,6 +224,12 @@ Atomic (32-bit, and optional 64-bit)
   #define ULATOMIC_API_GNUC
 #endif
 
+#ifdef ULATOMIC_SINGLE_THREAD
+  #undef ULATOMIC_API_CXX11
+  #undef ULATOMIC_API_C11
+  #undef ULATOMIC_API_MSVC
+  #undef ULATOMIC_API_GNUC
+#endif
 
 #if defined(ULATOMIC_API_C11)
   #include <stdatomic.h>
