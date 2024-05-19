@@ -1785,6 +1785,7 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
+    else if(error == ERROR_HANDLE_EOF) return 0;
     else return _ul_win32_toerrno(error);
   }
   ul_hapi int ulfd_write(ulfd_t fd, const void* buf, size_t count, size_t* pwriten_bytes) {
@@ -1843,6 +1844,7 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     *pread_bytes = sum_read_bytes + read_bytes;
     if(error == ERROR_ACCESS_DENIED) return EBADF;
     else if(error == ERROR_BROKEN_PIPE) return 0;
+    else if(error == ERROR_HANDLE_EOF) return 0;
     else return _ul_win32_toerrno(error);
   }
   ul_hapi int ulfd_pwrite(ulfd_t fd, const void* buf, size_t count, ulfd_int64_t off, size_t* pwriten_bytes) {
