@@ -1064,6 +1064,9 @@ Atomic (32-bit, and optional 64-bit)
 #ifdef ULATOMIC_FLAG_INIT
   typedef ulatomic_flag_t ulatomic_spinlock_t;
   #define ULATOMIC_SPINLOCK_INIT ULATOMIC_FLAG_INIT
+  ul_hapi void ulatomic_spinlock_init(ulatomic_spinlock_t* lck) {
+    ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_release);
+  }
   ul_hapi void ulatomic_spinlock_lock(ulatomic_spinlock_t* lck) {
     while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire));
   }
