@@ -424,7 +424,10 @@ ul_hapi uldate_t uldate_now_utc(void) {
   return ULDATE_FROM_SECOND(ul_static_cast(uldate_int_t, sec));
 #endif
 }
-ul_hapi uldate_t uldate_now_locale(void) { return uldate_utc_to_locale(uldate_now_utc()); }
+ul_hapi uldate_t uldate_now_locale(void) {
+  const uldate_t utc = uldate_now_utc();
+  return ul_likely(utc != ULDATE_INVALID) ? uldate_utc_to_locale(utc) : ULDATE_INVALID;
+}
 
 #ifdef ULDATE_IGNORE_JULIAN_CALENDAR
   /* return days of the first day of the given year from '1970', negative value is accepted */
