@@ -1938,7 +1938,7 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     }
 
     if(error && mode != ULFD_F_UNLCK) return EDEADLOCK;
-    return _ul_win32_toerrno(GetLastError());
+    return _ul_win32_toerrno(error);
   }
   ul_hapi int ulfd_lock(ulfd_t fd, ulfd_int64_t off, ulfd_int64_t len, int mode) {
     return _ulfd_lock(fd, off, len, mode, LOCKFILE_FAIL_IMMEDIATELY);
