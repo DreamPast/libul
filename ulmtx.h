@@ -965,9 +965,9 @@ Mutex
 
   ul_hapi int _ulmtx_get_timepoint(struct timespec* tp, unsigned long ms) {
     if(timespec_get(tp, TIME_UTC) != TIME_UTC) return -1;
-    tp->tv_nsec += (ms % 1000 * 1000000);
+    tp->tv_nsec += ul_static_cast(long, ms % 1000 * 1000000);
     if(tp->tv_nsec >= 1000000000) { tp->tv_nsec -= 1000000000; ++tp->tv_sec; }
-    tp->tv_sec += ms;
+    tp->tv_sec += ul_static_cast(time_t, ms / 1000);
     if(tp->tv_sec < 0) return -1;
     return 0;
   }
