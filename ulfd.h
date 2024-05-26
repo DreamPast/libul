@@ -114,7 +114,7 @@ File descriptor (Unix style)
 #endif /* ul_hapi */
 
 #ifndef ul_nodiscard
-  #if defined(__has_cpp_attribute)
+  #if defined(__cplusplus) && __cplusplus >= 201103L && defined(__has_cpp_attribute)
     #if __has_cpp_attribute(nodiscard)
       #define ul_nodiscard [[nodiscard]]
     #endif
@@ -124,11 +124,11 @@ File descriptor (Unix style)
       #define ul_nodiscard __attribute__((warn_unused_result))
     #endif
   #endif
-  #if !defined(ul_nodiscard) && defined(_HAS_NODISCARD)
-    #define ul_nodiscard _NODISCARD
-  #endif
   #if !defined(ul_nodiscard) && defined(_MSC_VER) && _MSC_VER >= 1700
     #define ul_nodiscard _Check_return_
+  #endif
+  #if !defined(ul_nodiscard) && defined(_HAS_NODISCARD)
+    #define ul_nodiscard _NODISCARD
   #endif
   #ifndef ul_nodiscard
     #define ul_nodiscard
@@ -1224,14 +1224,14 @@ ul_hapi int ulfd_copy_file_range_user(
     nwriten = 0;
     if(nin >= 0) {
       err = ulfd_pread(fd_in, nbuf, buf_len, nin, &nread);
-      nin += nread;
+      nin += ul_static_cast(ulfd_int64_t, nread);
     } else err = ulfd_read(fd_in, nbuf, buf_len, &nread);
     if(err) goto do_return;
 
     if(nread) {
       if(nout >= 0) {
         err = ulfd_pwrite(fd_out, nbuf, nread, nout, &nwriten);
-        nout += nwriten;
+        nout += ul_static_cast(ulfd_int64_t, nwriten);
       } else err = ulfd_write(fd_out, nbuf, buf_len, &nwriten);
     }
     if(err) goto do_return;

@@ -373,7 +373,7 @@ ul_hapi int uldate_get_gmtoff_minutes(void) {
   time_t ti = 100000;
   struct tm tm;
   if(ul_unlikely(localtime_r(&ti, &tm) == NULL)) return 0;
-  return tm.tm_gmtoff / 60;
+  return ul_static_cast(int, tm.tm_gmtoff / 60);
 #else
   time_t ti = 100000;
   time_t gm_ti, loc_ti;

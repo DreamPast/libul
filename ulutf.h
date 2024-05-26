@@ -79,12 +79,17 @@ UTF support
     #if __has_cpp_attribute(nodiscard)
       #define ul_nodiscard [[nodiscard]]
     #endif
-  #elif defined(__has_attribute)
+  #endif
+  #if !defined(ul_nodiscard) && defined(__has_attribute)
     #if __has_attribute(warn_unused_result)
       #define ul_nodiscard __attribute__((warn_unused_result))
     #endif
-  #elif defined(_MSC_VER) && _MSC_VER >= 1700
+  #endif
+  #if !defined(ul_nodiscard) && defined(_MSC_VER) && _MSC_VER >= 1700
     #define ul_nodiscard _Check_return_
+  #endif
+  #if !defined(ul_nodiscard) && defined(_HAS_NODISCARD)
+    #define ul_nodiscard _NODISCARD
   #endif
   #ifndef ul_nodiscard
     #define ul_nodiscard
