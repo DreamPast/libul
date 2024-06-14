@@ -47,85 +47,87 @@ Endian order
 #ifndef ULENDIAN_H
 #define ULENDIAN_H
 
-#if defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
-  #if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
-    #define UL_ENDIAN_BIG
-  #elif defined(BYTE_ORDER) && BYTE_ORDER == LITTLE_ENDIAN
-    #define UL_ENDIAN_LITTLE
-  #endif
-#elif defined(BIG_ENDIAN)
-  #define UL_ENDIAN_BIG
-#elif defined(LITTLE_ENDIAN)
-  #define UL_ENDIAN_LITTLE
-#endif
-
-#if defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN)
-  #if defined(_BYTE_ORDER) && _BYTE_ORDER == _BIG_ENDIAN
-    #define UL_ENDIAN_BIG
-  #elif defined(_BYTE_ORDER) && _BYTE_ORDER == _LITTLE_ENDIAN
-    #define UL_ENDIAN_LITTLE
-  #endif
-#elif defined(_BIG_ENDIAN)
-  #define UL_ENDIAN_BIG
-#elif defined(_LITTLE_ENDIAN)
-  #define UL_ENDIAN_LITTLE
-#endif
-
-#if defined(__BIG_ENDIAN) && defined(__LITTLE_ENDIAN)
-  #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
-    #define UL_ENDIAN_BIG
-  #elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN
-    #define UL_ENDIAN_LITTLE
-  #endif
-#elif defined(__BIG_ENDIAN)
-  #define UL_ENDIAN_BIG
-#elif defined(__LITTLE_ENDIAN)
-  #define UL_ENDIAN_LITTLE
-#endif
-
-#if defined(__BIG_ENDIAN__) && defined(__LITTLE_ENDIAN__)
-  #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __BIG_ENDIAN__
-    #define UL_ENDIAN_BIG
-  #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __LITTLE_ENDIAN__
-    #define UL_ENDIAN_LITTLE
-  #endif
-#elif defined(__BIG_ENDIAN__)
-  #define UL_ENDIAN_BIG
-#elif defined(__LITTLE_ENDIAN__)
-  #define UL_ENDIAN_LITTLE
-#endif
-
 #if !defined(UL_ENDIAN_BIG) && !defined(UL_ENDIAN_LITTLE)
-  #if defined(__alpha__) || defined(__alpha) || defined(i386)       || \
-      defined(__i386__)  || defined(_M_I86)  || defined(_M_IX86)    || \
-      defined(__OS2__)   || defined(sun386)  || defined(__TURBOC__) || \
-      defined(vax)       || defined(vms)     || defined(VMS)        || \
-      defined(__VMS)     || defined(_M_X64)
-    #define UL_ENDIAN_LITTLE
-  #elif defined(AMIGA) || defined(applec) || defined(__AS400__) || \
-        defined(_CRAY)    || defined(__hppa)    || defined(__hp9000)   || \
-        defined(ibm370)   || defined(mc68000)   || defined(m68k)       || \
-        defined(__MRC__)  || defined(__MVS__)   || defined(__MWERKS__) || \
-        defined(sparc)    || defined(__sparc)   || defined(SYMANTEC_C) || \
-        defined(__VOS__)  || defined(__TIGCC__) || defined(__TANDEM)   || \
-        defined(THINK_C)  || defined(__VMCMS__) || defined(_AIX)       || \
-        defined(__s390__) || defined(__s390x__) || defined(__zarch__)
-    #define UL_ENDIAN_BIG
-  #elif defined(__arm__)
-    #ifdef __BIG_ENDIAN
+  #if defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
+    #if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
       #define UL_ENDIAN_BIG
-    #else
+    #elif defined(BYTE_ORDER) && BYTE_ORDER == LITTLE_ENDIAN
       #define UL_ENDIAN_LITTLE
     #endif
+  #elif defined(BIG_ENDIAN)
+    #define UL_ENDIAN_BIG
+  #elif defined(LITTLE_ENDIAN)
+    #define UL_ENDIAN_LITTLE
   #endif
-#endif
 
-#if !defined(UL_ENDIAN_BIG) && !defined(UL_ENDIAN_LITTLE)
-  #error "ulendian.h: undetected endian order"
-#endif
-#if defined(UL_ENDIAN_BIG) && defined(UL_ENDIAN_LITTLE)
-  #error "ulendian.h: big-endian and little-endian cannot coexist"
-#endif
+  #if defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN)
+    #if defined(_BYTE_ORDER) && _BYTE_ORDER == _BIG_ENDIAN
+      #define UL_ENDIAN_BIG
+    #elif defined(_BYTE_ORDER) && _BYTE_ORDER == _LITTLE_ENDIAN
+      #define UL_ENDIAN_LITTLE
+    #endif
+  #elif defined(_BIG_ENDIAN)
+    #define UL_ENDIAN_BIG
+  #elif defined(_LITTLE_ENDIAN)
+    #define UL_ENDIAN_LITTLE
+  #endif
+
+  #if defined(__BIG_ENDIAN) && defined(__LITTLE_ENDIAN)
+    #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
+      #define UL_ENDIAN_BIG
+    #elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN
+      #define UL_ENDIAN_LITTLE
+    #endif
+  #elif defined(__BIG_ENDIAN)
+    #define UL_ENDIAN_BIG
+  #elif defined(__LITTLE_ENDIAN)
+    #define UL_ENDIAN_LITTLE
+  #endif
+
+  #if defined(__BIG_ENDIAN__) && defined(__LITTLE_ENDIAN__)
+    #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __BIG_ENDIAN__
+      #define UL_ENDIAN_BIG
+    #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __LITTLE_ENDIAN__
+      #define UL_ENDIAN_LITTLE
+    #endif
+  #elif defined(__BIG_ENDIAN__)
+    #define UL_ENDIAN_BIG
+  #elif defined(__LITTLE_ENDIAN__)
+    #define UL_ENDIAN_LITTLE
+  #endif
+
+  #if !defined(UL_ENDIAN_BIG) && !defined(UL_ENDIAN_LITTLE)
+    #if defined(__alpha__) || defined(__alpha) || defined(i386)       || \
+        defined(__i386__)  || defined(_M_I86)  || defined(_M_IX86)    || \
+        defined(__OS2__)   || defined(sun386)  || defined(__TURBOC__) || \
+        defined(vax)       || defined(vms)     || defined(VMS)        || \
+        defined(__VMS)     || defined(_M_X64)
+      #define UL_ENDIAN_LITTLE
+    #elif defined(AMIGA) || defined(applec) || defined(__AS400__) || \
+          defined(_CRAY)    || defined(__hppa)    || defined(__hp9000)   || \
+          defined(ibm370)   || defined(mc68000)   || defined(m68k)       || \
+          defined(__MRC__)  || defined(__MVS__)   || defined(__MWERKS__) || \
+          defined(sparc)    || defined(__sparc)   || defined(SYMANTEC_C) || \
+          defined(__VOS__)  || defined(__TIGCC__) || defined(__TANDEM)   || \
+          defined(THINK_C)  || defined(__VMCMS__) || defined(_AIX)       || \
+          defined(__s390__) || defined(__s390x__) || defined(__zarch__)
+      #define UL_ENDIAN_BIG
+    #elif defined(__arm__)
+      #ifdef __BIG_ENDIAN
+        #define UL_ENDIAN_BIG
+      #else
+        #define UL_ENDIAN_LITTLE
+      #endif
+    #endif
+  #endif
+
+  #if !defined(UL_ENDIAN_BIG) && !defined(UL_ENDIAN_LITTLE)
+    #error "ulendian.h: undetected endian order"
+  #endif
+  #if defined(UL_ENDIAN_BIG) && defined(UL_ENDIAN_LITTLE)
+    #error "ulendian.h: big-endian and little-endian cannot coexist"
+  #endif
+#endif /* UL_ENDIAN_BIG + UL_ENDIAN_LITTLE */
 
 #ifndef ul_unused
   #if (defined(__GNUC__) && __GNUC__ >= 3) || defined(__clang__)
