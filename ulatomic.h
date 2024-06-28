@@ -153,6 +153,12 @@ Atomic (32-bit, and optional 64-bit)
     | ul_hapi void ulatomic_rw_unrlock(ulatomic_rwlock_t* lck);
     | ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck);
     +----------------------------------------------------------------
+  
+  ## Yield / Pause
+    +----------------------------------------------------------------
+    | void ulatomic_yield(void);
+    | void ulatomic_pause(void);
+    +----------------------------------------------------------------
 
 # License
   The MIT License (MIT)
@@ -1087,6 +1093,54 @@ Atomic (32-bit, and optional 64-bit)
   #endif
 #endif
 
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #include <Windows.h>
+  #define ulatomic_yield() ((void)(SwitchToThread() ? 0u : SleepEx(0, FALSE)))
+#endif
+#ifndef ulatomic_yield
+  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
+    #include <unistd.h>
+    #if 0 /* defined(_POSIX_PRIORITY_SCHEDULING) || (_POSIX_C_SOURCE+0) >= 200809L */
+      #define ulatomic_yield() ((void)sched_yield())
+    #elif (_POSIX_C_SOURCE+0) >= 199309L
+      #include <time.h>
+      ul_hapi void ulatomic_yield() {
+        struct timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = 1000;
+        nanosleep(&ts, NULL);
+      }
+      #define ulatomic_yield() (ulatomic_yield)()
+    #elif defined(_BSD_SOURCE) || ((_XOPEN_SOURCE+0) >= 500)
+      #define ulatomic_yield() ((void)usleep(1))
+    #endif
+  #endif
+#endif
+#ifndef ulatomic_yield
+  #define ulatomic_yield() ((void)0)
+#endif
+
+ul_hapi void ulatomic_pause(void) {
+#if defined(_MSC_VER)
+  #if defined(_M_AMD64) || defined(_M_IX86)
+    __asm pause;
+  #elif defined(_M_ARM)
+    __asm yield;
+  #elif defined(_M_ARM64)
+    __asm isb SY;
+  #endif
+#elif defined(__GNUC__)
+  #if (defined(__i386__) || defined(__x86_64__))
+    __asm__ __volatile__("pause":::"memory");
+  #elif (defined(__ARM_ARCH) && __ARM_ARCH >= 8) || defined(__ARM_ARCH_8A__)
+    __asm__ __volatile__("yield":::"memory");
+  #elif defined(__aarch64__)
+    __asm__ __volatile__("isb SY":::"memory");
+  #endif
+#endif
+}
+
 /* ulatomic_spinlock_t */
 #ifdef ULATOMIC_FLAG_INIT
   typedef ulatomic_flag_t ulatomic_spinlock_t;
@@ -1095,7 +1149,7 @@ Atomic (32-bit, and optional 64-bit)
     ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_release);
   }
   ul_hapi void ulatomic_spin_lock(ulatomic_spinlock_t* lck) {
-    while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire));
+    while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire)) ulatomic_pause();
   }
   ul_hapi int ulatomic_spin_trylock(ulatomic_spinlock_t* lck) {
     return !ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire);
@@ -1118,10 +1172,10 @@ Atomic (32-bit, and optional 64-bit)
   }
   ul_hapi void ulatomic_rw_rlock(ulatomic_rwlock_t* lck) {
     int r;
-    while(ulatomic_load_explicit_32(&lck->rwait, ulatomic_memory_order_acquire));
+    while(ulatomic_load_explicit_32(&lck->rwait, ulatomic_memory_order_acquire)) ulatomic_pause();
     r = ulatomic_fetch_add_explicit_32(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
     if((r & 1) == 0) return;
-    while(ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire) & 1);
+    while(ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire) & 1) ulatomic_pause();
   }
   ul_hapi void ulatomic_rw_wlock(ulatomic_rwlock_t* lck) {
     ulatomic_fetch_add_explicit_32(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
@@ -1129,6 +1183,7 @@ Atomic (32-bit, and optional 64-bit)
       int r = ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire);
       if(r == 0 && ulatomic_compare_exchange_weak_explicit_32(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
         break;
+      ulatomic_pause();
     }
   }
   ul_hapi int ulatomic_rw_tryrlock(ulatomic_rwlock_t* lck) {
