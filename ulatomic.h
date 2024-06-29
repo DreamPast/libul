@@ -51,57 +51,57 @@ Atomic (32-bit, and optional 64-bit)
     | typedef ... ulatomic32_raw_t;
     | ulatomic32_t ULATOMIC32_INIT = ...;
     |
-    | void ulatomic_store_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_load_32(ulatomic32_t* obj);
-    | ulatomic32_raw_t ulatomic_exchange_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | void ulatomic_store_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic32_raw_t ulatomic_load_explicit_32(ulatomic32_t* obj, ulatomic_memory_order_t ord);
-    | ulatomic32_raw_t ulatomic_exchange_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | void ulatomic32_store(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_load(ulatomic32_t* obj);
+    | ulatomic32_raw_t ulatomic32_exchange(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | void ulatomic32_store_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_load_explicit(ulatomic32_t* obj, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_exchange_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
     |
-    | int ulatomic_compare_exchange_strong_32(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val);
-    | int ulatomic_compare_exchange_weak_32(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val);
-    | int ulatomic_compare_exchange_strong_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
-    | int ulatomic_compare_exchange_weak_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | int ulatomic32_compare_exchange_strong(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val);
+    | int ulatomic32_compare_exchange_weak(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val);
+    | int ulatomic32_compare_exchange_strong_explicit(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | int ulatomic32_compare_exchange_weak_explicit(ulatomic32_t* obj, ulatomic32_raw_t* expected, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
     |
-    | ulatomic32_raw_t ulatomic_fetch_add_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_fetch_sub_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_fetch_add_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic32_raw_t ulatomic_fetch_sub_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_fetch_add(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_fetch_sub(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_fetch_add_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_fetch_sub_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
     |
-    | ulatomic32_raw_t ulatomic_fetch_or_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_fetch_xor_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_fetch_and_32(ulatomic32_t* obj, ulatomic32_raw_t val);
-    | ulatomic32_raw_t ulatomic_fetch_or_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic32_raw_t ulatomic_fetch_xor_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic32_raw_t ulatomic_fetch_and_explicit_32(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_fetch_or(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_fetch_xor(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_fetch_and(ulatomic32_t* obj, ulatomic32_raw_t val);
+    | ulatomic32_raw_t ulatomic32_fetch_or_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_fetch_xor_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic32_raw_t ulatomic32_fetch_and_explicit(ulatomic32_t* obj, ulatomic32_raw_t val, ulatomic_memory_order_t ord);
     +----------------------------------------------------------------
     | typedef ... ulatomic64_t;
     | typedef ... ulatomic64_raw_t;
     | ulatomic64_t ULATOMIC64_INIT = ...;
     |
-    | void ulatomic_store_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_load_64(ulatomic64_t* obj);
-    | ulatomic64_raw_t ulatomic_exchange_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | void ulatomic_store_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic64_raw_t ulatomic_load_explicit_64(ulatomic64_t* obj, ulatomic_memory_order_t ord);
-    | ulatomic64_raw_t ulatomic_exchange_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | void ulatomic64_store(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_load(ulatomic64_t* obj);
+    | ulatomic64_raw_t ulatomic64_exchange(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | void ulatomic64_store_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_load_explicit(ulatomic64_t* obj, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_exchange_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
     |
-    | int ulatomic_compare_exchange_strong_64(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val);
-    | int ulatomic_compare_exchange_weak_64(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val);
-    | int ulatomic_compare_exchange_strong_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
-    | int ulatomic_compare_exchange_weak_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | int ulatomic64_compare_exchange_strong(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val);
+    | int ulatomic64_compare_exchange_weak(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val);
+    | int ulatomic64_compare_exchange_strong_explicit(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | int ulatomic64_compare_exchange_weak_explicit(ulatomic64_t* obj, ulatomic64_raw_t* expected, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
     |
-    | ulatomic64_raw_t ulatomic_fetch_add_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_fetch_sub_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_fetch_add_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic64_raw_t ulatomic_fetch_sub_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_fetch_add(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_fetch_sub(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_fetch_add_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_fetch_sub_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
     |
-    | ulatomic64_raw_t ulatomic_fetch_or_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_fetch_xor_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_fetch_and_64(ulatomic64_t* obj, ulatomic64_raw_t val);
-    | ulatomic64_raw_t ulatomic_fetch_or_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic64_raw_t ulatomic_fetch_xor_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
-    | ulatomic64_raw_t ulatomic_fetch_and_explicit_64(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_fetch_or(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_fetch_xor(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_fetch_and(ulatomic64_t* obj, ulatomic64_raw_t val);
+    | ulatomic64_raw_t ulatomic64_fetch_or_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_fetch_xor_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
+    | ulatomic64_raw_t ulatomic64_fetch_and_explicit(ulatomic64_t* obj, ulatomic64_raw_t val, ulatomic_memory_order_t ord);
     +----------------------------------------------------------------
     | typedef ... ulatomiciptr_t;
     | typedef ... ulatomiciptr_raw_t;
@@ -154,6 +154,21 @@ Atomic (32-bit, and optional 64-bit)
     | ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck);
     +----------------------------------------------------------------
   
+  ## Wait / Notify
+    +----------------------------------------------------------------
+    | void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected);
+    | void ulatomic32_notify_one(ulatomic32_t* obj);
+    | void ulatomic32_notify_all(ulatomic32_t* obj);
+    +----------------------------------------------------------------
+    | void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected);
+    | void ulatomic64_notify_one(ulatomic64_t* obj);
+    | void ulatomic64_notify_all(ulatomic64_t* obj);
+    +----------------------------------------------------------------
+    | void ulatomiciptr_wait(ulatomiciptr_t* obj, ulatomiciptr_raw_t expected);
+    | void ulatomiciptr_notify_one(ulatomiciptr_t* obj);
+    | void ulatomiciptr_notify_all(ulatomiciptr_t* obj);
+    +----------------------------------------------------------------
+    
   ## Yield / Pause
     +----------------------------------------------------------------
     | void ulatomic_yield(void);
@@ -232,6 +247,9 @@ Atomic (32-bit, and optional 64-bit)
   #if __cplusplus >= 201103L && __STDCPP_THREADS__ /* C++11 and above */
     #define ULATOMIC_API_CXX11
   #endif
+  #if __cplusplus >= 202002L /* C++20 and above */
+    #define ULATOMIC_API_CXX20
+  #endif
 #elif __STDC_VERSION__ >= 201112L && (!defined(__STDC_NO_ATOMICS__) || !__STDC_NO_ATOMICS__) /* C11 and above */
   #define ULATOMIC_API_C11
 #endif
@@ -244,6 +262,7 @@ Atomic (32-bit, and optional 64-bit)
 
 #ifdef ULATOMIC_SINGLE_THREAD
   #undef ULATOMIC_API_CXX11
+  #undef ULATOMIC_API_CXX20
   #undef ULATOMIC_API_C11
   #undef ULATOMIC_API_MSVC
   #undef ULATOMIC_API_GNUC
@@ -282,28 +301,28 @@ Atomic (32-bit, and optional 64-bit)
   #else
     #define ULATOMIC32_INIT ATOMIC_VAR_INIT(0)
   #endif
-  #define ulatomic_store_32(obj, val)                             atomic_store(obj, val)
-  #define ulatomic_load_32(obj)                                   atomic_load(obj)
-  #define ulatomic_exchange_32(obj, val)                          atomic_exchange(obj, val)
-  #define ulatomic_compare_exchange_strong_32(obj, expected, val) ul_static_cast(int, atomic_compare_exchange_strong(obj, expected, val))
-  #define ulatomic_compare_exchange_weak_32(obj, expected, val)   ul_static_cast(int, atomic_compare_exchange_weak(obj, expected, val))
-  #define ulatomic_fetch_add_32(obj, val)                         atomic_fetch_add(obj, val)
-  #define ulatomic_fetch_sub_32(obj, val)                         atomic_fetch_sub(obj, val)
-  #define ulatomic_fetch_or_32(obj, val)                          atomic_fetch_or(obj, val)
-  #define ulatomic_fetch_xor_32(obj, val)                         atomic_fetch_xor(obj, val)
-  #define ulatomic_fetch_and_32(obj, val)                         atomic_fetch_and(obj, val)
-  #define ulatomic_store_explicit_32(obj, val, ord)                             atomic_store_explicit(obj, val, ord)
-  #define ulatomic_load_explicit_32(obj, ord)                                   atomic_load_explicit(obj, ord)
-  #define ulatomic_exchange_explicit_32(obj, val, ord)                          atomic_exchange_explicit(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_store(obj, val)                             atomic_store(obj, val)
+  #define ulatomic32_load(obj)                                   atomic_load(obj)
+  #define ulatomic32_exchange(obj, val)                          atomic_exchange(obj, val)
+  #define ulatomic32_compare_exchange_strong(obj, expected, val) ul_static_cast(int, atomic_compare_exchange_strong(obj, expected, val))
+  #define ulatomic32_compare_exchange_weak(obj, expected, val)   ul_static_cast(int, atomic_compare_exchange_weak(obj, expected, val))
+  #define ulatomic32_fetch_add(obj, val)                         atomic_fetch_add(obj, val)
+  #define ulatomic32_fetch_sub(obj, val)                         atomic_fetch_sub(obj, val)
+  #define ulatomic32_fetch_or(obj, val)                          atomic_fetch_or(obj, val)
+  #define ulatomic32_fetch_xor(obj, val)                         atomic_fetch_xor(obj, val)
+  #define ulatomic32_fetch_and(obj, val)                         atomic_fetch_and(obj, val)
+  #define ulatomic32_store_explicit(obj, val, ord)                             atomic_store_explicit(obj, val, ord)
+  #define ulatomic32_load_explicit(obj, ord)                                   atomic_load_explicit(obj, ord)
+  #define ulatomic32_exchange_explicit(obj, val, ord)                          atomic_exchange_explicit(obj, val, ord)
+  #define ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, atomic_compare_exchange_strong_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, atomic_compare_exchange_weak_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_32(obj, val, ord)                         atomic_fetch_add_explicit(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_32(obj, val, ord)                         atomic_fetch_sub_explicit(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_32(obj, val, ord)                          atomic_fetch_or_explicit(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_32(obj, val, ord)                         atomic_fetch_xor_explicit(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_32(obj, val, ord)                         atomic_fetch_and_explicit(obj, val, ord)
+  #define ulatomic32_fetch_add_explicit(obj, val, ord)                         atomic_fetch_add_explicit(obj, val, ord)
+  #define ulatomic32_fetch_sub_explicit(obj, val, ord)                         atomic_fetch_sub_explicit(obj, val, ord)
+  #define ulatomic32_fetch_or_explicit(obj, val, ord)                          atomic_fetch_or_explicit(obj, val, ord)
+  #define ulatomic32_fetch_xor_explicit(obj, val, ord)                         atomic_fetch_xor_explicit(obj, val, ord)
+  #define ulatomic32_fetch_and_explicit(obj, val, ord)                         atomic_fetch_and_explicit(obj, val, ord)
 
   typedef _Atomic int64_t ulatomic64_t;
   typedef int64_t ulatomic64_raw_t;
@@ -312,39 +331,39 @@ Atomic (32-bit, and optional 64-bit)
   #else
     #define ULATOMIC64_INIT ATOMIC_VAR_INIT(0)
   #endif
-  #define ulatomic_store_64(obj, val)                             atomic_store(obj, val)
-  #define ulatomic_load_64(obj)                                   atomic_load(obj)
-  #define ulatomic_exchange_64(obj, val)                          atomic_exchange(obj, val)
-  #define ulatomic_compare_exchange_strong_64(obj, expected, val) ul_static_cast(int, atomic_compare_exchange_strong(obj, expected, val))
-  #define ulatomic_compare_exchange_weak_64(obj, expected, val)   ul_static_cast(int, atomic_compare_exchange_weak(obj, expected, val))
-  #define ulatomic_fetch_add_64(obj, val)                         atomic_fetch_add(obj, val)
-  #define ulatomic_fetch_sub_64(obj, val)                         atomic_fetch_sub(obj, val)
-  #define ulatomic_fetch_or_64(obj, val)                          atomic_fetch_or(obj, val)
-  #define ulatomic_fetch_xor_64(obj, val)                         atomic_fetch_xor(obj, val)
-  #define ulatomic_fetch_and_64(obj, val)                         atomic_fetch_and(obj, val)
-  #define ulatomic_store_explicit_64(obj, val, ord)                             atomic_store_explicit(obj, val, ord)
-  #define ulatomic_load_explicit_64(obj, ord)                                   atomic_load_explicit(obj, ord)
-  #define ulatomic_exchange_explicit_64(obj, val, ord)                          atomic_exchange_explicit(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_store(obj, val)                             atomic_store(obj, val)
+  #define ulatomic64_load(obj)                                   atomic_load(obj)
+  #define ulatomic64_exchange(obj, val)                          atomic_exchange(obj, val)
+  #define ulatomic64_compare_exchange_strong(obj, expected, val) ul_static_cast(int, atomic_compare_exchange_strong(obj, expected, val))
+  #define ulatomic64_compare_exchange_weak(obj, expected, val)   ul_static_cast(int, atomic_compare_exchange_weak(obj, expected, val))
+  #define ulatomic64_fetch_add(obj, val)                         atomic_fetch_add(obj, val)
+  #define ulatomic64_fetch_sub(obj, val)                         atomic_fetch_sub(obj, val)
+  #define ulatomic64_fetch_or(obj, val)                          atomic_fetch_or(obj, val)
+  #define ulatomic64_fetch_xor(obj, val)                         atomic_fetch_xor(obj, val)
+  #define ulatomic64_fetch_and(obj, val)                         atomic_fetch_and(obj, val)
+  #define ulatomic64_store_explicit(obj, val, ord)                             atomic_store_explicit(obj, val, ord)
+  #define ulatomic64_load_explicit(obj, ord)                                   atomic_load_explicit(obj, ord)
+  #define ulatomic64_exchange_explicit(obj, val, ord)                          atomic_exchange_explicit(obj, val, ord)
+  #define ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, atomic_compare_exchange_strong_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, atomic_compare_exchange_weak_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_64(obj, val, ord)                         atomic_fetch_add_explicit(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_64(obj, val, ord)                         atomic_fetch_sub_explicit(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_64(obj, val, ord)                          atomic_fetch_or_explicit(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_64(obj, val, ord)                         atomic_fetch_xor_explicit(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         atomic_fetch_and_explicit(obj, val, ord)
+  #define ulatomic64_fetch_add_explicit(obj, val, ord)                         atomic_fetch_add_explicit(obj, val, ord)
+  #define ulatomic64_fetch_sub_explicit(obj, val, ord)                         atomic_fetch_sub_explicit(obj, val, ord)
+  #define ulatomic64_fetch_or_explicit(obj, val, ord)                          atomic_fetch_or_explicit(obj, val, ord)
+  #define ulatomic64_fetch_xor_explicit(obj, val, ord)                         atomic_fetch_xor_explicit(obj, val, ord)
+  #define ulatomic64_fetch_and_explicit(obj, val, ord)                         atomic_fetch_and_explicit(obj, val, ord)
 #elif defined(ULATOMIC_API_CXX11)
   #include <atomic>
   #include <cstdint>
 
   typedef ::std::memory_order ulatomic_memory_order_t;
-  #define ulatomic_memory_order_relaxed ::std::memory_order::memory_order_relaxed
-  #define ulatomic_memory_order_consume ::std::memory_order::memory_order_consume
-  #define ulatomic_memory_order_acquire ::std::memory_order::memory_order_acquire
-  #define ulatomic_memory_order_release ::std::memory_order::memory_order_release
-  #define ulatomic_memory_order_acq_rel ::std::memory_order::memory_order_acq_rel
-  #define ulatomic_memory_order_seq_cst ::std::memory_order::memory_order_seq_cst
+  #define ulatomic_memory_order_relaxed ::std::memory_order_relaxed
+  #define ulatomic_memory_order_consume ::std::memory_order_consume
+  #define ulatomic_memory_order_acquire ::std::memory_order_acquire
+  #define ulatomic_memory_order_release ::std::memory_order_release
+  #define ulatomic_memory_order_acq_rel ::std::memory_order_acq_rel
+  #define ulatomic_memory_order_seq_cst ::std::memory_order_seq_cst
 
   #define ulatomic_thread_fence(ord) ::std::atomic_thread_fence(ord)
   #define ulatomic_signal_fence(ord) ::std::atomic_signal_fence(ord)
@@ -360,55 +379,56 @@ Atomic (32-bit, and optional 64-bit)
   typedef ::std::atomic<int32_t> ulatomic32_t;
   typedef int32_t ulatomic32_raw_t;
   #define ULATOMIC32_INIT { 0 }
-  #define ulatomic_store_32(obj, val)                             ::std::atomic_store(obj, val)
-  #define ulatomic_load_32(obj)                                   ::std::atomic_load(obj)
-  #define ulatomic_exchange_32(obj, val)                          ::std::atomic_exchange(obj, val)
-  #define ulatomic_compare_exchange_strong_32(obj, expected, val) ul_static_cast(int, ::std::atomic_compare_exchange_strong(obj, expected, val))
-  #define ulatomic_compare_exchange_weak_32(obj, expected, val)   ul_static_cast(int, ::std::atomic_compare_exchange_weak(obj, expected, val))
-  #define ulatomic_fetch_add_32(obj, val)                         ::std::atomic_fetch_add(obj, val)
-  #define ulatomic_fetch_sub_32(obj, val)                         ::std::atomic_fetch_sub(obj, val)
-  #define ulatomic_fetch_or_32(obj, val)                          ::std::atomic_fetch_or(obj, val)
-  #define ulatomic_fetch_xor_32(obj, val)                         ::std::atomic_fetch_xor(obj, val)
-  #define ulatomic_fetch_and_32(obj, val)                         ::std::atomic_fetch_and(obj, val)
-  #define ulatomic_store_explicit_32(obj, val, ord)                             ::std::atomic_store_explicit(obj, val, ord)
-  #define ulatomic_load_explicit_32(obj, ord)                                   ::std::atomic_load_explicit(obj, ord)
-  #define ulatomic_exchange_explicit_32(obj, val, ord)                          ::std::atomic_exchange_explicit(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_store(obj, val)                             ::std::atomic_store(obj, val)
+  #define ulatomic32_load(obj)                                   ::std::atomic_load(obj)
+  #define ulatomic32_exchange(obj, val)                          ::std::atomic_exchange(obj, val)
+  #define ulatomic32_compare_exchange_strong(obj, expected, val) ul_static_cast(int, ::std::atomic_compare_exchange_strong(obj, expected, val))
+  #define ulatomic32_compare_exchange_weak(obj, expected, val)   ul_static_cast(int, ::std::atomic_compare_exchange_weak(obj, expected, val))
+  #define ulatomic32_fetch_add(obj, val)                         ::std::atomic_fetch_add(obj, val)
+  #define ulatomic32_fetch_sub(obj, val)                         ::std::atomic_fetch_sub(obj, val)
+  #define ulatomic32_fetch_or(obj, val)                          ::std::atomic_fetch_or(obj, val)
+  #define ulatomic32_fetch_xor(obj, val)                         ::std::atomic_fetch_xor(obj, val)
+  #define ulatomic32_fetch_and(obj, val)                         ::std::atomic_fetch_and(obj, val)
+  #define ulatomic32_store_explicit(obj, val, ord)                             ::std::atomic_store_explicit(obj, val, ord)
+  #define ulatomic32_load_explicit(obj, ord)                                   ::std::atomic_load_explicit(obj, ord)
+  #define ulatomic32_exchange_explicit(obj, val, ord)                          ::std::atomic_exchange_explicit(obj, val, ord)
+  #define ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, ::std::atomic_compare_exchange_strong_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, ::std::atomic_compare_exchange_weak_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_32(obj, val, ord)                         ::std::atomic_fetch_add_explicit(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_32(obj, val, ord)                         ::std::atomic_fetch_sub_explicit(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_32(obj, val, ord)                          ::std::atomic_fetch_or_explicit(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_32(obj, val, ord)                         ::std::atomic_fetch_xor_explicit(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_32(obj, val, ord)                         ::std::atomic_fetch_and_explicit(obj, val, ord)
+  #define ulatomic32_fetch_add_explicit(obj, val, ord)                         ::std::atomic_fetch_add_explicit(obj, val, ord)
+  #define ulatomic32_fetch_sub_explicit(obj, val, ord)                         ::std::atomic_fetch_sub_explicit(obj, val, ord)
+  #define ulatomic32_fetch_or_explicit(obj, val, ord)                          ::std::atomic_fetch_or_explicit(obj, val, ord)
+  #define ulatomic32_fetch_xor_explicit(obj, val, ord)                         ::std::atomic_fetch_xor_explicit(obj, val, ord)
+  #define ulatomic32_fetch_and_explicit(obj, val, ord)                         ::std::atomic_fetch_and_explicit(obj, val, ord)
 
   typedef ::std::atomic<int64_t> ulatomic64_t;
   typedef int64_t ulatomic64_raw_t;
   #define ULATOMIC64_INIT { 0 }
-  #define ulatomic_store_64(obj, val)                             ::std::atomic_store(obj, val)
-  #define ulatomic_load_64(obj)                                   ::std::atomic_load(obj)
-  #define ulatomic_exchange_64(obj, val)                          ::std::atomic_exchange(obj, val)
-  #define ulatomic_compare_exchange_strong_64(obj, expected, val) ul_static_cast(int, ::std::atomic_compare_exchange_strong(obj, expected, val))
-  #define ulatomic_compare_exchange_weak_64(obj, expected, val)   ul_static_cast(int, ::std::atomic_compare_exchange_weak(obj, expected, val))
-  #define ulatomic_fetch_add_64(obj, val)                         ::std::atomic_fetch_add(obj, val)
-  #define ulatomic_fetch_sub_64(obj, val)                         ::std::atomic_fetch_sub(obj, val)
-  #define ulatomic_fetch_or_64(obj, val)                          ::std::atomic_fetch_or(obj, val)
-  #define ulatomic_fetch_xor_64(obj, val)                         ::std::atomic_fetch_xor(obj, val)
-  #define ulatomic_fetch_and_64(obj, val)                         ::std::atomic_fetch_and(obj, val)
-  #define ulatomic_store_explicit_64(obj, val, ord)                             ::std::atomic_store_explicit(obj, val, ord)
-  #define ulatomic_load_explicit_64(obj, ord)                                   ::std::atomic_load_explicit(obj, ord)
-  #define ulatomic_exchange_explicit_64(obj, val, ord)                          ::std::atomic_exchange_explicit(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_store(obj, val)                             ::std::atomic_store(obj, val)
+  #define ulatomic64_load(obj)                                   ::std::atomic_load(obj)
+  #define ulatomic64_exchange(obj, val)                          ::std::atomic_exchange(obj, val)
+  #define ulatomic64_compare_exchange_strong(obj, expected, val) ul_static_cast(int, ::std::atomic_compare_exchange_strong(obj, expected, val))
+  #define ulatomic64_compare_exchange_weak(obj, expected, val)   ul_static_cast(int, ::std::atomic_compare_exchange_weak(obj, expected, val))
+  #define ulatomic64_fetch_add(obj, val)                         ::std::atomic_fetch_add(obj, val)
+  #define ulatomic64_fetch_sub(obj, val)                         ::std::atomic_fetch_sub(obj, val)
+  #define ulatomic64_fetch_or(obj, val)                          ::std::atomic_fetch_or(obj, val)
+  #define ulatomic64_fetch_xor(obj, val)                         ::std::atomic_fetch_xor(obj, val)
+  #define ulatomic64_fetch_and(obj, val)                         ::std::atomic_fetch_and(obj, val)
+  #define ulatomic64_store_explicit(obj, val, ord)                             ::std::atomic_store_explicit(obj, val, ord)
+  #define ulatomic64_load_explicit(obj, ord)                                   ::std::atomic_load_explicit(obj, ord)
+  #define ulatomic64_exchange_explicit(obj, val, ord)                          ::std::atomic_exchange_explicit(obj, val, ord)
+  #define ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, ::std::atomic_compare_exchange_strong_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, ::std::atomic_compare_exchange_weak_explicit(obj, expected, val, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_64(obj, val, ord)                         ::std::atomic_fetch_add_explicit(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_64(obj, val, ord)                         ::std::atomic_fetch_sub_explicit(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_64(obj, val, ord)                          ::std::atomic_fetch_or_explicit(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_64(obj, val, ord)                         ::std::atomic_fetch_xor_explicit(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         ::std::atomic_fetch_and_explicit(obj, val, ord)
+  #define ulatomic64_fetch_add_explicit(obj, val, ord)                         ::std::atomic_fetch_add_explicit(obj, val, ord)
+  #define ulatomic64_fetch_sub_explicit(obj, val, ord)                         ::std::atomic_fetch_sub_explicit(obj, val, ord)
+  #define ulatomic64_fetch_or_explicit(obj, val, ord)                          ::std::atomic_fetch_or_explicit(obj, val, ord)
+  #define ulatomic64_fetch_xor_explicit(obj, val, ord)                         ::std::atomic_fetch_xor_explicit(obj, val, ord)
+  #define ulatomic64_fetch_and_explicit(obj, val, ord)                         ::std::atomic_fetch_and_explicit(obj, val, ord)
 #elif defined(ULATOMIC_API_MSVC)
+  #define WIN32_LEAN_AND_MEAN
   #include <Windows.h>
 
   typedef int ulatomic_memory_order_t;
@@ -454,7 +474,7 @@ Atomic (32-bit, and optional 64-bit)
   typedef int ulatomic32_raw_t;
   #define ULATOMIC32_INIT (0)
   #if defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)
-    ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
+    ul_hapi int ulatomic32_load_explicit(int* obj, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedCompareExchange_nf(ul_reinterpret_cast(long*, obj), 0, 0));
@@ -469,7 +489,7 @@ Atomic (32-bit, and optional 64-bit)
         return ul_static_cast(int, _InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), 0, 0));
       }
     }
-    ul_hapi int ulatomic_exchange_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_exchange_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedExchange_nf(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
@@ -485,7 +505,7 @@ Atomic (32-bit, and optional 64-bit)
       }
 
     }
-    ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
+    ul_hapi int ulatomic32_compare_exchange_strong_explicit(int* obj, int* expected, int val, int ord) {
       int old = *expected;
       switch(ord) {
       case ulatomic_memory_order_relaxed:
@@ -501,7 +521,7 @@ Atomic (32-bit, and optional 64-bit)
         return (*expected = ul_static_cast(int, _InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val), ul_static_cast(long, old))) == old);
       }
     }
-    ul_hapi int ulatomic_fetch_add_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_add_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedExchangeAdd_nf(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
@@ -516,7 +536,7 @@ Atomic (32-bit, and optional 64-bit)
         return ul_static_cast(int, _InterlockedExchangeAdd(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
       }
     }
-    ul_hapi int ulatomic_fetch_sub_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_sub_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedExchangeAdd_nf(ul_reinterpret_cast(long*, obj), -ul_static_cast(long, val)));
@@ -531,7 +551,7 @@ Atomic (32-bit, and optional 64-bit)
         return ul_static_cast(int, _InterlockedExchangeAdd(ul_reinterpret_cast(long*, obj), -ul_static_cast(long, val)));
       }
     }
-    ul_hapi int ulatomic_fetch_or_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_or_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedOr_nf(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
@@ -546,7 +566,7 @@ Atomic (32-bit, and optional 64-bit)
         return ul_static_cast(int, _InterlockedOr(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
       }
     }
-    ul_hapi int ulatomic_fetch_xor_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_xor_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedXor_nf(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
@@ -561,7 +581,7 @@ Atomic (32-bit, and optional 64-bit)
         return ul_static_cast(int, _InterlockedXor(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
       }
     }
-    ul_hapi int ulatomic_fetch_and_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_and_explicit(int* obj, int val, int ord) {
       switch(ord) {
       case ulatomic_memory_order_relaxed:
         return ul_static_cast(int, _InterlockedAnd_nf(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
@@ -577,48 +597,48 @@ Atomic (32-bit, and optional 64-bit)
       }
     }
   #else /* !(defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)) */
-    ul_hapi int ulatomic_exchange_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_exchange_explicit(int* obj, int val, int ord) {
       (void)ord; return ul_static_cast(int, InterlockedExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
     }
     #if _MSC_VER >= 1300
-      ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
+      ul_hapi int ulatomic32_load_explicit(int* obj, int ord) {
         (void)ord; return ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), 0, 0));
       }
-      ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
+      ul_hapi int ulatomic32_compare_exchange_strong_explicit(int* obj, int* expected, int val, int ord) {
         int old = *expected; (void)ord;
         return (*expected = ul_static_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val), ul_static_cast(long, old))) == old);
       }
     #else
-      ul_hapi int ulatomic_load_explicit_32(int* obj, int ord) {
+      ul_hapi int ulatomic32_load_explicit(int* obj, int ord) {
         (void)ord; return ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), 0, 0));
       }
-      ul_hapi int ulatomic_compare_exchange_strong_explicit_32(int* obj, int* expected, int val, int ord) {
+      ul_hapi int ulatomic32_compare_exchange_strong_explicit(int* obj, int* expected, int val, int ord) {
         int old = *expected; (void)ord;
         return (*expected = ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, val), ul_reinterpret_cast(void*, old))) == old);
       }
     #endif
-    ul_hapi int ulatomic_fetch_add_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_add_explicit(int* obj, int val, int ord) {
       (void)ord; return ul_static_cast(int, InterlockedExchangeAdd(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
     }
-    ul_hapi int ulatomic_fetch_sub_explicit_32(int* obj, int val, int ord) {
+    ul_hapi int ulatomic32_fetch_sub_explicit(int* obj, int val, int ord) {
       (void)ord; return ul_static_cast(int, InterlockedExchangeAdd(ul_reinterpret_cast(long*, obj), -ul_static_cast(long, val)));
     }
     #if _MSC_VER >= 1500 || defined(_AMD64_) /* older MSVC don't obtain these APIs */
-      ul_hapi int ulatomic_fetch_or_explicit_32(int* obj, int val, int ord) {
+      ul_hapi int ulatomic32_fetch_or_explicit(int* obj, int val, int ord) {
         (void)ord; return ul_static_cast(int, _InterlockedOr(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
       }
-      ul_hapi int ulatomic_fetch_xor_explicit_32(int* obj, int val, int ord) {
+      ul_hapi int ulatomic32_fetch_xor_explicit(int* obj, int val, int ord) {
         (void)ord; return ul_static_cast(int, _InterlockedXor(ul_reinterpret_cast(long*, obj), -ul_static_cast(long, val)));
       }
-      ul_hapi int ulatomic_fetch_and_explicit_32(int* obj, int val, int ord) {
+      ul_hapi int ulatomic32_fetch_and_explicit(int* obj, int val, int ord) {
         (void)ord; return ul_static_cast(int, _InterlockedAnd(ul_reinterpret_cast(long*, obj), ul_static_cast(long, val)));
       }
-      #define ulatomic_fetch_or_32(obj, val)  ulatomic_fetch_or_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-      #define ulatomic_fetch_xor_32(obj, val) ulatomic_fetch_xor_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-      #define ulatomic_fetch_and_32(obj, val) ulatomic_fetch_and_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
+      #define ulatomic32_fetch_or(obj, val)  ulatomic32_fetch_or_explicit(obj, val, ulatomic_memory_order_seq_cst)
+      #define ulatomic32_fetch_xor(obj, val) ulatomic32_fetch_xor_explicit(obj, val, ulatomic_memory_order_seq_cst)
+      #define ulatomic32_fetch_and(obj, val) ulatomic32_fetch_and_explicit(obj, val, ulatomic_memory_order_seq_cst)
     #else
       #if _MSC_VER >= 1300
-        ul_hapi int ulatomic_fetch_or_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_or(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -626,7 +646,7 @@ Atomic (32-bit, and optional 64-bit)
           } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
           return ov;
         }
-        ul_hapi int ulatomic_fetch_xor_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_xor(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -634,7 +654,7 @@ Atomic (32-bit, and optional 64-bit)
           } while(InterlockedCompareExchange(ul_reinterpret_cast(long*, obj), nv, ov) != ov);
           return ov;
         }
-        ul_hapi int ulatomic_fetch_and_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_and(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -643,7 +663,7 @@ Atomic (32-bit, and optional 64-bit)
           return ov;
         }
       #else
-        ul_hapi int ulatomic_fetch_or_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_or(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -651,7 +671,7 @@ Atomic (32-bit, and optional 64-bit)
           } while(ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, nv), ul_reinterpret_cast(void*, ov))) != ov);
           return ov;
         }
-        ul_hapi int ulatomic_fetch_xor_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_xor(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -659,7 +679,7 @@ Atomic (32-bit, and optional 64-bit)
           } while(ul_reinterpret_cast(int, InterlockedCompareExchange(ul_reinterpret_cast(void**, obj), ul_reinterpret_cast(void*, nv), ul_reinterpret_cast(void*, ov))) != ov);
           return ov;
         }
-        ul_hapi int ulatomic_fetch_and_32(int* obj, int val) {
+        ul_hapi int ulatomic32_fetch_and(int* obj, int val) {
           long ov, nv;
           do {
             ov = ul_static_cast(long, *obj);
@@ -668,28 +688,28 @@ Atomic (32-bit, and optional 64-bit)
           return ov;
         }
       #endif
-      #define ulatomic_fetch_or_explicit_32(obj, val, ord)  ulatomic_fetch_or_32(obj, val)
-      #define ulatomic_fetch_xor_explicit_32(obj, val, ord) ulatomic_fetch_xor_32(obj, val)
-      #define ulatomic_fetch_and_explicit_32(obj, val, ord) ulatomic_fetch_and_32(obj, val)
+      #define ulatomic32_fetch_or_explicit(obj, val, ord)  ulatomic32_fetch_or(obj, val)
+      #define ulatomic32_fetch_xor_explicit(obj, val, ord) ulatomic32_fetch_xor(obj, val)
+      #define ulatomic32_fetch_and_explicit(obj, val, ord) ulatomic32_fetch_and(obj, val)
     #endif
   #endif
-  #define ulatomic_store_explicit_32(obj, val, ord)                           (void)(ulatomic_exchange_explicit_32(obj, val, ord))
-  #define ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord) ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord)
+  #define ulatomic32_store_explicit(obj, val, ord)                           (void)(ulatomic32_exchange_explicit(obj, val, ord))
+  #define ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord) ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord)
 
-  #define ulatomic_store_32(obj, val)                             ulatomic_store_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_load_32(obj)                                   ulatomic_load_explicit_32(obj, ulatomic_memory_order_seq_cst)
-  #define ulatomic_exchange_32(obj, val)                          ulatomic_exchange_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_strong_32(obj, expected, val) ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_weak_32(obj, expected, val)   ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_add_32(obj, val)                         ulatomic_fetch_add_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_sub_32(obj, val)                         ulatomic_fetch_sub_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_store(obj, val)                             ulatomic32_store_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_load(obj)                                   ulatomic32_load_explicit(obj, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_exchange(obj, val)                          ulatomic32_exchange_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_compare_exchange_strong(obj, expected, val) ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_compare_exchange_weak(obj, expected, val)   ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_add(obj, val)                         ulatomic32_fetch_add_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_sub(obj, val)                         ulatomic32_fetch_sub_explicit(obj, val, ulatomic_memory_order_seq_cst)
 
   #if defined(__ULATOMIC_API_MSVC_X64) || defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)
     typedef __int64 ulatomic64_t;
     typedef __int64 ulatomic64_raw_t;
     #define ULATOMIC64_INIT (0)
     #if defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)
-      ul_hapi __int64 ulatomic_load_explicit_64(__int64* obj, int ord) {
+      ul_hapi __int64 ulatomic64_load_explicit(__int64* obj, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedCompareExchange64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, 0), ul_static_cast(__int64, 0)));
@@ -704,7 +724,7 @@ Atomic (32-bit, and optional 64-bit)
           return ul_static_cast(__int64, _InterlockedCompareExchange64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, 0), ul_static_cast(__int64, 0)));
         }
       }
-      ul_hapi __int64 ulatomic_exchange_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_exchange_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedExchange64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
@@ -720,7 +740,7 @@ Atomic (32-bit, and optional 64-bit)
         }
 
       }
-      ul_hapi __int64 ulatomic_compare_exchange_strong_explicit_64(__int64* obj, __int64* expected, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_compare_exchange_strong_explicit(__int64* obj, __int64* expected, __int64 val, int ord) {
         __int64 old = *expected;
         switch(ord) {
         case ulatomic_memory_order_relaxed:
@@ -736,7 +756,7 @@ Atomic (32-bit, and optional 64-bit)
           return (*expected = ul_static_cast(__int64, _InterlockedCompareExchange64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val), ul_static_cast(__int64, old)))) == old;
         }
       }
-      ul_hapi __int64 ulatomic_fetch_add_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_add_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedExchangeAdd64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
@@ -751,7 +771,7 @@ Atomic (32-bit, and optional 64-bit)
           return ul_static_cast(__int64, _InterlockedExchangeAdd64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
         }
       }
-      ul_hapi __int64 ulatomic_fetch_sub_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_sub_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedExchangeAdd64_nf(ul_reinterpret_cast(__int64*, obj), -ul_static_cast(__int64, val)));
@@ -766,7 +786,7 @@ Atomic (32-bit, and optional 64-bit)
           return ul_static_cast(__int64, _InterlockedExchangeAdd64(ul_reinterpret_cast(__int64*, obj), -ul_static_cast(__int64, val)));
         }
       }
-      ul_hapi __int64 ulatomic_fetch_or_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_or_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedOr64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
@@ -781,7 +801,7 @@ Atomic (32-bit, and optional 64-bit)
           return ul_static_cast(__int64, _InterlockedOr64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
         }
       }
-      ul_hapi __int64 ulatomic_fetch_xor_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_xor_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedXor64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
@@ -796,7 +816,7 @@ Atomic (32-bit, and optional 64-bit)
           return ul_static_cast(__int64, _InterlockedXor64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
         }
       }
-      ul_hapi __int64 ulatomic_fetch_and_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_and_explicit(__int64* obj, __int64 val, int ord) {
         switch(ord) {
         case ulatomic_memory_order_relaxed:
           return ul_static_cast(__int64, _InterlockedAnd64_nf(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
@@ -812,45 +832,45 @@ Atomic (32-bit, and optional 64-bit)
         }
       }
     #else /* !(defined(__ULATOMIC_API_MSVC_ARM32) || defined(__ULATOMIC_API_MSVC_ARM64)) */
-      ul_hapi __int64 ulatomic_load_explicit_64(__int64* obj, int ord) {
+      ul_hapi __int64 ulatomic64_load_explicit(__int64* obj, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedCompareExchange64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, 0), ul_static_cast(__int64, 0)));
       }
-      ul_hapi __int64 ulatomic_exchange_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_exchange_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedExchange64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
       }
-      ul_hapi __int64 ulatomic_compare_exchange_strong_explicit_64(__int64* obj, __int64* expected, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_compare_exchange_strong_explicit(__int64* obj, __int64* expected, __int64 val, int ord) {
         __int64 old = *expected; (void)ord;
         return (*expected = ul_static_cast(__int64, InterlockedCompareExchange64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val), ul_static_cast(__int64, old)))) == old;
       }
-      ul_hapi __int64 ulatomic_fetch_add_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_add_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedExchangeAdd64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
       }
-      ul_hapi __int64 ulatomic_fetch_sub_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_sub_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedExchangeAdd64(ul_reinterpret_cast(__int64*, obj), -ul_static_cast(__int64, val)));
       }
-      ul_hapi __int64 ulatomic_fetch_or_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_or_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedOr64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
       }
-      ul_hapi __int64 ulatomic_fetch_xor_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_xor_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedXor64(ul_reinterpret_cast(__int64*, obj), -ul_static_cast(__int64, val)));
       }
-      ul_hapi __int64 ulatomic_fetch_and_explicit_64(__int64* obj, __int64 val, int ord) {
+      ul_hapi __int64 ulatomic64_fetch_and_explicit(__int64* obj, __int64 val, int ord) {
         (void)ord; return ul_static_cast(__int64, InterlockedAnd64(ul_reinterpret_cast(__int64*, obj), ul_static_cast(__int64, val)));
       }
     #endif
-    #define ulatomic_store_explicit_64(obj, val, ord)                           (void)(ulatomic_exchange_explicit_64(obj, val, ord))
-    #define ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord) ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord)
+    #define ulatomic64_store_explicit(obj, val, ord)                           (void)(ulatomic64_exchange_explicit(obj, val, ord))
+    #define ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord) ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord)
 
-    #define ulatomic_store_64(obj, val)                             ulatomic_store_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_load_64(obj)                                   ulatomic_load_explicit_64(obj, ulatomic_memory_order_seq_cst)
-    #define ulatomic_exchange_64(obj, val)                          ulatomic_exchange_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_compare_exchange_strong_64(obj, expected, val) ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_compare_exchange_weak_64(obj, expected, val)   ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_fetch_add_64(obj, val)                         ulatomic_fetch_add_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_fetch_sub_64(obj, val)                         ulatomic_fetch_sub_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_fetch_or_64(obj, val)                          ulatomic_fetch_or_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_fetch_xor_64(obj, val)                         ulatomic_fetch_xor_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-    #define ulatomic_fetch_and_64(obj, val)                         ulatomic_fetch_and_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_store(obj, val)                             ulatomic64_store_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_load(obj)                                   ulatomic64_load_explicit(obj, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_exchange(obj, val)                          ulatomic64_exchange_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_compare_exchange_strong(obj, expected, val) ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_compare_exchange_weak(obj, expected, val)   ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_fetch_add(obj, val)                         ulatomic64_fetch_add_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_fetch_sub(obj, val)                         ulatomic64_fetch_sub_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_fetch_or(obj, val)                          ulatomic64_fetch_or_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_fetch_xor(obj, val)                         ulatomic64_fetch_xor_explicit(obj, val, ulatomic_memory_order_seq_cst)
+    #define ulatomic64_fetch_and(obj, val)                         ulatomic64_fetch_and_explicit(obj, val, ulatomic_memory_order_seq_cst)
   #endif
 #elif defined(ULATOMIC_API_GNUC)
   #include <limits.h>
@@ -871,54 +891,54 @@ Atomic (32-bit, and optional 64-bit)
   typedef int32_t ulatomic32_t;
   typedef int32_t ulatomic32_raw_t;
   #define ULATOMIC32_INIT (0)
-  #define ulatomic_store_explicit_32(obj, val, ord)                             __atomic_store_n(obj, val, ord)
-  #define ulatomic_load_explicit_32(obj, ord)                                   __atomic_load_n(obj, ord)
-  #define ulatomic_exchange_explicit_32(obj, val, ord)                          __atomic_exchange_n(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_store_explicit(obj, val, ord)                             __atomic_store_n(obj, val, ord)
+  #define ulatomic32_load_explicit(obj, ord)                                   __atomic_load_n(obj, ord)
+  #define ulatomic32_exchange_explicit(obj, val, ord)                          __atomic_exchange_n(obj, val, ord)
+  #define ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, __atomic_compare_exchange_n(obj, expected, val, 0, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord) \
+  #define ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, __atomic_compare_exchange_n(obj, expected, val, 1, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_32(obj, val, ord)                         __atomic_fetch_add(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_32(obj, val, ord)                         __atomic_fetch_sub(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_32(obj, val, ord)                          __atomic_fetch_or(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_32(obj, val, ord)                         __atomic_fetch_xor(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_32(obj, val, ord)                         __atomic_fetch_and(obj, val, ord)
-  #define ulatomic_store_32(obj, val)                             ulatomic_store_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_load_32(obj)                                   ulatomic_load_explicit_32(obj, ulatomic_memory_order_seq_cst)
-  #define ulatomic_exchange_32(obj, val)                          ulatomic_exchange_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_strong_32(obj, expected, val) ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_weak_32(obj, expected, val)   ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_add_32(obj, val)                         ulatomic_fetch_add_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_sub_32(obj, val)                         ulatomic_fetch_sub_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_or_32(obj, val)                          ulatomic_fetch_or_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_xor_32(obj, val)                         ulatomic_fetch_xor_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_and_32(obj, val)                         ulatomic_fetch_and_explicit_32(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_add_explicit(obj, val, ord)                         __atomic_fetch_add(obj, val, ord)
+  #define ulatomic32_fetch_sub_explicit(obj, val, ord)                         __atomic_fetch_sub(obj, val, ord)
+  #define ulatomic32_fetch_or_explicit(obj, val, ord)                          __atomic_fetch_or(obj, val, ord)
+  #define ulatomic32_fetch_xor_explicit(obj, val, ord)                         __atomic_fetch_xor(obj, val, ord)
+  #define ulatomic32_fetch_and_explicit(obj, val, ord)                         __atomic_fetch_and(obj, val, ord)
+  #define ulatomic32_store(obj, val)                             ulatomic32_store_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_load(obj)                                   ulatomic32_load_explicit(obj, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_exchange(obj, val)                          ulatomic32_exchange_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_compare_exchange_strong(obj, expected, val) ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_compare_exchange_weak(obj, expected, val)   ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_add(obj, val)                         ulatomic32_fetch_add_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_sub(obj, val)                         ulatomic32_fetch_sub_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_or(obj, val)                          ulatomic32_fetch_or_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_xor(obj, val)                         ulatomic32_fetch_xor_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic32_fetch_and(obj, val)                         ulatomic32_fetch_and_explicit(obj, val, ulatomic_memory_order_seq_cst)
 
   typedef int64_t ulatomic64_t;
   typedef int64_t ulatomic64_raw_t;
   #define ULATOMIC64_INIT (0)
-  #define ulatomic_store_explicit_64(obj, val, ord)                             __atomic_store_n(obj, val, ord)
-  #define ulatomic_load_explicit_64(obj, ord)                                   __atomic_load_n(obj, ord)
-  #define ulatomic_exchange_explicit_64(obj, val, ord)                          __atomic_exchange_n(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_store_explicit(obj, val, ord)                             __atomic_store_n(obj, val, ord)
+  #define ulatomic64_load_explicit(obj, ord)                                   __atomic_load_n(obj, ord)
+  #define ulatomic64_exchange_explicit(obj, val, ord)                          __atomic_exchange_n(obj, val, ord)
+  #define ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord) \
     ul_static_cast(int, __atomic_compare_exchange_n(obj, expected, val, 0, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord) \
+  #define ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord) \
     ul_static_cast(int, __atomic_compare_exchange_n(obj, expected, val, 1, ord, _ulatomic_memory_order_of_fail(ord)))
-  #define ulatomic_fetch_add_explicit_64(obj, val, ord)                         __atomic_fetch_add(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_64(obj, val, ord)                         __atomic_fetch_sub(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_64(obj, val, ord)                          __atomic_fetch_or(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_64(obj, val, ord)                         __atomic_fetch_xor(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         __atomic_fetch_and(obj, val, ord)
-  #define ulatomic_store_64(obj, val)                             ulatomic_store_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_load_64(obj)                                   ulatomic_load_explicit_64(obj, ulatomic_memory_order_seq_cst)
-  #define ulatomic_exchange_64(obj, val)                          ulatomic_exchange_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_strong_64(obj, expected, val) ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_compare_exchange_weak_64(obj, expected, val)   ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_add_64(obj, val)                         ulatomic_fetch_add_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_sub_64(obj, val)                         ulatomic_fetch_sub_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_or_64(obj, val)                          ulatomic_fetch_or_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_xor_64(obj, val)                         ulatomic_fetch_xor_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
-  #define ulatomic_fetch_and_64(obj, val)                         ulatomic_fetch_and_explicit_64(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_add_explicit(obj, val, ord)                         __atomic_fetch_add(obj, val, ord)
+  #define ulatomic64_fetch_sub_explicit(obj, val, ord)                         __atomic_fetch_sub(obj, val, ord)
+  #define ulatomic64_fetch_or_explicit(obj, val, ord)                          __atomic_fetch_or(obj, val, ord)
+  #define ulatomic64_fetch_xor_explicit(obj, val, ord)                         __atomic_fetch_xor(obj, val, ord)
+  #define ulatomic64_fetch_and_explicit(obj, val, ord)                         __atomic_fetch_and(obj, val, ord)
+  #define ulatomic64_store(obj, val)                             ulatomic64_store_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_load(obj)                                   ulatomic64_load_explicit(obj, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_exchange(obj, val)                          ulatomic64_exchange_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_compare_exchange_strong(obj, expected, val) ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_compare_exchange_weak(obj, expected, val)   ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_add(obj, val)                         ulatomic64_fetch_add_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_sub(obj, val)                         ulatomic64_fetch_sub_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_or(obj, val)                          ulatomic64_fetch_or_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_xor(obj, val)                         ulatomic64_fetch_xor_explicit(obj, val, ulatomic_memory_order_seq_cst)
+  #define ulatomic64_fetch_and(obj, val)                         ulatomic64_fetch_and_explicit(obj, val, ulatomic_memory_order_seq_cst)
 
   typedef int ulatomic_flag_t;
   #define ULATOMIC_FLAG_INIT (0)
@@ -967,63 +987,63 @@ Atomic (32-bit, and optional 64-bit)
   typedef _ulatomic_i32_t ulatomic32_t;
   typedef _ulatomic_i32_t ulatomic32_raw_t;
   #define ULATOMIC32_INIT (0)
-  #define ulatomic_store_32(obj, val) (void)(*(obj) = (val))
-  #define ulatomic_load_32(obj) (*(obj))
-  ul_hapi _ulatomic_i32_t ulatomic_exchange_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj = val; return old; }
-  ul_hapi int ulatomic_compare_exchange_strong_32(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
+  #define ulatomic32_store(obj, val) (void)(*(obj) = (val))
+  #define ulatomic32_load(obj) (*(obj))
+  ul_hapi _ulatomic32_i32_t ulatomic_exchange(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj = val; return old; }
+  ul_hapi int ulatomic32_compare_exchange_strong(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
     if(*obj == *expected) { *obj = val; return 1; }
     else { *expected = *obj; return 0; }
   }
-  ul_hapi int ulatomic_compare_exchange_weak_32(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
+  ul_hapi int ulatomic32_compare_exchange_weak(ulatomic32_t* obj, _ulatomic_i32_t* expected, _ulatomic_i32_t val) {
     if(*obj == *expected) { *obj = val; return 1; }
     else { *expected = *obj; return 0; }
   }
-  ul_hapi _ulatomic_i32_t ulatomic_fetch_add_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj += val; return old; }
-  ul_hapi _ulatomic_i32_t ulatomic_fetch_sub_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj -= val; return old; }
-  ul_hapi _ulatomic_i32_t ulatomic_fetch_or_32(ulatomic32_t* obj, _ulatomic_i32_t val)  { _ulatomic_i32_t old = *obj; *obj |= val; return old; }
-  ul_hapi _ulatomic_i32_t ulatomic_fetch_xor_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj ^= val; return old; }
-  ul_hapi _ulatomic_i32_t ulatomic_fetch_and_32(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj &= val; return old; }
-  #define ulatomic_store_explicit_32(obj, val, ord)                             ulatomic_store_32(obj, val)
-  #define ulatomic_load_explicit_32(obj, ord)                                   ulatomic_load_32(obj)
-  #define ulatomic_exchange_explicit_32(obj, val, ord)                          ulatomic_exchange_32(obj, val)
-  #define ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord) ulatomic_compare_exchange_strong_32(obj, expected, val)
-  #define ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord)   ulatomic_compare_exchange_weak_32(obj, expected, val)
-  #define ulatomic_fetch_add_explicit_32(obj, val, ord)                         ulatomic_fetch_add_32(obj, val)
-  #define ulatomic_fetch_sub_explicit_32(obj, val, ord)                         ulatomic_fetch_sub_32(obj, val)
-  #define ulatomic_fetch_or_explicit_32(obj, val, ord)                          ulatomic_fetch_or_32(obj, val)
-  #define ulatomic_fetch_xor_explicit_32(obj, val, ord)                         ulatomic_fetch_xor_32(obj, val)
-  #define ulatomic_fetch_and_explicit_32(obj, val, ord)                         ulatomic_fetch_and_32(obj, val)
+  ul_hapi _ulatomic32_i32_t ulatomic_fetch_add(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj += val; return old; }
+  ul_hapi _ulatomic32_i32_t ulatomic_fetch_sub(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj -= val; return old; }
+  ul_hapi _ulatomic32_i32_t ulatomic_fetch_or(ulatomic32_t* obj, _ulatomic_i32_t val)  { _ulatomic_i32_t old = *obj; *obj |= val; return old; }
+  ul_hapi _ulatomic32_i32_t ulatomic_fetch_xor(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj ^= val; return old; }
+  ul_hapi _ulatomic32_i32_t ulatomic_fetch_and(ulatomic32_t* obj, _ulatomic_i32_t val) { _ulatomic_i32_t old = *obj; *obj &= val; return old; }
+  #define ulatomic32_store_explicit(obj, val, ord)                             ulatomic32_store(obj, val)
+  #define ulatomic32_load_explicit(obj, ord)                                   ulatomic32_load(obj)
+  #define ulatomic32_exchange_explicit(obj, val, ord)                          ulatomic32_exchange(obj, val)
+  #define ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord) ulatomic32_compare_exchange_strong(obj, expected, val)
+  #define ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord)   ulatomic32_compare_exchange_weak(obj, expected, val)
+  #define ulatomic32_fetch_add_explicit(obj, val, ord)                         ulatomic32_fetch_add(obj, val)
+  #define ulatomic32_fetch_sub_explicit(obj, val, ord)                         ulatomic32_fetch_sub(obj, val)
+  #define ulatomic32_fetch_or_explicit(obj, val, ord)                          ulatomic32_fetch_or(obj, val)
+  #define ulatomic32_fetch_xor_explicit(obj, val, ord)                         ulatomic32_fetch_xor(obj, val)
+  #define ulatomic32_fetch_and_explicit(obj, val, ord)                         ulatomic32_fetch_and(obj, val)
 
   #ifdef _ULATOMIC_I64_DEFINED
     typedef _ulatomic_i64_t ulatomic64_t;
     typedef _ulatomic_i64_t ulatomic64_raw_t;
     #define ULATOMIC64_INIT (0)
-    #define ulatomic_store_64(obj, val) (void)(*(obj) = (val))
-    #define ulatomic_load_64(obj) (*(obj))
-    ul_hapi _ulatomic_i64_t ulatomic_exchange_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj = val; return old; }
-    ul_hapi int ulatomic_compare_exchange_strong_64(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
+    #define ulatomic64_store(obj, val) (void)(*(obj) = (val))
+    #define ulatomic64_load(obj) (*(obj))
+    ul_hapi _ulatomic64_i64_t ulatomic_exchange(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj = val; return old; }
+    ul_hapi int ulatomic64_compare_exchange_strong(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
       if(*obj == *expected) { *obj = val; return 1; }
       else { *expected = *obj; return 0; }
     }
-    ul_hapi int ulatomic_compare_exchange_weak_64(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
+    ul_hapi int ulatomic64_compare_exchange_weak(ulatomic64_t* obj, _ulatomic_i64_t* expected, _ulatomic_i64_t val) {
       if(*obj == *expected) { *obj = val; return 1; }
       else { *expected = *obj; return 0; }
     }
-    ul_hapi _ulatomic_i64_t ulatomic_fetch_add_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj += val; return old; }
-    ul_hapi _ulatomic_i64_t ulatomic_fetch_sub_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj -= val; return old; }
-    ul_hapi _ulatomic_i64_t ulatomic_fetch_or_64(ulatomic64_t* obj, _ulatomic_i64_t val)  { _ulatomic_i64_t old = *obj; *obj |= val; return old; }
-    ul_hapi _ulatomic_i64_t ulatomic_fetch_xor_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj ^= val; return old; }
-    ul_hapi _ulatomic_i64_t ulatomic_fetch_and_64(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj &= val; return old; }
-    #define ulatomic_store_explicit_64(obj, val, ord)                             ulatomic_store_64(obj, val)
-    #define ulatomic_load_explicit_64(obj, ord)                                   ulatomic_load_64(obj)
-    #define ulatomic_exchange_explicit_64(obj, val, ord)                          ulatomic_exchange_64(obj, val)
-    #define ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord) ulatomic_compare_exchange_strong_64(obj, expected, val)
-    #define ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord)   ulatomic_compare_exchange_weak_64(obj, expected, val)
-    #define ulatomic_fetch_add_explicit_64(obj, val, ord)                         ulatomic_fetch_add_64(obj, val)
-    #define ulatomic_fetch_sub_explicit_64(obj, val, ord)                         ulatomic_fetch_sub_64(obj, val)
-    #define ulatomic_fetch_or_explicit_64(obj, val, ord)                          ulatomic_fetch_or_64(obj, val)
-    #define ulatomic_fetch_xor_explicit_64(obj, val, ord)                         ulatomic_fetch_xor_64(obj, val)
-    #define ulatomic_fetch_and_explicit_64(obj, val, ord)                         ulatomic_fetch_and_64(obj, val)
+    ul_hapi _ulatomic64_i64_t ulatomic_fetch_add(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj += val; return old; }
+    ul_hapi _ulatomic64_i64_t ulatomic_fetch_sub(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj -= val; return old; }
+    ul_hapi _ulatomic64_i64_t ulatomic_fetch_or(ulatomic64_t* obj, _ulatomic_i64_t val)  { _ulatomic_i64_t old = *obj; *obj |= val; return old; }
+    ul_hapi _ulatomic64_i64_t ulatomic_fetch_xor(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj ^= val; return old; }
+    ul_hapi _ulatomic64_i64_t ulatomic_fetch_and(ulatomic64_t* obj, _ulatomic_i64_t val) { _ulatomic_i64_t old = *obj; *obj &= val; return old; }
+    #define ulatomic64_store_explicit(obj, val, ord)                             ulatomic64_store(obj, val)
+    #define ulatomic64_load_explicit(obj, ord)                                   ulatomic64_load(obj)
+    #define ulatomic64_exchange_explicit(obj, val, ord)                          ulatomic64_exchange(obj, val)
+    #define ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord) ulatomic64_compare_exchange_strong(obj, expected, val)
+    #define ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord)   ulatomic64_compare_exchange_weak(obj, expected, val)
+    #define ulatomic64_fetch_add_explicit(obj, val, ord)                         ulatomic64_fetch_add(obj, val)
+    #define ulatomic64_fetch_sub_explicit(obj, val, ord)                         ulatomic64_fetch_sub(obj, val)
+    #define ulatomic64_fetch_or_explicit(obj, val, ord)                          ulatomic64_fetch_or(obj, val)
+    #define ulatomic64_fetch_xor_explicit(obj, val, ord)                         ulatomic64_fetch_xor(obj, val)
+    #define ulatomic64_fetch_and_explicit(obj, val, ord)                         ulatomic64_fetch_and(obj, val)
   #endif
 
   #undef _ULATOMIC_I64_DEFINED
@@ -1032,67 +1052,13 @@ Atomic (32-bit, and optional 64-bit)
 #if !defined(ULATOMIC_FLAG_INIT) && defined(ULATOMIC32_INIT)
   typedef ulatomic32_t ulatomic_flag_t;
   #define ULATOMIC_FLAG_INIT ULATOMIC32_INIT
-  #define ulatomic_flag_test_and_set(obj)               ulatomic_exchange_32(obj, 1)
-  #define ulatomic_flag_clear(obj)                      ulatomic_store_32(obj, 0)
-  #define ulatomic_flag_test_and_set_explicit(obj, ord) ulatomic_exchange_explicit_32(obj, 1, ord)
-  #define ulatomic_flag_clear_explicit(obj, ord)        ulatomic_store_explicit_32(obj, 0, ord)
+  #define ulatomic32_flag_test_and_set(obj)               ulatomic_exchange(obj, 1)
+  #define ulatomic32_flag_clear(obj)                      ulatomic_store(obj, 0)
+  #define ulatomic32_flag_test_and_set_explicit(obj, ord) ulatomic_exchange_explicit(obj, 1, ord)
+  #define ulatomic32_flag_clear_explicit(obj, ord)        ulatomic_store_explicit(obj, 0, ord)
 #endif /* ULATOMIC_FLAG_INIT */
 
-/* ulatomiciptr_t */
-#if INTPTR_MAX == INT64_MAX && defined(ULATOMIC64_INIT)
-  typedef ulatomic64_t ulatomiciptr_t;
-  typedef ulatomic64_raw_t ulatomiciptr_raw_t;
-  #define ULATOMICIPTR_INIT ULATOMIC64_INIT
-  #define ulatomic_store_iptr(obj, val)                             ulatomic_store_64(obj, val)
-  #define ulatomic_load_iptr(obj)                                   ulatomic_load_64(obj)
-  #define ulatomic_exchange_iptr(obj, val)                          ulatomic_exchange_64(obj, val)
-  #define ulatomic_compare_exchange_strong_iptr(obj, expected, val) ulatomic_compare_exchange_strong_64(obj, expected, val)
-  #define ulatomic_compare_exchange_weak_iptr(obj, expected, val)   ulatomic_compare_exchange_weak_64(obj, expected, val)
-  #define ulatomic_fetch_add_iptr(obj, val)                         ulatomic_fetch_add_64(obj, val)
-  #define ulatomic_fetch_sub_iptr(obj, val)                         ulatomic_fetch_sub_64(obj, val)
-  #define ulatomic_fetch_or_iptr(obj, val)                          ulatomic_fetch_or_64(obj, val)
-  #define ulatomic_fetch_xor_iptr(obj, val)                         ulatomic_fetch_xor_64(obj, val)
-  #define ulatomic_fetch_and_iptr(obj, val)                         ulatomic_fetch_and_64(obj, val)
-  #define ulatomic_store_explicit_iptr(obj, val, ord)                             ulatomic_store_explicit_64(obj, val, ord)
-  #define ulatomic_load_explicit_iptr(obj, ord)                                   ulatomic_load_explicit_64(obj, ord)
-  #define ulatomic_exchange_explicit_iptr(obj, val, ord)                          ulatomic_exchange_explicit_64(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_iptr(obj, expected, val, ord) ulatomic_compare_exchange_strong_explicit_64(obj, expected, val, ord)
-  #define ulatomic_compare_exchange_weak_explicit_iptr(obj, expected, val, ord)   ulatomic_compare_exchange_weak_explicit_64(obj, expected, val, ord)
-  #define ulatomic_fetch_add_explicit_iptr(obj, val, ord)                         ulatomic_fetch_add_explicit_64(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_iptr(obj, val, ord)                         ulatomic_fetch_sub_explicit_64(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_iptr(obj, val, ord)                          ulatomic_fetch_or_explicit_64(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_iptr(obj, val, ord)                         ulatomic_fetch_xor_explicit_64(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_iptr(obj, val, ord)                         ulatomic_fetch_and_explicit_64(obj, val, ord)
-#elif INTPTR_MAX == INT32_MAX && defined(ULATOMIC32_INIT)
-  typedef ulatomic32_t ulatomiciptr_t;
-  typedef ulatomic32_raw_t ulatomiciptr_raw_t;
-  #define ULATOMICIPTR_INIT ULATOMIC32_INIT
-  #define ulatomic_store_iptr(obj, val)                             ulatomic_store_32(obj, val)
-  #define ulatomic_load_iptr(obj)                                   ulatomic_load_32(obj)
-  #define ulatomic_exchange_iptr(obj, val)                          ulatomic_exchange_32(obj, val)
-  #define ulatomic_compare_exchange_strong_iptr(obj, expected, val) ulatomic_compare_exchange_strong_32(obj, expected, val)
-  #define ulatomic_compare_exchange_weak_iptr(obj, expected, val)   ulatomic_compare_exchange_weak_32(obj, expected, val)
-  #define ulatomic_fetch_add_iptr(obj, val)                         ulatomic_fetch_add_32(obj, val)
-  #define ulatomic_fetch_sub_iptr(obj, val)                         ulatomic_fetch_sub_32(obj, val)
-  #define ulatomic_fetch_or_iptr(obj, val)                          ulatomic_fetch_or_32(obj, val)
-  #define ulatomic_fetch_xor_iptr(obj, val)                         ulatomic_fetch_xor_32(obj, val)
-  #define ulatomic_fetch_and_iptr(obj, val)                         ulatomic_fetch_and_32(obj, val)
-  #define ulatomic_store_explicit_iptr(obj, val, ord)                             ulatomic_store_explicit_32(obj, val, ord)
-  #define ulatomic_load_explicit_iptr(obj, ord)                                   ulatomic_load_explicit_32(obj, ord)
-  #define ulatomic_exchange_explicit_iptr(obj, val, ord)                          ulatomic_exchange_explicit_32(obj, val, ord)
-  #define ulatomic_compare_exchange_strong_explicit_iptr(obj, expected, val, ord) ulatomic_compare_exchange_strong_explicit_32(obj, expected, val, ord)
-  #define ulatomic_compare_exchange_weak_explicit_iptr(obj, expected, val, ord)   ulatomic_compare_exchange_weak_explicit_32(obj, expected, val, ord)
-  #define ulatomic_fetch_add_explicit_iptr(obj, val, ord)                         ulatomic_fetch_add_explicit_32(obj, val, ord)
-  #define ulatomic_fetch_sub_explicit_iptr(obj, val, ord)                         ulatomic_fetch_sub_explicit_32(obj, val, ord)
-  #define ulatomic_fetch_or_explicit_iptr(obj, val, ord)                          ulatomic_fetch_or_explicit_32(obj, val, ord)
-  #define ulatomic_fetch_xor_explicit_iptr(obj, val, ord)                         ulatomic_fetch_xor_explicit_32(obj, val, ord)
-  #define ulatomic_fetch_and_explicit_iptr(obj, val, ord)                         ulatomic_fetch_and_explicit_32(obj, val, ord)
-#else
-  #if defined(ULATOMIC32_INIT) || defined(ULATOMIC64_INIT)
-    #error "ulatomic.h: atomic intptr_t defined failed"
-  #endif
-#endif
-
+/* ulatomic_yield */
 #ifdef _WIN32
   #define WIN32_LEAN_AND_MEAN
   #include <Windows.h>
@@ -1103,7 +1069,7 @@ Atomic (32-bit, and optional 64-bit)
     #include <unistd.h>
     #if 0 /* defined(_POSIX_PRIORITY_SCHEDULING) || (_POSIX_C_SOURCE+0) >= 200809L */
       #define ulatomic_yield() ((void)sched_yield())
-    #elif (_POSIX_C_SOURCE+0) >= 199309L
+    #elif defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE+0) >= 199309L
       #include <time.h>
       ul_hapi void ulatomic_yield() {
         struct timespec ts;
@@ -1112,7 +1078,7 @@ Atomic (32-bit, and optional 64-bit)
         nanosleep(&ts, NULL);
       }
       #define ulatomic_yield() (ulatomic_yield)()
-    #elif defined(_BSD_SOURCE) || ((_XOPEN_SOURCE+0) >= 500)
+    #elif defined(_BSD_SOURCE) || (defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE+0) >= 500)
       #define ulatomic_yield() ((void)usleep(1))
     #endif
   #endif
@@ -1141,6 +1107,340 @@ ul_hapi void ulatomic_pause(void) {
 #endif
 }
 
+/* ulatomic32_wait / ulatomic32_notify_one / ulatomic32_notify_all */
+#ifdef ULATOMIC32_INIT
+  #undef _ULATOMIC32_WAIT_DEFINED
+
+  /* C++20 */
+  #ifdef ULATOMIC_API_CXX20
+    ul_hapi void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
+      obj->wait(expected);
+    }
+    ul_hapi void ulatomic32_notify_one(ulatomic32_t* obj) {
+      obj->notify_one();
+    }
+    ul_hapi void ulatomic32_notify_all(ulatomic32_t* obj) {
+      obj->notify_all(); 
+    }
+    #define _ULATOMIC32_WAIT_DEFINED
+  #endif
+
+  /* Windows 8 */
+  #if !defined(_ULATOMIC32_WAIT_DEFINED) && defined(_WIN32)
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
+    #ifdef _MSC_VER
+      #pragma comment(lib, "Synchronization.lib")
+    #endif
+    #if _WIN32_WINNT >= 0x0602
+      ul_hapi void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
+        WaitOnAddress(ul_reinterpret_cast(void*, obj), &expected, 4, INFINITE);
+      }
+      ul_hapi void ulatomic32_notify_one(ulatomic32_t* obj) {
+        WakeByAddressSingle(ul_reinterpret_cast(void*, obj));
+      }
+      ul_hapi void ulatomic32_notify_all(ulatomic32_t* obj) {
+        WakeByAddressAll(ul_reinterpret_cast(void*, obj));
+      }
+      #define _ULATOMIC32_WAIT_DEFINED
+    #endif
+  #endif
+
+  /* Linux 2.6.0: use futex + table */
+  #if !defined(_ULATOMIC32_WAIT_DEFINED) && defined(__linux__)
+    #include <linux/version.h>
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+      #include <unistd.h>
+      #include <sys/syscall.h>
+      #include <linux/futex.h>
+      #include <stdint.h>
+      #include <limits.h>
+
+      ul_hapi void _ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
+        syscall(SYS_futex, obj, FUTEX_WAIT_PRIVATE, expected, NULL, NULL, 0);
+      }
+      ul_hapi void _ulatomic32_notify_one(ulatomic32_t* obj) {
+        syscall(SYS_futex, obj, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
+      }
+      ul_hapi void _ulatomic32_notify_all(ulatomic32_t* obj) {
+        syscall(SYS_futex, obj, FUTEX_WAKE_PRIVATE, INT_MAX, NULL, NULL, 0);
+      }
+
+      struct alignas(64) _ulatomic32_table_t {
+        ulatomic32_t waiters;
+        ulatomic32_t version;
+      };
+      ul_hapi struct _ulatomic32_table_t* _ulatomic32_table(volatile const void* p) {
+        static _ulatomic32_table_t table[256] = { };
+        return table + (((uintptr_t)p >> 2) & 255);
+      }
+      ul_hapi void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
+        int i;
+        if(ulatomic32_load(obj) != expected) return;
+        for(i = 0; i < 16; ++i) {
+          if(ulatomic32_load(obj) != expected) return;
+          ulatomic_pause();
+        }
+        do {
+          struct _ulatomic32_table_t* c = _ulatomic32_table(obj);
+          ulatomic32_raw_t version;
+          ulatomic32_store(&c->waiters, 1);
+          version = ulatomic32_load(&c->version);
+          if(ulatomic32_load(obj) != expected) return;
+          _ulatomic32_wait(&c->version, version);
+        } while(0);
+      }
+      ul_hapi void ulatomic32_notify_all(ulatomic32_t* obj) {
+        struct _ulatomic32_table_t* c = _ulatomic32_table(obj);
+        ulatomic32_fetch_add_explicit(&c->version, 1, ulatomic_memory_order_seq_cst);
+        if(ulatomic32_exchange_explicit(&c->waiters, 0, ulatomic_memory_order_relaxed))
+          _ulatomic32_notify_all(&c->version);
+      }
+      ul_hapi void ulatomic32_notify_one(ulatomic32_t* obj) {
+        ulatomic32_notify_all(obj);
+      }
+      #define _ULATOMIC32_WAIT_DEFINED
+    #endif
+  #endif
+
+  #ifndef _ULATOMIC32_WAIT_DEFINED
+    ul_hapi void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
+      int i;
+      for(i = 0; i < 16; ++i) {
+        if(ulatomic32_load(obj) != expected) return;
+        ulatomic_pause();
+      }
+      while(ulatomic32_load(obj) == expected) ulatomic_yield();
+    }
+    ul_hapi void ulatomic32_notify_one(ulatomic32_t* obj) { (void)obj; }
+    ul_hapi void ulatomic32_notify_all(ulatomic32_t* obj) { (void)obj; }
+    #define _ULATOMIC32_WAIT_DEFINED
+  #endif
+
+  #undef _ULATOMIC32_WAIT_DEFINED
+#endif
+
+/* ulatomic64_wait / ulatomic64_notify_one / ulatomic64_notify_all */
+#ifdef ULATOMIC64_INIT
+  #undef _ULATOMIC64_WAIT_DEFINED
+
+  /* C++20 */
+  #ifdef ULATOMIC_API_CXX20
+    ul_hapi void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected) {
+      obj->wait(expected);
+    }
+    ul_hapi void ulatomic64_notify_one(ulatomic64_t* obj) {
+      obj->notify_one();
+    }
+    ul_hapi void ulatomic64_notify_all(ulatomic64_t* obj) {
+      obj->notify_all(); 
+    }
+    #define _ULATOMIC64_WAIT_DEFINED
+  #endif
+
+  /* Windows 8 */
+  #if !defined(_ULATOMIC64_WAIT_DEFINED) && defined(_WIN64)
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
+    #ifdef _MSC_VER
+      #pragma comment(lib, "Synchronization.lib")
+    #endif
+    #if _WIN32_WINNT >= 0x0602
+      ul_hapi void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected) {
+        WaitOnAddress(ul_reinterpret_cast(void*, obj), &expected, 8, INFINITE);
+      }
+      ul_hapi void ulatomic64_notify_one(ulatomic64_t* obj) {
+        WakeByAddressSingle(ul_reinterpret_cast(void*, obj));
+      }
+      ul_hapi void ulatomic64_notify_all(ulatomic64_t* obj) {
+        WakeByAddressAll(ul_reinterpret_cast(void*, obj));
+      }
+      #define _ULATOMIC64_WAIT_DEFINED
+    #endif
+  #endif
+
+  /* Linux 2.6.0: use futex + table */
+  #if !defined(_ULATOMIC64_WAIT_DEFINED) && defined(__linux__)
+    #include <linux/version.h>
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+      #include <unistd.h>
+      #include <sys/syscall.h>
+      #include <linux/futex.h>
+      #include <stdint.h>
+      #include <limits.h>
+
+      ul_hapi void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected) {
+        int i;
+        if(ulatomic64_load(obj) != expected) return;
+        for(i = 0; i < 16; ++i) {
+          if(ulatomic64_load(obj) != expected) return;
+          ulatomic_pause();
+        }
+        do {
+          struct _ulatomic32_table_t* c = _ulatomic32_table(obj);
+          ulatomic32_raw_t version;
+          ulatomic32_store(&c->waiters, 1);
+          version = ulatomic32_load(&c->version);
+          if(ulatomic64_load(obj) != expected) return;
+          _ulatomic32_wait(&c->version, version);
+        } while(0);
+      }
+      ul_hapi void ulatomic64_notify_all(ulatomic64_t* obj) {
+        struct _ulatomic32_table_t* c = _ulatomic32_table(obj);
+        ulatomic32_fetch_add_explicit(&c->version, 1, ulatomic_memory_order_seq_cst);
+        if(ulatomic32_exchange_explicit(&c->waiters, 0, ulatomic_memory_order_relaxed))
+          _ulatomic32_notify_all(&c->version);
+      }
+      ul_hapi void ulatomic64_notify_one(ulatomic64_t* obj) {
+        ulatomic64_notify_all(obj);
+      }
+      #define _ULATOMIC64_WAIT_DEFINED
+    #endif
+  #endif
+
+  #ifndef _ULATOMIC64_WAIT_DEFINED
+    ul_hapi void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected) {
+      int i;
+      for(i = 0; i < 16; ++i) {
+        if(ulatomic64_load(obj) != expected) return;
+        ulatomic_pause();
+      }
+      while(ulatomic64_load(obj) == expected) ulatomic_yield();
+    }
+    ul_hapi void ulatomic64_notify_one(ulatomic64_t* obj) { (void)obj; }
+    ul_hapi void ulatomic64_notify_all(ulatomic64_t* obj) { (void)obj; }
+    #define _ULATOMIC64_WAIT_DEFINED
+  #endif
+
+  #undef _ULATOMIC64_WAIT_DEFINED
+#endif
+
+#ifndef UL_HAS_STDINT_H
+  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
+    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+  #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
+      (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
+    #define UL_HAS_STDINT_H
+  #endif
+  #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
+    #include <unistd.h>
+    #if defined(_POSIX_VERSION) && ((_POSIX_VERSION+0) >= 200100L)
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+  #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+      || (defined(__cplusplus) && __cplusplus >= 201103L)
+    #define UL_HAS_STDINT_H
+  #endif
+  #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
+    #define UL_HAS_STDINT_H
+  #endif
+  #if defined(__has_include)
+    #if __has_include(<stdint.h>)
+      #define UL_HAS_STDINT_H
+    #endif
+  #endif
+#endif /* UL_HAS_STDINT_H */
+#ifdef UL_HAS_STDINT_H
+  #include <stdint.h>
+  #define _ULATOMIC_INTPTR_MAX INTPTR_MAX
+#elif defined(INTPTR_MAX)
+  #define _ULATOMIC_INTPTR_MAX INTPTR_MAX
+#else
+  #include <limits.h>
+  #if defined(_WIN32) || defined(_WIN64)
+    #if _WIN64
+      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFFFFFFFFFFi64
+    #else
+      #define _ULATOMIC_INTPTR_MAX INT_MAX
+    #endif
+  #elif defined(__SIZEOF_POINTER__)
+    #if __SIZEOF_POINTER__ == 8
+      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFFFFFFFFFF
+    #elif __SIZEOF_POINTER__ == 4
+      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFF
+    #elif __SIZEOF_POINTER__ == 2
+      #define _ULATOMIC_INTPTR_MAX 0x7FFF
+    #elif __SIZEOF_POINTER__ == 1
+      #define _ULATOMIC_INTPTR_MAX 0x7F
+    #endif
+  #endif
+  #ifndef _ULATOMIC_INTPTR_MAX
+    #ifdef LLONG_MAX
+      #define _ULATOMIC_INTPTR_MAX LLONG_MAX
+    #else
+      #define _ULATOMIC_INTPTR_MAX LONG_MAX
+    #endif
+  #endif
+#endif
+
+/* ulatomiciptr_t */
+#if _ULATOMIC_INTPTR_MAX == INT64_MAX && defined(ULATOMIC64_INIT)
+  typedef ulatomic64_t ulatomiciptr_t;
+  typedef ulatomic64_raw_t ulatomiciptr_raw_t;
+  #define ULATOMICIPTR_INIT ULATOMIC64_INIT
+  #define ulatomiciptr_store(obj, val)                             ulatomic64_store(obj, val)
+  #define ulatomiciptr_load(obj)                                   ulatomic64_load(obj)
+  #define ulatomiciptr_exchange(obj, val)                          ulatomic64_exchange(obj, val)
+  #define ulatomiciptr_compare_exchange_strong(obj, expected, val) ulatomic64_compare_exchange_strong(obj, expected, val)
+  #define ulatomiciptr_compare_exchange_weak(obj, expected, val)   ulatomic64_compare_exchange_weak(obj, expected, val)
+  #define ulatomiciptr_fetch_add(obj, val)                         ulatomic64_fetch_add(obj, val)
+  #define ulatomiciptr_fetch_sub(obj, val)                         ulatomic64_fetch_sub(obj, val)
+  #define ulatomiciptr_fetch_or(obj, val)                          ulatomic64_fetch_or(obj, val)
+  #define ulatomiciptr_fetch_xor(obj, val)                         ulatomic64_fetch_xor(obj, val)
+  #define ulatomiciptr_fetch_and(obj, val)                         ulatomic64_fetch_and(obj, val)
+  #define ulatomiciptr_store_explicit(obj, val, ord)                             ulatomic64_store_explicit(obj, val, ord)
+  #define ulatomiciptr_load_explicit(obj, ord)                                   ulatomic64_load_explicit(obj, ord)
+  #define ulatomiciptr_exchange_explicit(obj, val, ord)                          ulatomic64_exchange_explicit(obj, val, ord)
+  #define ulatomiciptr_compare_exchange_strong_explicit(obj, expected, val, ord) ulatomic64_compare_exchange_strong_explicit(obj, expected, val, ord)
+  #define ulatomiciptr_compare_exchange_weak_explicit(obj, expected, val, ord)   ulatomic64_compare_exchange_weak_explicit(obj, expected, val, ord)
+  #define ulatomiciptr_fetch_add_explicit(obj, val, ord)                         ulatomic64_fetch_add_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_sub_explicit(obj, val, ord)                         ulatomic64_fetch_sub_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_or_explicit(obj, val, ord)                          ulatomic64_fetch_or_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_xor_explicit(obj, val, ord)                         ulatomic64_fetch_xor_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_and_explicit(obj, val, ord)                         ulatomic64_fetch_and_explicit(obj, val, ord)
+
+  #define ulatomiciptr_wait(obj, expected) ulatomic64_wait(obj, expected)
+  #define ulatomiciptr_notify_one(obj)     ulatomic64_notify_one(obj)
+  #define ulatomiciptr_notify_all(obj)     ulatomic64_notify_all(obj)
+#elif _ULATOMIC_INTPTR_MAX == INT32_MAX && defined(ULATOMIC32_INIT)
+  typedef ulatomic32_t ulatomiciptr_t;
+  typedef ulatomic32_raw_t ulatomiciptr_raw_t;
+  #define ULATOMICIPTR_INIT ULATOMIC32_INIT
+  #define ulatomiciptr_store(obj, val)                             ulatomic32_store(obj, val)
+  #define ulatomiciptr_load(obj)                                   ulatomic32_load(obj)
+  #define ulatomiciptr_exchange(obj, val)                          ulatomic32_exchange(obj, val)
+  #define ulatomiciptr_compare_exchange_strong(obj, expected, val) ulatomic32_compare_exchange_strong(obj, expected, val)
+  #define ulatomiciptr_compare_exchange_weak(obj, expected, val)   ulatomic32_compare_exchange_weak(obj, expected, val)
+  #define ulatomiciptr_fetch_add(obj, val)                         ulatomic32_fetch_add(obj, val)
+  #define ulatomiciptr_fetch_sub(obj, val)                         ulatomic32_fetch_sub(obj, val)
+  #define ulatomiciptr_fetch_or(obj, val)                          ulatomic32_fetch_or(obj, val)
+  #define ulatomiciptr_fetch_xor(obj, val)                         ulatomic32_fetch_xor(obj, val)
+  #define ulatomiciptr_fetch_and(obj, val)                         ulatomic32_fetch_and(obj, val)
+  #define ulatomiciptr_store_explicit(obj, val, ord)                             ulatomic32_store_explicit(obj, val, ord)
+  #define ulatomiciptr_load_explicit(obj, ord)                                   ulatomic32_load_explicit(obj, ord)
+  #define ulatomiciptr_exchange_explicit(obj, val, ord)                          ulatomic32_exchange_explicit(obj, val, ord)
+  #define ulatomiciptr_compare_exchange_strong_explicit(obj, expected, val, ord) ulatomic32_compare_exchange_strong_explicit(obj, expected, val, ord)
+  #define ulatomiciptr_compare_exchange_weak_explicit(obj, expected, val, ord)   ulatomic32_compare_exchange_weak_explicit(obj, expected, val, ord)
+  #define ulatomiciptr_fetch_add_explicit(obj, val, ord)                         ulatomic32_fetch_add_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_sub_explicit(obj, val, ord)                         ulatomic32_fetch_sub_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_or_explicit(obj, val, ord)                          ulatomic32_fetch_or_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_xor_explicit(obj, val, ord)                         ulatomic32_fetch_xor_explicit(obj, val, ord)
+  #define ulatomiciptr_fetch_and_explicit(obj, val, ord)                         ulatomic32_fetch_and_explicit(obj, val, ord)
+
+  #define ulatomiciptr_wait(obj, expected) ulatomic32_wait(obj, expected)
+  #define ulatomiciptr_notify_one(obj)     ulatomic32_notify_one(obj)
+  #define ulatomiciptr_notify_all(obj)     ulatomic32_notify_all(obj)
+#else
+  #if defined(ULATOMIC32_INIT) || defined(ULATOMIC64_INIT)
+    #error "ulatomic.h: atomic intptr_t defined failed"
+  #endif
+#endif
+#undef _ULATOMIC_INTPTR_MAX
+
 /* ulatomic_spinlock_t */
 #ifdef ULATOMIC_FLAG_INIT
   typedef ulatomic_flag_t ulatomic_spinlock_t;
@@ -1167,52 +1467,52 @@ ul_hapi void ulatomic_pause(void) {
   } ulatomic_rwlock_t;
   #define ULATOMIC_RWLOCK_INIT { ULATOMIC32_INIT, ULATOMIC32_INIT }
   ul_hapi void ulatomic_rw_init(ulatomic_rwlock_t* lck) {
-    ulatomic_store_explicit_32(&lck->rwait, 0, ulatomic_memory_order_relaxed);
-    ulatomic_store_explicit_32(&lck->wlock, 0, ulatomic_memory_order_relaxed);
+    ulatomic32_store_explicit(&lck->rwait, 0, ulatomic_memory_order_relaxed);
+    ulatomic32_store_explicit(&lck->wlock, 0, ulatomic_memory_order_relaxed);
   }
   ul_hapi void ulatomic_rw_rlock(ulatomic_rwlock_t* lck) {
     int r;
-    while(ulatomic_load_explicit_32(&lck->rwait, ulatomic_memory_order_acquire)) ulatomic_pause();
-    r = ulatomic_fetch_add_explicit_32(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
+    while(ulatomic32_load_explicit(&lck->rwait, ulatomic_memory_order_acquire)) ulatomic_pause();
+    r = ulatomic32_fetch_add_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
     if((r & 1) == 0) return;
-    while(ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire) & 1) ulatomic_pause();
+    while(ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire) & 1) ulatomic_pause();
   }
   ul_hapi void ulatomic_rw_wlock(ulatomic_rwlock_t* lck) {
-    ulatomic_fetch_add_explicit_32(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
+    ulatomic32_fetch_add_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
     for(;;) {
-      int r = ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire);
-      if(r == 0 && ulatomic_compare_exchange_weak_explicit_32(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
+      int r = ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire);
+      if(r == 0 && ulatomic32_compare_exchange_weak_explicit(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
         break;
       ulatomic_pause();
     }
   }
   ul_hapi int ulatomic_rw_tryrlock(ulatomic_rwlock_t* lck) {
     int r;
-    while(ulatomic_load_explicit_32(&lck->rwait, ulatomic_memory_order_acquire));
-    r = ulatomic_fetch_add_explicit_32(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
+    while(ulatomic32_load_explicit(&lck->rwait, ulatomic_memory_order_acquire));
+    r = ulatomic32_fetch_add_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
     if((r & 1) == 0) return 1;
     else {
-      ulatomic_fetch_sub_explicit_32(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
+      ulatomic32_fetch_sub_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
       return 0;
     }
   }
   ul_hapi int ulatomic_rw_trywlock(ulatomic_rwlock_t* lck) {
     int r;
-    ulatomic_fetch_add_explicit_32(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
-    r = ulatomic_load_explicit_32(&lck->wlock, ulatomic_memory_order_acquire);
-    if(r == 0 && ulatomic_compare_exchange_weak_explicit_32(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
+    ulatomic32_fetch_add_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
+    r = ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire);
+    if(r == 0 && ulatomic32_compare_exchange_weak_explicit(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
       return 1;
     else {
-      ulatomic_fetch_sub_explicit_32(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
+      ulatomic32_fetch_sub_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
       return 0;
     }
   }
   ul_hapi void ulatomic_rw_unrlock(ulatomic_rwlock_t* lck) {
-    ulatomic_fetch_sub_explicit_32(&lck->wlock, 2, ulatomic_memory_order_release);
+    ulatomic32_fetch_sub_explicit(&lck->wlock, 2, ulatomic_memory_order_release);
   }
   ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck) {
-    ulatomic_fetch_and_explicit_32(&lck->wlock, ~1, ulatomic_memory_order_release);
-    ulatomic_fetch_sub_explicit_32(&lck->rwait, 1, ulatomic_memory_order_release);
+    ulatomic32_fetch_and_explicit(&lck->wlock, ~1, ulatomic_memory_order_release);
+    ulatomic32_fetch_sub_explicit(&lck->rwait, 1, ulatomic_memory_order_release);
   }
 #endif
 
