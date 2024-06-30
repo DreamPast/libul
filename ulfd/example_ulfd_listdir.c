@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
         if(path == NULL) break;
         puts(path);
     }
-    
+
     err = ulfd_closedir(&dir);
     if(err) {
         fprintf(stderr, "[ERROR] %s\n", strerror(err));

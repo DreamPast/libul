@@ -106,7 +106,7 @@ int main(void) {
     do {
         ulrb_iter_t iter;
         const ulrb_node_t* x;
-        
+
         ulrb_iter_init(&iter, root);
         printf("Iterate forward: ");
         while((x = ulrb_iter_next(&iter))) node_walk(NULL, x);

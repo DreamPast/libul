@@ -96,7 +96,7 @@ int main() {
         if(read != writen) {
             fprintf(stderr, "[ERROR] ulfd_pwrite() writes some: %d / %d", (int)writen, (int)read); goto failed2;
         }
-        
+
         free(buf);
         err = ulfd_close(rfd);
         if(err) {
@@ -108,7 +108,7 @@ int main() {
         }
         remove("example_ulfd.c.out");
         printf("[SUCCESS] test ulfd_filelength(), ulfd_read(), ulfd_pread(), ulfd_write(), ulfd_write()\n");
-    
+
     failed2:
         remove("example_ulfd.c.out");
         exit(1);
