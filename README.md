@@ -4,36 +4,33 @@
 
 Some header-only utility files, no configuration required, ready to use.
 
-In the main directory, most of the header files can be used under C89/C++98, but some features may require some platform support, which will be determined through macros.
+Every folders may include following files:
 
-The "hpp" directory includes some C++ header files to provide a simple wrapper for the header file in the main directory. These files won't deliberately reduce the demand for the standard C++ version.
+| File type | Introduction                                                 |
+| --------- | ------------------------------------------------------------ |
+| *.h       | C header files. Most of which can be used under C89/C++98, some components depend on platform support (automatically determined by macros). |
+| *.hpp     | C++ header files. These provide simple wrappers for C header file, most require C++11 or higher. |
+| *.c       | Example in C.                                                |
+| *.cpp     | Example in C++.                                              |
 
-## Files Overview
+## Overview
 
-### Main Directory
-
-| Header Files | Introduction                                                 |
-| ------------ | ------------------------------------------------------------ |
-| ulatomic.h   | Atomic operations                                            |
-| uldate.h     | Date and time (like `Date` in Javascript)                    |
-| uldbuf.h     | Dynamic buffer                                               |
-| uldecode.h   | Text encoding                                                |
-| uldl.h       | Dynamic shared library                                       |
-| ulendian.h   | Endianness                                                   |
-| ulfd.h       | File descriptor                                              |
-| ullist.h     | Double linked list                                           |
-| ulmtx.h      | Mutex                                                        |
-| ulrand.h     | Random number generator (uses [PCG Random Number Generators](https://www.pcg-random.org/)) |
-| ulrb.h       | Red-black tree (quick but restricted version)                |
-| ulsarr.h     | Read-only shared array (speeding up slicing, concatenating, etc.) |
-| ulstdint.h   | Compatibility header file for <stdint.h> (for some older compilers) |
-| ulutf.h      | UTF related operations                                       |
-
-### "hpp" Directory
-
-| File     | Minimum C++ version |
-| -------- | ------------------- |
-| ulfd.hpp | C++11               |
+| Folder   | Introduction                                                 |
+| -------- | ------------------------------------------------------------ |
+| ulatomic | Atomic operations                                            |
+| uldate   | Date and time (like `Date` in Javascript)                    |
+| uldbuf   | Dynamic buffer                                               |
+| uldecode | Text encoding                                                |
+| uldl     | Dynamic shared library                                       |
+| ulendian | Endianness                                                   |
+| ulfd     | File descriptor                                              |
+| ullist   | Double linked list                                           |
+| ulmtx    | Mutex                                                        |
+| ulrand   | Random number generator (uses [PCG Random Number Generators](https://www.pcg-random.org/)) |
+| ulrb     | Red-black tree (quick but restricted version)                |
+| ulsarr   | Read-only shared array (speeding up slicing, concatenating, etc.) |
+| ulstdint | Compatibility header file for <stdint.h> (for some older compilers) |
+| ulutf    | UTF related operations                                       |
 
 ## License
 

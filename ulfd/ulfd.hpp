@@ -29,6 +29,7 @@ File descriptor (Unix style) (C++ wrapper)
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
+#pragma once
 #ifndef _CRT_SECURE_NO_WARNINGS
     #define _CRT_SECURE_NO_WARNINGS 1 /* disable warnings of `strerror` */
 #endif

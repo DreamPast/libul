@@ -344,6 +344,14 @@ ul_hapi void uldate_tm_from_ctm(const struct tm* ctm, uldate_tm_t* tm);
 ul_hapi void uldate_to_ctm(uldate_t date, struct tm* ctm);
 ul_hapi uldate_t uldate_from_ctm(const struct tm* ctm);
 
+#ifdef __cplusplus
+  #include <string>
+  ul_hapi std::string uldate_format(const char* fmt, uldate_t date);
+  ul_hapi std::string uldate_to_utc_string(uldate_t utc);
+  ul_hapi std::string uldate_to_string(uldate_t utc);
+  ul_hapi std::string uldate_to_iso_string(uldate_t utc);
+  ul_hapi std::string uldate_to_locale_string(uldate_t utc);
+#endif
 
 
 /**************
@@ -1535,5 +1543,29 @@ ul_hapi uldate_t uldate_from_ctm(const struct tm* ctm) {
   struct tm _ctm = *ctm;
   return uldate_from_ctime(mktime(&_ctm));
 }
+
+#ifdef __cplusplus
+  #include <stdexcept>
+  ul_hapi std::string uldate_format(const char* fmt, uldate_t date) {
+    size_t len = uldate_format_len(fmt, date);
+    if(len == 0) throw std::runtime_error("uldate.h: wrong format");
+    std::string ret(len - 1, '\0');
+    size_t writen = uldate_format(&ret[0], len, fmt, date);
+    if(writen != len) throw std::runtime_error("uldate.h: unknown error");
+    return ret;
+  }
+  ul_hapi std::string uldate_to_utc_string(uldate_t utc) {
+    return uldate_format("%a, %d %b %Y %T GMT", utc);
+  }
+  ul_hapi std::string uldate_to_string(uldate_t utc) {
+    return uldate_format("%a %b %d %Y %T GMT%z", utc + ULDATE_FROM_MINUTE(uldate_get_gmtoff_minutes()));
+  }
+  ul_hapi std::string uldate_to_iso_string(uldate_t utc) {
+    return uldate_format("%FT%T.%+Z", utc);
+  }
+  ul_hapi std::string uldate_to_locale_string(uldate_t utc) {
+    return uldate_format("%D, %T %p", utc);
+  }
+#endif
 
 #endif /* ULDATE_H */
