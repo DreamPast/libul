@@ -19,7 +19,7 @@ int main() {
         fprintf(stderr, "fail to get length: %s\n", strerror(err)); exit(1);
     }
 
-    err = ulfd_mmap(&map, fd, NULL, (size_t)length, 0, ULFD_MAP_PROT_READ | ULFD_MAP_PRIVATE);
+    err = ulfd_mmap(&map, fd, NULL, (size_t)length, 0, ULFD_PROT_READ);
     if(err) {
         fprintf(stderr, "fail to map: %s\n", strerror(err)); exit(1);
     }
