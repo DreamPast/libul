@@ -153,7 +153,7 @@ Atomic (32-bit, and optional 64-bit)
     | ul_hapi void ulatomic_rw_unrlock(ulatomic_rwlock_t* lck);
     | ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck);
     +----------------------------------------------------------------
-  
+
   ## Wait / Notify
     +----------------------------------------------------------------
     | void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected);
@@ -168,7 +168,7 @@ Atomic (32-bit, and optional 64-bit)
     | void ulatomiciptr_notify_one(ulatomiciptr_t* obj);
     | void ulatomiciptr_notify_all(ulatomiciptr_t* obj);
     +----------------------------------------------------------------
-    
+
   ## Yield / Pause
     +----------------------------------------------------------------
     | void ulatomic_yield(void);
@@ -1052,17 +1052,21 @@ Atomic (32-bit, and optional 64-bit)
 #if !defined(ULATOMIC_FLAG_INIT) && defined(ULATOMIC32_INIT)
   typedef ulatomic32_t ulatomic_flag_t;
   #define ULATOMIC_FLAG_INIT ULATOMIC32_INIT
-  #define ulatomic32_flag_test_and_set(obj)               ulatomic_exchange(obj, 1)
-  #define ulatomic32_flag_clear(obj)                      ulatomic_store(obj, 0)
-  #define ulatomic32_flag_test_and_set_explicit(obj, ord) ulatomic_exchange_explicit(obj, 1, ord)
-  #define ulatomic32_flag_clear_explicit(obj, ord)        ulatomic_store_explicit(obj, 0, ord)
+  #define ulatomic_flag_test_and_set(obj)               ulatomic32_exchange(obj, 1)
+  #define ulatomic_flag_clear(obj)                      ulatomic32_store(obj, 0)
+  #define ulatomic_flag_test_and_set_explicit(obj, ord) ulatomic32_exchange_explicit(obj, 1, ord)
+  #define ulatomic_flag_clear_explicit(obj, ord)        ulatomic32_store_explicit(obj, 0, ord)
 #endif /* ULATOMIC_FLAG_INIT */
 
 /* ulatomic_yield */
 #ifdef _WIN32
   #define WIN32_LEAN_AND_MEAN
   #include <Windows.h>
-  #define ulatomic_yield() ((void)(SwitchToThread() ? 0u : SleepEx(0, FALSE)))
+  #if _WIN32_WINNT >= 0x0502
+    #define ulatomic_yield() ((void)(SwitchToThread() ? 0u : SleepEx(0, FALSE)))
+  #else
+    #define ulatomic_yield() ((void)SleepEx(0, FALSE))
+  #endif
 #endif
 #ifndef ulatomic_yield
   #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
@@ -1120,7 +1124,7 @@ ul_hapi void ulatomic_pause(void) {
       obj->notify_one();
     }
     ul_hapi void ulatomic32_notify_all(ulatomic32_t* obj) {
-      obj->notify_all(); 
+      obj->notify_all();
     }
     #define _ULATOMIC32_WAIT_DEFINED
   #endif
@@ -1233,7 +1237,7 @@ ul_hapi void ulatomic_pause(void) {
       obj->notify_one();
     }
     ul_hapi void ulatomic64_notify_all(ulatomic64_t* obj) {
-      obj->notify_all(); 
+      obj->notify_all();
     }
     #define _ULATOMIC64_WAIT_DEFINED
   #endif
@@ -1346,39 +1350,53 @@ ul_hapi void ulatomic_pause(void) {
 #endif /* UL_HAS_STDINT_H */
 #ifdef UL_HAS_STDINT_H
   #include <stdint.h>
-  #define _ULATOMIC_INTPTR_MAX INTPTR_MAX
+  #if INTPTR_MAX == INT64_MAX
+    #define _ULATOMIC_INTPTR_64BIT
+  #elif INTPTR_MAX == INT32_MAX
+    #define _ULATOMIC_INTPTR_32BIT
+  #endif
 #elif defined(INTPTR_MAX)
-  #define _ULATOMIC_INTPTR_MAX INTPTR_MAX
+  #if INTPTR_MAX == INT64_MAX
+    #define _ULATOMIC_INTPTR_64BIT
+  #elif INTPTR_MAX == INT32_MAX
+    #define _ULATOMIC_INTPTR_32BIT
+  #endif
 #else
   #include <limits.h>
   #if defined(_WIN32) || defined(_WIN64)
     #if _WIN64
-      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFFFFFFFFFFi64
+      #define _ULATOMIC_INTPTR_64BIT
     #else
-      #define _ULATOMIC_INTPTR_MAX INT_MAX
+      #define _ULATOMIC_INTPTR_32BIT
     #endif
   #elif defined(__SIZEOF_POINTER__)
     #if __SIZEOF_POINTER__ == 8
-      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFFFFFFFFFF
+      #define _ULATOMIC_INTPTR_64BIT
     #elif __SIZEOF_POINTER__ == 4
-      #define _ULATOMIC_INTPTR_MAX 0x7FFFFFFF
-    #elif __SIZEOF_POINTER__ == 2
-      #define _ULATOMIC_INTPTR_MAX 0x7FFF
-    #elif __SIZEOF_POINTER__ == 1
-      #define _ULATOMIC_INTPTR_MAX 0x7F
+      #define _ULATOMIC_INTPTR_32BIT
     #endif
   #endif
-  #ifndef _ULATOMIC_INTPTR_MAX
+  #if !defined(_ULATOMIC_INTPTR_32BIT) && !defined(_ULATOMIC_INTPTR_64BIT)
     #ifdef LLONG_MAX
-      #define _ULATOMIC_INTPTR_MAX LLONG_MAX
-    #else
-      #define _ULATOMIC_INTPTR_MAX LONG_MAX
+      #define _ULATOMIC_INTPTR_64BIT
+    #endif
+  #endif
+  #if !defined(_ULATOMIC_INTPTR_32BIT) && !defined(_ULATOMIC_INTPTR_64BIT)
+    #if (LONG_MAX >> 61) == 3
+      #if LONG_MAX == 0x7FFFFFFFFFFFFFFF
+        #define _ULATOMIC_INTPTR_64BIT
+      #endif
+    #endif
+  #endif
+  #if !defined(_ULATOMIC_INTPTR_32BIT) && !defined(_ULATOMIC_INTPTR_64BIT)
+    #if LONG_MAX == 0x7FFFFFFF
+      #define _ULATOMIC_INTPTR_32BIT
     #endif
   #endif
 #endif
 
 /* ulatomiciptr_t */
-#if _ULATOMIC_INTPTR_MAX == INT64_MAX && defined(ULATOMIC64_INIT)
+#if defined(_ULATOMIC_INTPTR_64BIT) && defined(ULATOMIC64_INIT)
   typedef ulatomic64_t ulatomiciptr_t;
   typedef ulatomic64_raw_t ulatomiciptr_raw_t;
   #define ULATOMICIPTR_INIT ULATOMIC64_INIT
@@ -1406,7 +1424,7 @@ ul_hapi void ulatomic_pause(void) {
   #define ulatomiciptr_wait(obj, expected) ulatomic64_wait(obj, expected)
   #define ulatomiciptr_notify_one(obj)     ulatomic64_notify_one(obj)
   #define ulatomiciptr_notify_all(obj)     ulatomic64_notify_all(obj)
-#elif _ULATOMIC_INTPTR_MAX == INT32_MAX && defined(ULATOMIC32_INIT)
+#elif defined(_ULATOMIC_INTPTR_32BIT) && defined(ULATOMIC32_INIT)
   typedef ulatomic32_t ulatomiciptr_t;
   typedef ulatomic32_raw_t ulatomiciptr_raw_t;
   #define ULATOMICIPTR_INIT ULATOMIC32_INIT
@@ -1439,7 +1457,9 @@ ul_hapi void ulatomic_pause(void) {
     #error "ulatomic.h: atomic intptr_t defined failed"
   #endif
 #endif
-#undef _ULATOMIC_INTPTR_MAX
+#undef _ULATOMIC_INTPTR_64BIT
+#undef _ULATOMIC_INTPTR_32BIT
+
 
 /* ulatomic_spinlock_t */
 #ifdef ULATOMIC_FLAG_INIT
