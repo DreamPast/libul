@@ -1133,10 +1133,10 @@ ul_hapi void ulatomic_pause(void) {
   #if !defined(_ULATOMIC32_WAIT_DEFINED) && defined(_WIN32)
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
-    #ifdef _MSC_VER
-      #pragma comment(lib, "Synchronization.lib")
-    #endif
     #if _WIN32_WINNT >= 0x0602
+      #ifdef _MSC_VER
+        #pragma comment(lib, "Synchronization.lib")
+      #endif
       ul_hapi void ulatomic32_wait(ulatomic32_t* obj, ulatomic32_raw_t expected) {
         WaitOnAddress(ul_reinterpret_cast(void*, obj), &expected, 4, INFINITE);
       }
@@ -1246,10 +1246,10 @@ ul_hapi void ulatomic_pause(void) {
   #if !defined(_ULATOMIC64_WAIT_DEFINED) && defined(_WIN64)
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
-    #ifdef _MSC_VER
-      #pragma comment(lib, "Synchronization.lib")
-    #endif
     #if _WIN32_WINNT >= 0x0602
+      #ifdef _MSC_VER
+        #pragma comment(lib, "Synchronization.lib")
+      #endif
       ul_hapi void ulatomic64_wait(ulatomic64_t* obj, ulatomic64_raw_t expected) {
         WaitOnAddress(ul_reinterpret_cast(void*, obj), &expected, 8, INFINITE);
       }
@@ -1322,40 +1322,33 @@ ul_hapi void ulatomic_pause(void) {
 #ifndef UL_HAS_STDINT_H
   #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
     #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
-      #define UL_HAS_STDINT_H
+      #include <stdint.h>
     #endif
   #endif
   #if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION > 2 || \
       (__MINGW32_MAJOR_VERSION == 2 && __MINGW32_MINOR_VERSION >= 0))
-    #define UL_HAS_STDINT_H
+    #include <stdint.h>
   #endif
   #if defined(unix) || defined(__unix) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
     #include <unistd.h>
     #if defined(_POSIX_VERSION) && ((_POSIX_VERSION+0) >= 200100L)
-      #define UL_HAS_STDINT_H
+      #include <stdint.h>
     #endif
   #endif
   #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
       || (defined(__cplusplus) && __cplusplus >= 201103L)
-    #define UL_HAS_STDINT_H
+    #include <stdint.h>
   #endif
   #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__CYGWIN__) && defined(_STDINT_H))
-    #define UL_HAS_STDINT_H
+    #include <stdint.h>
   #endif
   #if defined(__has_include)
     #if __has_include(<stdint.h>)
-      #define UL_HAS_STDINT_H
+      #include <stdint.h>
     #endif
   #endif
 #endif /* UL_HAS_STDINT_H */
-#ifdef UL_HAS_STDINT_H
-  #include <stdint.h>
-  #if INTPTR_MAX == INT64_MAX
-    #define _ULATOMIC_INTPTR_64BIT
-  #elif INTPTR_MAX == INT32_MAX
-    #define _ULATOMIC_INTPTR_32BIT
-  #endif
-#elif defined(INTPTR_MAX)
+#if defined(INTPTR_MAX)
   #if INTPTR_MAX == INT64_MAX
     #define _ULATOMIC_INTPTR_64BIT
   #elif INTPTR_MAX == INT32_MAX
@@ -1466,7 +1459,7 @@ ul_hapi void ulatomic_pause(void) {
   typedef ulatomic_flag_t ulatomic_spinlock_t;
   #define ULATOMIC_SPINLOCK_INIT ULATOMIC_FLAG_INIT
   ul_hapi void ulatomic_spin_init(ulatomic_spinlock_t* lck) {
-    ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_release);
+    ulatomic_flag_clear_explicit(lck, ulatomic_memory_order_relaxed);
   }
   ul_hapi void ulatomic_spin_lock(ulatomic_spinlock_t* lck) {
     while(ulatomic_flag_test_and_set_explicit(lck, ulatomic_memory_order_acquire)) ulatomic_pause();
@@ -1482,57 +1475,99 @@ ul_hapi void ulatomic_pause(void) {
 /* ulatomic_rwlock_t */
 #ifdef ULATOMIC32_INIT
   typedef struct ulatomic_rwlock_t {
-    ulatomic32_t rwait;
-    ulatomic32_t wlock;
+    ulatomic32_t wait;
+    ulatomic32_t lock;
   } ulatomic_rwlock_t;
   #define ULATOMIC_RWLOCK_INIT { ULATOMIC32_INIT, ULATOMIC32_INIT }
   ul_hapi void ulatomic_rw_init(ulatomic_rwlock_t* lck) {
-    ulatomic32_store_explicit(&lck->rwait, 0, ulatomic_memory_order_relaxed);
-    ulatomic32_store_explicit(&lck->wlock, 0, ulatomic_memory_order_relaxed);
+    ulatomic32_store_explicit(&lck->wait, 0, ulatomic_memory_order_relaxed);
+    ulatomic32_store_explicit(&lck->lock, 0, ulatomic_memory_order_relaxed);
   }
   ul_hapi void ulatomic_rw_rlock(ulatomic_rwlock_t* lck) {
-    int r;
-    while(ulatomic32_load_explicit(&lck->rwait, ulatomic_memory_order_acquire)) ulatomic_pause();
-    r = ulatomic32_fetch_add_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
-    if((r & 1) == 0) return;
-    while(ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire) & 1) ulatomic_pause();
+    int wait, lock;
+    while(1) {
+      wait = ulatomic32_load(&lck->wait);
+      if(wait != 0) {
+        ulatomic32_wait(&lck->wait, wait);
+        continue;
+      }
+      lock = ulatomic32_load(&lck->lock);
+      if((lock >> 31) == 0) {
+        if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return;
+      }
+    }
   }
   ul_hapi void ulatomic_rw_wlock(ulatomic_rwlock_t* lck) {
-    ulatomic32_fetch_add_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
-    for(;;) {
-      int r = ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire);
-      if(r == 0 && ulatomic32_compare_exchange_weak_explicit(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
-        break;
-      ulatomic_pause();
+    int lock;
+    ulatomic32_fetch_add(&lck->wait, 1);
+    while(1) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock != 0) {
+        ulatomic32_wait(&lck->lock, lock);
+        continue;
+      }
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, ul_static_cast(ulatomic32_raw_t, 1) << 31)) return;
     }
   }
   ul_hapi int ulatomic_rw_tryrlock(ulatomic_rwlock_t* lck) {
-    int r;
-    while(ulatomic32_load_explicit(&lck->rwait, ulatomic_memory_order_acquire));
-    r = ulatomic32_fetch_add_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
-    if((r & 1) == 0) return 1;
-    else {
-      ulatomic32_fetch_sub_explicit(&lck->wlock, 2, ulatomic_memory_order_acq_rel);
+      int wait = ulatomic32_load(&lck->wait);
+      int lock;
+      if(wait != 0) return 0;
+      lock = ulatomic32_load(&lck->lock);
+      if((lock >> 31) == 0) {
+        if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return 1;
+      }
       return 0;
-    }
   }
   ul_hapi int ulatomic_rw_trywlock(ulatomic_rwlock_t* lck) {
-    int r;
-    ulatomic32_fetch_add_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
-    r = ulatomic32_load_explicit(&lck->wlock, ulatomic_memory_order_acquire);
-    if(r == 0 && ulatomic32_compare_exchange_weak_explicit(&lck->wlock, &r, r | 1, ulatomic_memory_order_acq_rel))
-      return 1;
-    else {
-      ulatomic32_fetch_sub_explicit(&lck->rwait, 1, ulatomic_memory_order_acq_rel);
-      return 0;
+    int lock;
+    ulatomic32_fetch_add(&lck->wait, 1);
+    lock = ulatomic32_load(&lck->lock);
+    if(lock == 0) {
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, ul_static_cast(ulatomic32_raw_t, 1) << 31)) return 1;
     }
+    ulatomic32_fetch_sub(&lck->wait, 1);
+    ulatomic32_notify_all(&lck->wait);
+    return 0;
   }
   ul_hapi void ulatomic_rw_unrlock(ulatomic_rwlock_t* lck) {
-    ulatomic32_fetch_sub_explicit(&lck->wlock, 2, ulatomic_memory_order_release);
+    int lock;
+    while(1) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock == 0 || (lock >> 31) != 0) return; /* wrong unrlock */
+      if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock - 1)) continue;
+      ulatomic32_notify_one(&lck->lock);
+      return;
+    }
   }
   ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck) {
-    ulatomic32_fetch_and_explicit(&lck->wlock, ~1, ulatomic_memory_order_release);
-    ulatomic32_fetch_sub_explicit(&lck->rwait, 1, ulatomic_memory_order_release);
+    int lock;
+    while(1) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock != (ul_static_cast(ulatomic32_raw_t, 1) << 31)) return; /* wrong unwlock */
+      if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, 0)) continue;
+      ulatomic32_notify_one(&lck->lock);
+      ulatomic32_fetch_sub(&lck->wait, 1);
+      ulatomic32_notify_all(&lck->wait);
+      return;
+    }
+  }
+  ul_hapi void ulatomic_rw_unlock(ulatomic_rwlock_t* lck) {
+    int lock;
+    while(1) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock >> 31 != 0) {
+        if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, 0)) continue;
+        ulatomic32_notify_one(&lck->lock);
+        ulatomic32_fetch_sub(&lck->wait, 1);
+        ulatomic32_notify_all(&lck->wait);
+        return;
+      } else {
+        if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock - 1)) continue;
+        ulatomic32_notify_one(&lck->lock);
+        return;
+      }
+    }
   }
 #endif
 
