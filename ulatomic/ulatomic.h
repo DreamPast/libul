@@ -153,6 +153,16 @@ Atomic (32-bit, and optional 64-bit)
     | ul_hapi void ulatomic_rw_unrlock(ulatomic_rwlock_t* lck);
     | ul_hapi void ulatomic_rw_unwlock(ulatomic_rwlock_t* lck);
     +----------------------------------------------------------------
+    | // the lock doesn't use wait/signal
+    | typedef ... ulatomic_spinrwlock_t
+    | ulatomic_spinrwlock_t ULATOMIC_SPINRWLOCK_INIT = ...;
+    | ul_hapi void ulatomic_spinrw_init(ulatomic_spinrwlock_t* lck);
+    | ul_hapi void ulatomic_spinrw_rlock(ulatomic_spinrwlock_t* lck);
+    | ul_hapi int ulatomic_spinrw_tryrlock(ulatomic_spinrwlock_t* lck);
+    | ul_hapi int ulatomic_spinrw_trywlock(ulatomic_spinrwlock_t* lck);
+    | ul_hapi void ulatomic_spinrw_unrlock(ulatomic_spinrwlock_t* lck);
+    | ul_hapi void ulatomic_spinrw_unwlock(ulatomic_spinrwlock_t* lck);
+    +----------------------------------------------------------------
 
   ## Wait / Notify
     +----------------------------------------------------------------
@@ -1510,14 +1520,14 @@ ul_hapi void ulatomic_pause(void) {
     }
   }
   ul_hapi int ulatomic_rw_tryrlock(ulatomic_rwlock_t* lck) {
-      int wait = ulatomic32_load(&lck->wait);
-      int lock;
-      if(wait != 0) return 0;
-      lock = ulatomic32_load(&lck->lock);
-      if((lock >> 31) == 0) {
-        if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return 1;
-      }
-      return 0;
+    int wait = ulatomic32_load(&lck->wait);
+    int lock;
+    if(wait != 0) return 0;
+    lock = ulatomic32_load(&lck->lock);
+    if((lock >> 31) == 0) {
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return 1;
+    }
+    return 0;
   }
   ul_hapi int ulatomic_rw_trywlock(ulatomic_rwlock_t* lck) {
     int lock;
@@ -1565,6 +1575,78 @@ ul_hapi void ulatomic_pause(void) {
       } else {
         if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock - 1)) continue;
         ulatomic32_notify_one(&lck->lock);
+        return;
+      }
+    }
+  }
+#endif
+
+/* ulatomic_spinrwlock_t */
+#ifdef ULATOMIC32_INIT
+  typedef struct ulatomic_spinrwlock_t {
+    ulatomic32_t wait;
+    ulatomic32_t lock;
+  } ulatomic_spinrwlock_t;
+  #define ULATOMIC_SPINRWLOCK_INIT { ULATOMIC32_INIT, ULATOMIC32_INIT }
+  ul_hapi void ulatomic_spinrw_init(ulatomic_spinrwlock_t* lck) {
+    ulatomic32_store_explicit(&lck->wait, 0, ulatomic_memory_order_relaxed);
+    ulatomic32_store_explicit(&lck->lock, 0, ulatomic_memory_order_relaxed);
+  }
+  ul_hapi void ulatomic_spinrw_rlock(ulatomic_spinrwlock_t* lck) {
+    int lock;
+    for(;;ulatomic_pause()) {
+      if(ulatomic32_load(&lck->wait) != 0) continue;
+      lock = ulatomic32_load(&lck->lock);
+      if((lock >> 31) == 0) {
+        if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return;
+      }
+    }
+  }
+  ul_hapi void ulatomic_spinrw_wlock(ulatomic_spinrwlock_t* lck) {
+    int lock;
+    ulatomic32_fetch_add(&lck->wait, 1);
+    for(;;ulatomic_pause()) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock != 0) continue;
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, ul_static_cast(ulatomic32_raw_t, 1) << 31)) return;
+    }
+  }
+  ul_hapi int ulatomic_spinrw_tryrlock(ulatomic_spinrwlock_t* lck) {
+    int lock;
+    if(ulatomic32_load(&lck->wait) != 0) return 0;
+    lock = ulatomic32_load(&lck->lock);
+    if((lock >> 31) == 0) {
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock + 1)) return 1;
+    }
+    return 0;
+  }
+  ul_hapi int ulatomic_spinrw_trywlock(ulatomic_spinrwlock_t* lck) {
+    int lock;
+    ulatomic32_fetch_add(&lck->wait, 1);
+    lock = ulatomic32_load(&lck->lock);
+    if(lock == 0) {
+      if(ulatomic32_compare_exchange_weak(&lck->lock, &lock, ul_static_cast(ulatomic32_raw_t, 1) << 31)) return 1;
+    }
+    ulatomic32_fetch_sub(&lck->wait, 1);
+    return 0;
+  }
+  ul_hapi void ulatomic_spinrw_unrlock(ulatomic_spinrwlock_t* lck) {
+    ulatomic32_fetch_sub(&lck->lock, 1);
+  }
+  ul_hapi void ulatomic_spinrw_unwlock(ulatomic_spinrwlock_t* lck) {
+    ulatomic32_store(&lck->lock, 0);
+    ulatomic32_fetch_sub(&lck->wait, 1);
+  }
+  ul_hapi void ulatomic_spinrw_unlock(ulatomic_spinrwlock_t* lck) {
+    int lock;
+    for(;;ulatomic_pause()) {
+      lock = ulatomic32_load(&lck->lock);
+      if(lock >> 31 != 0) {
+        if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, 0)) continue;
+        ulatomic32_fetch_sub(&lck->wait, 1);
+        return;
+      } else {
+        if(!ulatomic32_compare_exchange_weak(&lck->lock, &lock, lock - 1)) continue;
         return;
       }
     }
