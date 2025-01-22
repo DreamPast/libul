@@ -1,0 +1,45 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+
+SortIncludes: false
+ColumnLimit: 120
+
+# indent and spaces
+AccessModifierOffset: -2
+IndentWidth: 2
+ContinuationIndentWidth: 2
+IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
+AlignAfterOpenBracket: BlockIndent
+# AlignOperands: Align
+
+# spaces
+# SpaceBeforeCtorInitializerColon: true
+# SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: Never
+SpaceBeforeRangeBasedForLoopColon: false
+# SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: true
+Cpp11BracedListStyle: false
+SpacesBeforeTrailingComments: 2
+SpaceAfterTemplateKeyword: false
+
+# empty line
+InsertNewlineAtEOF: true
+MaxEmptyLinesToKeep: 10
+
+# break line
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+# AllowShortCompoundRequirementOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+# AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBinaryOperators: NonAssignment
+
+# custom
+# MacroBlockBegin: 
+# MacroBlockEnd: 
