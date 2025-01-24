@@ -85,7 +85,7 @@
 #ifndef ul_unreachable
   #if !defined(UL_PEDANTIC) && defined(__GNUC__) || defined(__clang__)
     #define ul_unreachable() __builtin_unreachable()
-  #elif !defined(UL_PEDANTIC) && defined(_MSC_VER)
+  #elif !defined(UL_PEDANTIC) && defined(_MSC_VER) /* Visual Studio 6 */
     #define ul_unreachable() __assume(0)
   #else
     #define ul_unreachable() ((void)0)
@@ -96,7 +96,7 @@
  * @def ul_assume
  * @brief Hints to the compiler that the condition is always true.
  */
-#if !defined(ul_assume) & !defined(UL_PEDANTIC) && defined(_MSC_VER)
+#if !defined(ul_assume) & !defined(UL_PEDANTIC) && defined(_MSC_VER) /* Visual Studio 6 */
   #define ul_assume(cond) __assume(cond)
 #endif /* ul_assume */
 #if !defined(ul_assume) && !defined(UL_PEDANTIC) && defined(__has_builtin)
@@ -133,9 +133,9 @@
   #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
     #define ul_restrict restrict
   #elif !defined(UL_PEDANTIC)
-    #if defined(_MSC_VER) && _MSC_VER >= 1900
+    #if defined(_MSC_VER) && _MSC_VER >= 1400 /* Visual Studio 2005 */
       #define ul_restrict __restrict
-    #elif defined(__GNUC__) && __GNUC__ > 3
+    #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 304
       #define ul_restrict __restrict__
     #endif
   #endif
@@ -162,7 +162,7 @@
  */
 #ifndef ul_noexcept
   #ifdef __cplusplus
-    #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+    #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900 /* Visual Studio 2015 */)
       #define ul_noexcept noexcept
     #else
       #define ul_noexcept throw()
@@ -219,8 +219,7 @@
 
 /**
  * @def ul_reinterpret_cast
- * @brief Converts between types by reinterpreting the underlying bit pattern
- * (same as C++ `reinterpret_cast`).
+ * @brief Converts between types by reinterpreting the underlying bit pattern (same as C++ `reinterpret_cast`).
  */
 #ifndef ul_reinterpret_cast
   #ifdef __cplusplus
@@ -299,8 +298,8 @@
  * @brief Checks if `<stdint.h>` exists.
  */
 #ifndef UL_HAS_STDINT_H
-  #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
-    #if defined(__GNUC__) || ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 5)))
+  #if defined(__GLIBC__) && (__GLIBC__ * 100 + __GLIBC_MINOR__) >= 201
+    #if defined(__GNUC__) || (__GLIBC__ * 100 + __GLIBC_MINOR__) >= 205
       #define UL_HAS_STDINT_H
     #endif
   #endif
@@ -409,16 +408,19 @@
  */
 #ifndef UL_FUNCTION
   #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || (defined(__cplusplus) && __cplusplus >= 201103L) \
-    || (defined(__GNUC__) && (__GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95))) /* GNUC 2.95 */             \
+    || (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 295) /* GNUC 2.95 */                               \
     || (defined(_MSC_VER) && _MSC_VER >= 1310 /* Visual Studio 2013 */) || defined(__clang__)
     #define UL_FUNCTION __func__
+  #elif !defined(UL_PEDANTIC) \
+    && ((defined(__GNUC__) && __GNUC__ >= 2) || (defined(_MSC_VER) && _MSC_VER >= 1300 /* Visual Studio 2003 */))
+    #define UL_FUNCTION __FUNCTION__
   #else
     #define UL_FUNCTION "<unknown>"
   #endif
 #endif /* UL_FUNCTION */
 
 /**
- * @def UL_FUNCTION
+ * @def UL_PRETTY_FUNCTION
  * @brief Current pretty function name (fallback: not defined).
  * @example ```c
  *          void foo(void) {
@@ -426,10 +428,10 @@
  *          }
  *          ```
  */
-#ifndef UL_PRETTY_FUNCTION
-  #if defined(__clang__) || (defined(__GNUC__) && (__GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)))
+#if !defined(UL_PRETTY_FUNCTION) && !defined(UL_PEDANTIC)
+  #if defined(__clang__) || (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 200)
     #define UL_PRETTY_FUNCTION __PRETTY_FUNCTION__
-  #elif defined(__FUNCSIG__)
+  #elif defined(__FUNCSIG__) || (defined(_MSC_VER) && _MSC_VER >= 1300 /* Visual Studio 2003 */)
     #define UL_PRETTY_FUNCTION __FUNCSIG__
   #endif
 #endif /* UL_PRETTY_FUNCTION */
@@ -479,8 +481,7 @@
 #if !defined(ul_constexpr) && defined(__cplusplus)
   #if __cplusplus >= 201103L
     #define ul_constexpr constexpr
-    #define UL_CONSTEXPR_INIT /* clang-format off */ { }
-    /* clang-format on */
+    #define UL_CONSTEXPR_INIT /* clang-format off */ { }                                     /* clang-format on */
   #elif defined(_MSC_VER) && _MSC_VER >= 1900 /* Visual Studio 2015 */
     #define ul_constexpr constexpr
     #define UL_CONSTEXPR_INIT /* clang-format off */ { } /* clang-format on */
@@ -659,7 +660,7 @@
   #if !defined(ul_deprecated) && !defined(UL_PEDANTIC)
     #if defined(_MSC_VER) && _MSC_VER >= 1400 /* Visual Studio 2005 */
       #define ul_deprecated(msg) __declspec(deprecated(msg))
-    #elif defined(__GNUC__) && (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40500
+    #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
       #define ul_deprecated(msg) __declspec(deprecated(msg))
     #endif
   #endif
