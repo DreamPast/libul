@@ -116,6 +116,12 @@
  * @def ul_assume_aligned
  * @brief Hints to the compiler that the pointer is aligned.
  */
+#if !defined(ul_assume_aligned) && defined(__cplusplus) && __cplusplus >= 202002L
+  #include <memory>
+  #ifdef __cpp_lib_assume_aligned
+    #define ul_assume_aligned(exp, align) ::std::assume_aligned<align>(exp)
+  #endif
+#endif /* ul_assume_aligned */
 #if !defined(ul_assume_aligned) && !defined(UL_PEDANTIC) && defined(__has_builtin)
   #if __has_builtin(__builtin_assume_aligned)
     #define ul_assume_aligned(exp, align) __builtin_assume_aligned(exp, align)
@@ -616,14 +622,19 @@
  * @def ul_nodiscard
  * @brief Marks a function that the return value must be used.
  */
-#if !defined(ul_nodiscard) && !defined(UL_PEDANTIC) && defined(__has_attribute)
-  #if __has_attribute(warn_unused_result)
-    #define ul_nodiscard __attribute__((warn_unused_result))
-  #endif
-#endif /* ul_nodiscard */
 #if !defined(ul_nodiscard) && (defined(__cplusplus) && __cplusplus >= 201103L && defined(__has_cpp_attribute))
   #if __has_cpp_attribute(nodiscard)
     #define ul_nodiscard [[nodiscard]]
+  #endif
+#endif /* ul_nodiscard */
+#if !defined(ul_nodiscard) && (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L && defined(__has_c_attribute))
+  #if __has_c_attribute(nodiscard)
+    #define ul_nodiscard [[nodiscard]]
+  #endif
+#endif /* ul_nodiscard */
+#if !defined(ul_nodiscard) && !defined(UL_PEDANTIC) && defined(__has_attribute)
+  #if __has_attribute(warn_unused_result)
+    #define ul_nodiscard __attribute__((warn_unused_result))
   #endif
 #endif /* ul_nodiscard */
 #if !defined(ul_nodiscard) && !defined(UL_PEDANTIC) && defined(_HAS_NODISCARD)
