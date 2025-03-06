@@ -13,6 +13,7 @@ Text decoder and encoder. (encoder is slow)
 
   Compact macros:
     - (not defined) => enable all decoders and encoders
+    - ULDECODE_NO_EBCDIC => disable decoders and encoders based on EBCDIC
     - ULDECODE_COMPACT_JAVASCRIPT => compact with Javascript
 
   Define 1/0 to enable(default)/disable decoder and encoder
@@ -21,6 +22,7 @@ Text decoder and encoder. (encoder is slow)
     - ULDECODE_USE_UTF_16LE
     - ULDECODE_USE_UTF_32BE
     - ULDECODE_USE_UTF_32LE
+    - ULDECODE_USE_ASCII
 
     - ULDECODE_USE_IBM866
     - ULDECODE_USE_ISO_8859_2
@@ -70,6 +72,39 @@ Text decoder and encoder. (encoder is slow)
     - ULDECODE_USE_IBM00858
     - ULDECODE_USE_IBM860
     - ULDECODE_USE_IBM861
+    - ULDECODE_USE_IBM862
+    - ULDECODE_USE_IBM863
+    - ULDECODE_USE_IBM864
+    - ULDECODE_USE_IBM865
+    - ULDECODE_USE_IBM869
+    - ULDECODE_USE_IBM870
+    - ULDECODE_USE_IBM1026
+    - ULDECODE_USE_IBM01140
+    - ULDECODE_USE_IBM01141
+    - ULDECODE_USE_IBM01142
+    - ULDECODE_USE_IBM01143
+    - ULDECODE_USE_IBM01144
+    - ULDECODE_USE_IBM01145
+    - ULDECODE_USE_IBM01146
+    - ULDECODE_USE_IBM01147
+    - ULDECODE_USE_IBM01148
+    - ULDECODE_USE_IBM01149
+    - ULDECODE_USE_IBM273
+    - ULDECODE_USE_IBM277
+    - ULDECODE_USE_IBM278
+    - ULDECODE_USE_IBM280
+    - ULDECODE_USE_IBM284
+    - ULDECODE_USE_IBM285
+    - ULDECODE_USE_IBM290
+    - ULDECODE_USE_IBM297
+    - ULDECODE_USE_IBM420
+    - ULDECODE_USE_IBM423
+    - ULDECODE_USE_IBM424
+    - ULDECODE_USE_IBM_THAI
+    - ULDECODE_USE_IBM871
+    - ULDECODE_USE_IBM880
+    - ULDECODE_USE_IBM905
+    - ULDECODE_USE_IBM00924
 
 # License
   The MIT License (MIT)
@@ -105,10 +140,17 @@ Text decoder and encoder. (encoder is slow)
     - Enable "utf-16" label for UTF-16LE
 */
 #ifdef ULDECODE_COMPACT_JAVASCRIPT
-  #define _ULDECODE_JAVASCRIPT_VALUE 0
+  #define _ULDECODE_OUT_JAVASCRIPT_VALUE 0
+  #define ULDECODE_NO_EBCDIC
 #endif /* ULDECODE_COMPACT_JAVASCRIPT */
-#ifndef _ULDECODE_JAVASCRIPT_VALUE
-  #define _ULDECODE_JAVASCRIPT_VALUE 1
+#ifndef _ULDECODE_OUT_JAVASCRIPT_VALUE
+  #define _ULDECODE_OUT_JAVASCRIPT_VALUE 1
+#endif
+
+#ifdef ULDECODE_NO_EBCDIC
+  #define _ULDECODE_EBCDIC_VALUE 0
+#else
+  #define _ULDECODE_EBCDIC_VALUE 1
 #endif
 
 #ifndef ULDECODE_USE_UTF_8
@@ -121,11 +163,14 @@ Text decoder and encoder. (encoder is slow)
   #define ULDECODE_USE_UTF_16LE 1
 #endif /* ULDECODE_USE_UTF_16LE */
 #ifndef ULDECODE_USE_UTF_32BE
-  #define ULDECODE_USE_UTF_32BE _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_UTF_32BE _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_UTF_32BE */
 #ifndef ULDECODE_USE_UTF_32LE
-  #define ULDECODE_USE_UTF_32LE _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_UTF_32LE _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_UTF_32LE */
+#ifndef ULDECODE_USE_ASCII
+  #define ULDECODE_USE_ASCII _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_ASCII */
 
 #ifndef ULDECODE_USE_IBM866
   #define ULDECODE_USE_IBM866 1
@@ -235,38 +280,137 @@ Text decoder and encoder. (encoder is slow)
 #endif /* ULDECODE_USE_EUC_KR */
 
 #ifndef ULDECODE_USE_IBM037
-  #define ULDECODE_USE_IBM037 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM037 _ULDECODE_EBCDIC_VALUE
 #endif /* ULDECODE_USE_IBM037 */
 #ifndef ULDECODE_USE_IBM437
-  #define ULDECODE_USE_IBM437 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM437 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM437 */
 #ifndef ULDECODE_USE_IBM500
-  #define ULDECODE_USE_IBM500 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM500 _ULDECODE_EBCDIC_VALUE
 #endif /* ULDECODE_USE_IBM500 */
 #ifndef ULDECODE_USE_IBM775
-  #define ULDECODE_USE_IBM775 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM775 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM775 */
 #ifndef ULDECODE_USE_IBM850
-  #define ULDECODE_USE_IBM850 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM850 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM850 */
 #ifndef ULDECODE_USE_IBM852
-  #define ULDECODE_USE_IBM852 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM852 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM852 */
 #ifndef ULDECODE_USE_IBM855
-  #define ULDECODE_USE_IBM855 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM855 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM855 */
 #ifndef ULDECODE_USE_IBM857
-  #define ULDECODE_USE_IBM857 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM857 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM857 */
 #ifndef ULDECODE_USE_IBM00858
-  #define ULDECODE_USE_IBM00858 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM00858 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM00858 */
 #ifndef ULDECODE_USE_IBM860
-  #define ULDECODE_USE_IBM860 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM860 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM860 */
 #ifndef ULDECODE_USE_IBM861
-  #define ULDECODE_USE_IBM861 _ULDECODE_JAVASCRIPT_VALUE
+  #define ULDECODE_USE_IBM861 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM861 */
+#ifndef ULDECODE_USE_IBM862
+  #define ULDECODE_USE_IBM862 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM862 */
+#ifndef ULDECODE_USE_IBM863
+  #define ULDECODE_USE_IBM863 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM863 */
+#ifndef ULDECODE_USE_IBM864
+  #define ULDECODE_USE_IBM864 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM864 */
+#ifndef ULDECODE_USE_IBM865
+  #define ULDECODE_USE_IBM865 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM865 */
+#ifndef ULDECODE_USE_IBM869
+  #define ULDECODE_USE_IBM869 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM869 */
+#ifndef ULDECODE_USE_IBM870
+  #define ULDECODE_USE_IBM870 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM870 */
+#ifndef ULDECODE_USE_IBM1026
+  #define ULDECODE_USE_IBM1026 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM1026 */
+#ifndef ULDECODE_USE_IBM01140
+  #define ULDECODE_USE_IBM01140 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01140 */
+#ifndef ULDECODE_USE_IBM01141
+  #define ULDECODE_USE_IBM01141 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01141 */
+#ifndef ULDECODE_USE_IBM01142
+  #define ULDECODE_USE_IBM01142 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01142 */
+#ifndef ULDECODE_USE_IBM01143
+  #define ULDECODE_USE_IBM01143 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01143 */
+#ifndef ULDECODE_USE_IBM01144
+  #define ULDECODE_USE_IBM01144 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01144 */
+#ifndef ULDECODE_USE_IBM01145
+  #define ULDECODE_USE_IBM01145 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01145 */
+#ifndef ULDECODE_USE_IBM01146
+  #define ULDECODE_USE_IBM01146 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01146 */
+#ifndef ULDECODE_USE_IBM01147
+  #define ULDECODE_USE_IBM01147 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01147 */
+#ifndef ULDECODE_USE_IBM01148
+  #define ULDECODE_USE_IBM01148 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01148 */
+#ifndef ULDECODE_USE_IBM01149
+  #define ULDECODE_USE_IBM01149 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM01149 */
+#ifndef ULDECODE_USE_IBM273
+  #define ULDECODE_USE_IBM273 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM273 */
+#ifndef ULDECODE_USE_IBM277
+  #define ULDECODE_USE_IBM277 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM277 */
+#ifndef ULDECODE_USE_IBM278
+  #define ULDECODE_USE_IBM278 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM278 */
+#ifndef ULDECODE_USE_IBM280
+  #define ULDECODE_USE_IBM280 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM280 */
+#ifndef ULDECODE_USE_IBM284
+  #define ULDECODE_USE_IBM284 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM284 */
+#ifndef ULDECODE_USE_IBM285
+  #define ULDECODE_USE_IBM285 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM285 */
+#ifndef ULDECODE_USE_IBM290
+  #define ULDECODE_USE_IBM290 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM290 */
+#ifndef ULDECODE_USE_IBM297
+  #define ULDECODE_USE_IBM297 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM297 */
+#ifndef ULDECODE_USE_IBM420
+  #define ULDECODE_USE_IBM420 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM420 */
+#ifndef ULDECODE_USE_IBM423
+  #define ULDECODE_USE_IBM423 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM423 */
+#ifndef ULDECODE_USE_IBM424
+  #define ULDECODE_USE_IBM424 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM424 */
+#ifndef ULDECODE_USE_IBM_THAI
+  #define ULDECODE_USE_IBM_THAI _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_IBM_THAI */
+#ifndef ULDECODE_USE_IBM871
+  #define ULDECODE_USE_IBM871 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM871 */
+#ifndef ULDECODE_USE_IBM880
+  #define ULDECODE_USE_IBM880 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM880 */
+#ifndef ULDECODE_USE_IBM905
+  #define ULDECODE_USE_IBM905 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM905 */
+#ifndef ULDECODE_USE_IBM00924
+  #define ULDECODE_USE_IBM00924 _ULDECODE_EBCDIC_VALUE
+#endif /* ULDECODE_USE_IBM00924 */
 
 /* define labels for every decoder and encoder */
 #define ULDECODE_DEFINE_LABELS
@@ -288,17 +432,23 @@ Text decoder and encoder. (encoder is slow)
   #define ul_unlikely(x) (x)
 #endif /* ul_unlikely */
 
-#ifndef ul_unused
-  #if (defined(__GNUC__) && __GNUC__ >= 3) || defined(__clang__)
+#if !defined(ul_unused) && defined(__has_attribute) && !defined(UL_PEDANTIC)
+  #if __has_attribute(unused)
     #define ul_unused __attribute__((unused))
-  #elif defined(__cplusplus) && defined(__has_cpp_attribute)
-    #if __has_cpp_attribute(maybe_unused)
-      #define ul_unused [[maybe_unused]]
-    #endif
   #endif
-  #ifndef ul_unused
-    #define ul_unused
+#endif /* ul_unused */
+#if !defined(ul_unused) && (defined(__cplusplus) && __cplusplus >= 201103L && defined(__has_cpp_attribute))
+  #if __has_cpp_attribute(maybe_unused)
+    #define ul_unused [[maybe_unused]]
   #endif
+#endif /* ul_unused */
+#if !defined(ul_unused) && (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L && defined(__has_c_attribute))
+  #if __has_c_attribute(maybe_unused)
+    #define ul_unused [[maybe_unused]]
+  #endif
+#endif /* ul_unused */
+#ifndef ul_unused
+  #define ul_unused
 #endif /* ul_unused */
 
 #ifndef ul_inline
@@ -320,20 +470,23 @@ Text decoder and encoder. (encoder is slow)
 #endif /* uldecode_each_api */
 
 #ifndef ul_restrict
-  #if defined(_MSC_VER)
-    #define ul_restrict __restrict
-  #elif defined(__GNUC__) && __GNUC__ > 3
-    #define ul_restrict __restrict__
-  #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+  #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
     #define ul_restrict restrict
-  #else
+  #elif !defined(UL_PEDANTIC)
+    #if defined(_MSC_VER) && _MSC_VER >= 1400 /* Visual Studio 2005 */
+      #define ul_restrict __restrict
+    #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 304
+      #define ul_restrict __restrict__
+    #endif
+  #endif
+  #ifndef ul_restrict
     #define ul_restrict
   #endif
 #endif /* ul_restrict */
 
 #ifndef ul_reinterpret_cast
   #ifdef __cplusplus
-    #define ul_reinterpret_cast(T, val) reinterpret_cast<T>(val)
+    #define ul_reinterpret_cast(T, val) (reinterpret_cast<T>(val))
   #else
     #define ul_reinterpret_cast(T, val) ((T)(val))
   #endif
@@ -341,7 +494,7 @@ Text decoder and encoder. (encoder is slow)
 
 #ifndef ul_static_cast
   #ifdef __cplusplus
-    #define ul_static_cast(T, val) static_cast<T>(val)
+    #define ul_static_cast(T, val) (static_cast<T>(val))
   #else
     #define ul_static_cast(T, val) ((T)(val))
   #endif
@@ -378,10 +531,12 @@ typedef unsigned long uldecode_u32_t;
 #define ULENCODE_RETURN_MAX 4
 
 /* state for every decoders and encoders (fill 0 to initialize) */
-typedef struct uldecode_state {
-  uldecode_u32_t _dummy[4];
+typedef union uldecode_state {
+  uldecode_u32_t _dummy32[2];
+  uldecode_u16_t _dummy16[4];
+  uldecode_u8_t _dummy8[8];
 } uldecode_state_t;
-#define ULDECODE_STATE_INIT { { 0, 0, 0, 0 } }
+#define ULDECODE_STATE_INIT { { 0, 0 } }
 
 /**
  * Decode bytes to Unicode code points.
@@ -521,7 +676,7 @@ ul_hapi std::string ul_encode_between_alloc(
   return cont;
 }
 
-template<class InputFirstIter, class InputLastIter, class Container>
+template<class Container, class InputFirstIter, class InputLastIter>
 ul_hapi Container ul_encode_between_alloc(
   ulencode_func_t encoder,                                          /* */
   InputFirstIter first, InputLastIter last, uldecode_func_t decoder /* */
@@ -530,7 +685,7 @@ ul_hapi Container ul_encode_between_alloc(
   ul_encode_between(std::back_inserter(cont), encoder, first, last, decoder);
   return cont;
 }
-template<class InputFirstIter, class InputLastIter, class Container>
+template<class Container, class InputFirstIter, class InputLastIter>
 ul_hapi Container ul_encode_between_alloc(
   const char* encoder_name,                                          /* */
   InputFirstIter first, InputLastIter last, const char* decoder_name /* */
@@ -548,7 +703,8 @@ ul_hapi Container ul_encode_between_alloc(
   #ifdef ULDECODE_DEFINE_LABELS
     #define _ULDECODE_T(name) { uldecode_##name##_name, uldecode_##name##_labels, uldecode_##name, ulencode_##name }
   #else
-    #define _ULDECODE_T(name) { uldecode_##name##_name, NULL, uldecode_##name, ulencode_##name }
+static const char* uldecode_null_labels[1] = { NULL };
+    #define _ULDECODE_T(name) { uldecode_##name##_name, uldecode_null_labels, uldecode_##name, ulencode_##name }
   #endif
   #define _ULDECODE_DEF_T(name) static const uldecode_t uldecode_##name##_t = _ULDECODE_T(name);
   #define _ULDECODE_INLIST(name) &uldecode_##name##_t
@@ -558,10 +714,6 @@ ul_hapi Container ul_encode_between_alloc(
   #if ULDECODE_USE_UTF_16BE
 static const char uldecode_utf_16be_name[] = "UTF-16BE";
 struct _uldecode_utf_16be_state_t {
-  uldecode_u16_t byte;
-  uldecode_u16_t prev;
-};
-struct _uldecode_utf_16be_t {
   uldecode_u16_t byte, prev;
 };
 uldecode_each_api int uldecode_utf_16be(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
@@ -634,10 +786,6 @@ _ULDECODE_DEF_T(utf_16be)
   #if ULDECODE_USE_UTF_16LE
 static const char uldecode_utf_16le_name[] = "UTF-16LE";
 struct _uldecode_utf_16le_state_t {
-  uldecode_u16_t byte;
-  uldecode_u16_t prev;
-};
-struct _uldecode_utf_16le_t {
   uldecode_u16_t byte, prev;
 };
 uldecode_each_api int uldecode_utf_16le(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
@@ -927,9 +1075,40 @@ static const char* uldecode_utf_32le_labels[] = { "utf32le", "utf-32le", NULL };
 _ULDECODE_DEF_T(utf_32le)
   #endif /* ULDECODE_USE_UTF_32LE */
 
+  #if ULDECODE_USE_ASCII
+static const char uldecode_ascii_name[] = "ASCII";
+uldecode_each_api int uldecode_ascii(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  if(ul_unlikely(c == ULDECODE_EOF))
+    return 0;
+  if(ul_unlikely(c < 0 || c > 0x7F))
+    return -1;
+  p[0] = ul_static_cast(uldecode_u32_t, c);
+  return 1;
+}
+uldecode_each_api int ulencode_ascii(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  if(ul_unlikely(u == ULENCODE_EOF))
+    return 0;
+  if(ul_unlikely(u > 0x7F))
+    return -1;
+  p[0] = ul_static_cast(uldecode_u8_t, u);
+  return 1;
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ascii_labels[] = {
+  "US-ASCII", "iso-ir-6", "ANSI_X3.4-1968", "ANSI_X3.4-1986", "ISO_646.irv:1991", "ISO646-US", "us", "IBM367", "cp367",
+  "csASCII",  NULL
+};
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ascii)
+  #endif /* ULDECODE_USE_ASCII */
 
 
-ul_hapi int _uldecode_single(uldecode_u32_t* p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+
+/* 0x00-0x7F same as ASCII; other see table */
+ul_hapi int _uldecode_ascii(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   if(ul_unlikely(c == ULDECODE_EOF))
     return 0;
   if(ul_unlikely(c < 0 || c > 0xFF))
@@ -940,7 +1119,8 @@ ul_hapi int _uldecode_single(uldecode_u32_t* p, int c, const uldecode_u16_t* ul_
   }
   return (p[0] = TABLE[c & 0x7F]) ? 1 : -1;
 }
-ul_hapi int _ulencode_single(uldecode_u8_t* p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+/* 0x00-0x7F same as ASCII; other see table */
+ul_hapi int _ulencode_ascii(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF))
     return 0;
@@ -955,6 +1135,60 @@ ul_hapi int _ulencode_single(uldecode_u8_t* p, uldecode_u32_t u, const uldecode_
     }
   return -1;
 }
+
+/* none is null; (not optimized) */
+ul_hapi int _uldecode_ebcdic(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+  if(ul_unlikely(c == ULDECODE_EOF))
+    return 0;
+  if(ul_unlikely(c < 0 || c > 0xFF))
+    return -1;
+  p[0] = TABLE[c];
+  return 1;
+}
+/* none is null; (not optimized) */
+ul_hapi int _ulencode_ebcdic(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+  int i;
+  if(ul_unlikely(u == ULENCODE_EOF))
+    return 0;
+  for(i = 0; i < 0x100; ++i)
+    if(TABLE[i] == u) {
+      p[0] = ul_static_cast(uldecode_u8_t, i);
+      return 1;
+    }
+  return -1;
+}
+
+/* 0x00-0x1F same as ASCII; 0x20-0x3F are null; other see table */
+ul_hapi int _uldecode_ebcdic2(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+  if(ul_unlikely(c == ULDECODE_EOF))
+    return 0;
+  if(ul_unlikely(c < 0 || c > 0xFF))
+    return -1;
+  if(c <= 0x1F) {
+    p[0] = ul_static_cast(uldecode_u32_t, c);
+    return 1;
+  }
+  if(c <= 0x3F)
+    return -1;
+  return (p[0] = TABLE[c - 0x40]) ? 1 : 0;
+}
+/* 0x00-0x1F same as ASCII; 0x20-0x3F are null; other see table */
+ul_hapi int _ulencode_ebcdic2(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+  int i;
+  if(ul_unlikely(u == ULENCODE_EOF))
+    return 0;
+  if(u <= 0x1F) {
+    p[0] = ul_static_cast(uldecode_u8_t, u);
+    return 1;
+  }
+  for(i = 0; i < 0xC0; ++i)
+    if(TABLE[i] == u) {
+      p[0] = ul_static_cast(uldecode_u8_t, i + 0x40);
+      return 1;
+    }
+  return -1;
+}
+
 
   #if ULDECODE_USE_IBM866
 static const uldecode_u16_t _uldecode_ibm866_table[] = {
@@ -972,11 +1206,11 @@ static const uldecode_u16_t _uldecode_ibm866_table[] = {
 static const char uldecode_ibm866_name[] = "IBM866";
 uldecode_each_api int uldecode_ibm866(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm866_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm866_table);
 }
 uldecode_each_api int ulencode_ibm866(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm866_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm866_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1001,11 +1235,11 @@ static const uldecode_u16_t _uldecode_iso_8859_2_table[] = {
 static const char uldecode_iso_8859_2_name[] = "ISO-8859-2";
 uldecode_each_api int uldecode_iso_8859_2(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_2_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_2_table);
 }
 uldecode_each_api int ulencode_iso_8859_2(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_2_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_2_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1032,11 +1266,11 @@ static const uldecode_u16_t _uldecode_iso_8859_3_table[] = {
 static const char uldecode_iso_8859_3_name[] = "ISO-8859-3";
 uldecode_each_api int uldecode_iso_8859_3(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_3_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_3_table);
 }
 uldecode_each_api int ulencode_iso_8859_3(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_3_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_3_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1063,11 +1297,11 @@ static const uldecode_u16_t _uldecode_iso_8859_4_table[] = {
 static const char uldecode_iso_8859_4_name[] = "ISO-8859-4";
 uldecode_each_api int uldecode_iso_8859_4(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_4_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_4_table);
 }
 uldecode_each_api int ulencode_iso_8859_4(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_4_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_4_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1094,11 +1328,11 @@ static const uldecode_u16_t _uldecode_iso_8859_5_table[] = {
 static const char uldecode_iso_8859_5_name[] = "ISO-8859-5";
 uldecode_each_api int uldecode_iso_8859_5(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_5_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_5_table);
 }
 uldecode_each_api int ulencode_iso_8859_5(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_5_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_5_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1125,11 +1359,11 @@ static const uldecode_u16_t _uldecode_iso_8859_6_table[] = {
 static const char uldecode_iso_8859_6_name[] = "ISO-8859-6";
 uldecode_each_api int uldecode_iso_8859_6(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_6_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_6_table);
 }
 uldecode_each_api int ulencode_iso_8859_6(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_6_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_6_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1158,11 +1392,11 @@ static const uldecode_u16_t _uldecode_iso_8859_7_table[] = {
 static const char uldecode_iso_8859_7_name[] = "ISO-8859-7";
 uldecode_each_api int uldecode_iso_8859_7(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_7_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_7_table);
 }
 uldecode_each_api int ulencode_iso_8859_7(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_7_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_7_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1192,11 +1426,11 @@ static const uldecode_u16_t _uldecode_iso_8859_8_table[] = {
 static const char uldecode_iso_8859_8_name[] = "ISO-8859-8";
 uldecode_each_api int uldecode_iso_8859_8(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_8_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_8_table);
 }
 uldecode_each_api int ulencode_iso_8859_8(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_8_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_8_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1210,11 +1444,11 @@ _ULDECODE_DEF_T(iso_8859_8)
 static const char uldecode_iso_8859_8_i_name[] = "ISO-8859-8-I";
 uldecode_each_api int uldecode_iso_8859_8_i(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_8_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_8_table);
 }
 uldecode_each_api int ulencode_iso_8859_8_i(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_8_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_8_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1239,11 +1473,11 @@ static const uldecode_u16_t _uldecode_iso_8859_10_table[] = {
 static const char uldecode_iso_8859_10_name[] = "ISO-8859-10";
 uldecode_each_api int uldecode_iso_8859_10(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_10_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_10_table);
 }
 uldecode_each_api int ulencode_iso_8859_10(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_10_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_10_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1269,11 +1503,11 @@ static const uldecode_u16_t _uldecode_iso_8859_13_table[] = {
 static const char uldecode_iso_8859_13_name[] = "ISO-8859-13";
 uldecode_each_api int uldecode_iso_8859_13(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_13_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_13_table);
 }
 uldecode_each_api int ulencode_iso_8859_13(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_13_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_13_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1298,11 +1532,11 @@ static const uldecode_u16_t _uldecode_iso_8859_14_table[] = {
 static const char uldecode_iso_8859_14_name[] = "ISO-8859-14";
 uldecode_each_api int uldecode_iso_8859_14(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_14_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_14_table);
 }
 uldecode_each_api int ulencode_iso_8859_14(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_14_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_14_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1327,11 +1561,11 @@ static const uldecode_u16_t _uldecode_iso_8859_15_table[] = {
 static const char uldecode_iso_8859_15_name[] = "ISO-8859-15";
 uldecode_each_api int uldecode_iso_8859_15(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_15_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_15_table);
 }
 uldecode_each_api int ulencode_iso_8859_15(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_15_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_15_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1357,11 +1591,11 @@ static const uldecode_u16_t _uldecode_iso_8859_16_table[] = {
 static const char uldecode_iso_8859_16_name[] = "ISO-8859-16";
 uldecode_each_api int uldecode_iso_8859_16(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_iso_8859_16_table);
+  return _uldecode_ascii(p, c, _uldecode_iso_8859_16_table);
 }
 uldecode_each_api int ulencode_iso_8859_16(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_iso_8859_16_table);
+  return _ulencode_ascii(p, u, _uldecode_iso_8859_16_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1386,11 +1620,11 @@ static const uldecode_u16_t _uldecode_koi8_r_table[] = {
 static const char uldecode_koi8_r_name[] = "KOI8-R";
 uldecode_each_api int uldecode_koi8_r(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_koi8_r_table);
+  return _uldecode_ascii(p, c, _uldecode_koi8_r_table);
 }
 uldecode_each_api int ulencode_koi8_r(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_koi8_r_table);
+  return _ulencode_ascii(p, u, _uldecode_koi8_r_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1415,11 +1649,11 @@ static const uldecode_u16_t _uldecode_koi8_u_table[] = {
 static const char uldecode_koi8_u_name[] = "KOI8-U";
 uldecode_each_api int uldecode_koi8_u(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_koi8_u_table);
+  return _uldecode_ascii(p, c, _uldecode_koi8_u_table);
 }
 uldecode_each_api int ulencode_koi8_u(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_koi8_u_table);
+  return _ulencode_ascii(p, u, _uldecode_koi8_u_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1444,11 +1678,11 @@ static const uldecode_u16_t _uldecode_macintosh_table[] = {
 static const char uldecode_macintosh_name[] = "macintosh";
 uldecode_each_api int uldecode_macintosh(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_macintosh_table);
+  return _uldecode_ascii(p, c, _uldecode_macintosh_table);
 }
 uldecode_each_api int ulencode_macintosh(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_macintosh_table);
+  return _ulencode_ascii(p, u, _uldecode_macintosh_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1473,11 +1707,11 @@ static const uldecode_u16_t _uldecode_windows_874_table[] = {
 static const char uldecode_windows_874_name[] = "windows-874";
 uldecode_each_api int uldecode_windows_874(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_874_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_874_table);
 }
 uldecode_each_api int ulencode_windows_874(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_874_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_874_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1504,11 +1738,11 @@ static const uldecode_u16_t _uldecode_windows_1250_table[] = {
 static const char uldecode_windows_1250_name[] = "windows-1250";
 uldecode_each_api int uldecode_windows_1250(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1250_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1250_table);
 }
 uldecode_each_api int ulencode_windows_1250(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1250_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1250_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1533,11 +1767,11 @@ static const uldecode_u16_t _uldecode_windows_1251_table[] = {
 static const char uldecode_windows_1251_name[] = "windows-1251";
 uldecode_each_api int uldecode_windows_1251(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1251_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1251_table);
 }
 uldecode_each_api int ulencode_windows_1251(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1251_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1251_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1562,11 +1796,11 @@ static const uldecode_u16_t _uldecode_windows_1252_table[] = {
 static const char uldecode_windows_1252_name[] = "windows-1252";
 uldecode_each_api int uldecode_windows_1252(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1252_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1252_table);
 }
 uldecode_each_api int ulencode_windows_1252(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1252_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1252_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1608,11 +1842,11 @@ static const uldecode_u16_t _uldecode_windows_1253_table[] = {
 static const char uldecode_windows_1253_name[] = "windows-1253";
 uldecode_each_api int uldecode_windows_1253(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1253_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1253_table);
 }
 uldecode_each_api int ulencode_windows_1253(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1253_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1253_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1637,11 +1871,11 @@ static const uldecode_u16_t _uldecode_windows_1254_table[] = {
 static const char uldecode_windows_1254_name[] = "windows-1254";
 uldecode_each_api int uldecode_windows_1254(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1254_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1254_table);
 }
 uldecode_each_api int ulencode_windows_1254(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1254_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1254_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1678,11 +1912,11 @@ static const uldecode_u16_t _uldecode_windows_1255_table[] = {
 static const char uldecode_windows_1255_name[] = "windows-1255";
 uldecode_each_api int uldecode_windows_1255(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1255_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1255_table);
 }
 uldecode_each_api int ulencode_windows_1255(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1255_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1255_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1707,11 +1941,11 @@ static const uldecode_u16_t _uldecode_windows_1256_table[] = {
 static const char uldecode_windows_1256_name[] = "windows-1256";
 uldecode_each_api int uldecode_windows_1256(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1256_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1256_table);
 }
 uldecode_each_api int ulencode_windows_1256(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1256_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1256_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1736,11 +1970,11 @@ static const uldecode_u16_t _uldecode_windows_1257_table[] = {
 static const char uldecode_windows_1257_name[] = "windows-1257";
 uldecode_each_api int uldecode_windows_1257(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1257_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1257_table);
 }
 uldecode_each_api int ulencode_windows_1257(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1257_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1257_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1765,11 +1999,11 @@ static const uldecode_u16_t _uldecode_windows_1258_table[] = {
 static const char uldecode_windows_1258_name[] = "windows-1258";
 uldecode_each_api int uldecode_windows_1258(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_windows_1258_table);
+  return _uldecode_ascii(p, c, _uldecode_windows_1258_table);
 }
 uldecode_each_api int ulencode_windows_1258(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_windows_1258_table);
+  return _ulencode_ascii(p, u, _uldecode_windows_1258_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -1794,11 +2028,11 @@ static const uldecode_u16_t _uldecode_x_mac_cyrillic_table[] = {
 static const char uldecode_x_mac_cyrillic_name[] = "x-mac-cyrillic";
 uldecode_each_api int uldecode_x_mac_cyrillic(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_x_mac_cyrillic_table);
+  return _uldecode_ascii(p, c, _uldecode_x_mac_cyrillic_table);
 }
 uldecode_each_api int ulencode_x_mac_cyrillic(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_x_mac_cyrillic_table);
+  return _ulencode_ascii(p, u, _uldecode_x_mac_cyrillic_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9008,7 +9242,6 @@ static const uldecode_u8_t _uldecode_ibm037_table[] = {
 
 static const char uldecode_ibm037_name[] = "IBM037";
 uldecode_each_api int uldecode_ibm037(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
-  int i;
   (void)_state;
   if(ul_unlikely(c == ULDECODE_EOF))
     return 0;
@@ -9020,11 +9253,11 @@ uldecode_each_api int uldecode_ibm037(uldecode_u32_t* p, int c, uldecode_state_t
   }
   if(c <= 0x3F)
     return -1;
-  p[0] = _uldecode_ibm037_table[c - 0x40];
-  return 1;
+  return (p[0] = _uldecode_ibm037_table[c - 0x40]) ? 1 : 0;
 }
 uldecode_each_api int ulencode_ibm037(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   int i;
+  (void)_state;
   if(ul_unlikely(u == ULENCODE_EOF))
     return 0;
   if(u <= 0x1F) {
@@ -9064,11 +9297,11 @@ static const uldecode_u16_t _uldecode_ibm437_table[] = {
 static const char uldecode_ibm437_name[] = "IBM437";
 uldecode_each_api int uldecode_ibm437(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm437_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm437_table);
 }
 uldecode_each_api int ulencode_ibm437(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm437_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm437_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9097,35 +9330,12 @@ static const uldecode_u16_t _uldecode_ibm500_table[] = {
 
 static const char uldecode_ibm500_name[] = "IBM500";
 uldecode_each_api int uldecode_ibm500(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
-  int i;
   (void)_state;
-  if(ul_unlikely(c == ULDECODE_EOF))
-    return 0;
-  if(ul_unlikely(c < 0 || c > 0xFF))
-    return -1;
-  if(c <= 0x1F) {
-    p[0] = ul_static_cast(uldecode_u32_t, c);
-    return 1;
-  }
-  if(c <= 0x3F)
-    return -1;
-  p[0] = _uldecode_ibm500_table[c - 0x40];
-  return 1;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm500_table);
 }
 uldecode_each_api int ulencode_ibm500(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
-  int i;
-  if(ul_unlikely(u == ULENCODE_EOF))
-    return 0;
-  if(u <= 0x1F) {
-    p[0] = ul_static_cast(uldecode_u8_t, u);
-    return 1;
-  }
-  for(i = 0; i < 0xC0; ++i)
-    if(_uldecode_ibm500_table[i] == u) {
-      p[0] = ul_static_cast(uldecode_u8_t, i + 0x40);
-      return 1;
-    }
-  return -1;
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm500_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9159,25 +9369,12 @@ static const uldecode_u16_t _uldecode_ibm775_table[] = {
 
 static const char uldecode_ibm775_name[] = "IBM775";
 uldecode_each_api int uldecode_ibm775(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
-  int i;
   (void)_state;
-  if(ul_unlikely(c == ULDECODE_EOF))
-    return 0;
-  if(ul_unlikely(c < 0 || c > 0xFF))
-    return -1;
-  p[0] = _uldecode_ibm775_table[c];
-  return 1;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm775_table);
 }
 uldecode_each_api int ulencode_ibm775(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
-  int i;
-  if(ul_unlikely(u == ULENCODE_EOF))
-    return 0;
-  for(i = 0; i < 0x100; ++i)
-    if(_uldecode_ibm775_table[i] == u) {
-      p[0] = ul_static_cast(uldecode_u8_t, i + 0x40);
-      return 1;
-    }
-  return -1;
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm775_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9203,11 +9400,11 @@ static const uldecode_u16_t _uldecode_ibm850_table[] = {
 static const char uldecode_ibm850_name[] = "IBM850";
 uldecode_each_api int uldecode_ibm850(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm850_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm850_table);
 }
 uldecode_each_api int ulencode_ibm850(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm850_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm850_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9233,11 +9430,11 @@ static const uldecode_u16_t _uldecode_ibm852_table[] = {
 static const char uldecode_ibm852_name[] = "IBM852";
 uldecode_each_api int uldecode_ibm852(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm852_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm852_table);
 }
 uldecode_each_api int ulencode_ibm852(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm852_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm852_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9263,11 +9460,11 @@ static const uldecode_u16_t _uldecode_ibm855_table[] = {
 static const char uldecode_ibm855_name[] = "IBM855";
 uldecode_each_api int uldecode_ibm855(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm855_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm855_table);
 }
 uldecode_each_api int ulencode_ibm855(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm855_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm855_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9293,11 +9490,11 @@ static const uldecode_u16_t _uldecode_ibm857_table[] = {
 static const char uldecode_ibm857_name[] = "IBM857";
 uldecode_each_api int uldecode_ibm857(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm857_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm857_table);
 }
 uldecode_each_api int ulencode_ibm857(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm857_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm857_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9331,25 +9528,12 @@ static const uldecode_u16_t _uldecode_ibm00858_table[] = {
 
 static const char uldecode_ibm00858_name[] = "IBM00858";
 uldecode_each_api int uldecode_ibm00858(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
-  int i;
   (void)_state;
-  if(ul_unlikely(c == ULDECODE_EOF))
-    return 0;
-  if(ul_unlikely(c < 0 || c > 0xFF))
-    return -1;
-  p[0] = _uldecode_ibm00858_table[c];
-  return 1;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm00858_table);
 }
 uldecode_each_api int ulencode_ibm00858(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
-  int i;
-  if(ul_unlikely(u == ULENCODE_EOF))
-    return 0;
-  for(i = 0; i < 0x100; ++i)
-    if(_uldecode_ibm00858_table[i] == u) {
-      p[0] = ul_static_cast(uldecode_u8_t, i + 0x40);
-      return 1;
-    }
-  return -1;
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm00858_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9376,11 +9560,11 @@ static const uldecode_u16_t _uldecode_ibm860_table[] = {
 static const char uldecode_ibm860_name[] = "IBM860";
 uldecode_each_api int uldecode_ibm860(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm860_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm860_table);
 }
 uldecode_each_api int ulencode_ibm860(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm860_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm860_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9406,11 +9590,11 @@ static const uldecode_u16_t _uldecode_ibm861_table[] = {
 static const char uldecode_ibm861_name[] = "IBM861";
 uldecode_each_api int uldecode_ibm861(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
   (void)_state;
-  return _uldecode_single(p, c, _uldecode_ibm861_table);
+  return _uldecode_ascii(p, c, _uldecode_ibm861_table);
 }
 uldecode_each_api int ulencode_ibm861(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
   (void)_state;
-  return _ulencode_single(p, u, _uldecode_ibm861_table);
+  return _ulencode_ascii(p, u, _uldecode_ibm861_table);
 }
 
     #ifdef ULDECODE_DEFINE_LABELS
@@ -9418,6 +9602,1189 @@ static const char* uldecode_ibm861_labels[] = { "cp861", "861", "cp-is", "csIBM8
     #endif /* ULDECODE_DEFINE_LABELS */
 _ULDECODE_DEF_T(ibm861)
   #endif /* ULDECODE_USE_IBM861 */
+
+  #if ULDECODE_USE_IBM862
+static const uldecode_u16_t _uldecode_ibm862_table[] = {
+  0x05D0, 0x05D1, 0x05D2, 0x05D3, 0x05D4, 0x05D5, 0x05D6, 0x05D7, 0x05D8, 0x05D9, 0x05DA, 0x05DB, 0x05DC,
+  0x05DD, 0x05DE, 0x05DF, 0x05E0, 0x05E1, 0x05E2, 0x05E3, 0x05E4, 0x05E5, 0x05E6, 0x05E7, 0x05E8, 0x05E9,
+  0x05EA, 0x00A2, 0x00A3, 0x00D9, 0x20A7, 0x00D2, 0x00E1, 0x00ED, 0x00F3, 0x00FA, 0x00F1, 0x00D1, 0x00AA,
+  0x00BA, 0x00BF, 0,      0x00AC, 0x00BD, 0x00BC, 0x00A1, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+  0x2524, 0x2525, 0x2528, 0x2512, 0x2511, 0x252B, 0x2503, 0x2513, 0x251B, 0x251A, 0x2519, 0x2510, 0x2514,
+  0x2534, 0x252C, 0x251C, 0x2500, 0x253C, 0x251D, 0x2520, 0x2517, 0x250F, 0x253B, 0x2533, 0x2523, 0x2501,
+  0x254B, 0x2537, 0x2538, 0x252F, 0x2530, 0x2516, 0x2515, 0x250D, 0x250E, 0x2542, 0x253F, 0x2518, 0x250C,
+  0x2588, 0x2584, 0x258C, 0x2590, 0x2580, 0x03B1, 0x03B2, 0x0393, 0x03C0, 0x03A3, 0x03C3, 0x03BC, 0x03C4,
+  0x03A6, 0x0398, 0x03A9, 0x03B4, 0x221E, 0x2205, 0x03B5, 0x2229, 0x2261, 0x00B1, 0x2265, 0x2264, 0x2320,
+  0x2321, 0x00F7, 0x2248, 0x2218, 0x00B7, 0x2219, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_ibm862_name[] = "IBM862";
+uldecode_each_api int uldecode_ibm862(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_ibm862_table);
+}
+uldecode_each_api int ulencode_ibm862(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_ibm862_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm862_labels[] = { "cp862", "862", "csPC862LatinHebrew", "DOS-862" /* (for .NET) */,
+                                                NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm862)
+  #endif /* ULDECODE_USE_IBM862 */
+
+  #if ULDECODE_USE_IBM863
+static const uldecode_u16_t _uldecode_ibm863_table[] = {
+  0x00C7, 0x00FC, 0x00E9, 0x00E2, 0x00C2, 0x00E0, 0x00B6, 0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF, 0x00EE,
+  0x00EC, 0x00C0, 0x00A7, 0x00C9, 0x00C8, 0x00CA, 0x00F4, 0x00CB, 0x00CF, 0x00FB, 0x00F9, 0x00A4, 0x00D4,
+  0x00DC, 0x00A2, 0x00A3, 0x00D9, 0x00DB, 0x0192, 0x00A6, 0x00B4, 0x00F3, 0x00FA, 0x00A8, 0x00B8, 0x00B3,
+  0x00AF, 0x00CE, 0x2310, 0x00AC, 0x00BD, 0x00BC, 0x00BE, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+  0x2524, 0x2525, 0x2528, 0x2512, 0x2511, 0x252B, 0x2503, 0x2513, 0x251B, 0x251A, 0x2519, 0x2510, 0x2514,
+  0x2534, 0x252C, 0x251C, 0x2500, 0x253C, 0x251D, 0x2520, 0x2517, 0x250F, 0x253B, 0x2533, 0x2523, 0x2501,
+  0x254B, 0x2537, 0x2538, 0x252F, 0x2530, 0x2516, 0x2515, 0x250D, 0x250E, 0x2542, 0x253F, 0x2518, 0x250C,
+  0x2588, 0x2584, 0x258C, 0x2590, 0x2580, 0x03B1, 0x03B2, 0x0393, 0x03C0, 0x03A3, 0x03C3, 0x03BC, 0x03C4,
+  0x03A6, 0x0398, 0x03A9, 0x03B4, 0x221E, 0x2205, 0x03B5, 0x2229, 0x2261, 0x00B1, 0x2265, 0x2264, 0x2320,
+  0x2321, 0x00F7, 0x2248, 0x2218, 0x00B7, 0x2219, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_ibm863_name[] = "IBM863";
+uldecode_each_api int uldecode_ibm863(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_ibm863_table);
+}
+uldecode_each_api int ulencode_ibm863(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_ibm863_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm863_labels[] = { "cp863", "863", "csIBM863", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm863)
+  #endif /* ULDECODE_USE_IBM863 */
+
+  #if ULDECODE_USE_IBM864
+static const uldecode_u16_t _uldecode_ibm864_table[] = {
+  0x00B0, 0x00B7, 0x2218, 0x221A, 0x2592, 0x2500, 0x2502, 0x253C, 0x2524, 0x252C, 0x251C, 0x2534, 0x2510,
+  0x250C, 0x2514, 0x2518, 0x00DF, 0x221E, 0x00F8, 0x00B1, 0x00BD, 0x00BC, 0x2248, 0x00AB, 0x00BB, 0xFEF7,
+  0xFEF8, 0,      0,      0xFEFB, 0xFEFC, 0xE022, 0,      0x00AD, 0xFE82, 0x00A3, 0x00A4, 0xFE84, 0,
+  0,      0xFE8E, 0x0628, 0x062A, 0x062B, 0x060C, 0x062C, 0x062D, 0x062E, 0x06F0, 0x06F1, 0x06F2, 0x06F3,
+  0x06F4, 0x06F5, 0x06F6, 0x06F7, 0x06F8, 0x06F9, 0x06A4, 0x061B, 0x0633, 0x0634, 0x0635, 0x061F, 0x00A2,
+  0x0621, 0x0622, 0x0623, 0x0624, 0xFECC, 0x0626, 0x0627, 0xFE90, 0x0629, 0xFE96, 0xFE9A, 0xFE9E, 0xFEA2,
+  0xFEA6, 0x062F, 0x0630, 0x0631, 0x0632, 0xFEB2, 0xFEB6, 0xFEBA, 0xFEBE, 0x0637, 0x0638, 0xFECA, 0xFECE,
+  0x00A6, 0x00AC, 0x00F7, 0x00D7, 0x0639, 0x0640, 0xFED4, 0xFED8, 0xFEDA, 0xFEE0, 0xFEE2, 0xFEE8, 0xFEEA,
+  0x0648, 0x0649, 0xFEF2, 0x0636, 0xFEE4, 0xFED0, 0x063A, 0x0645, 0xFE7D, 0x0651, 0x0646, 0x0647, 0xFEEB,
+  0xFEF0, 0xFEF4, 0x0641, 0x0642, 0xFEF5, 0xFEF6, 0x0644, 0x0643, 0x064A, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_ibm864_name[] = "IBM864";
+uldecode_each_api int uldecode_ibm864(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_ibm864_table);
+}
+uldecode_each_api int ulencode_ibm864(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_ibm864_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm864_labels[] = { "cp864", "csIBM864", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm864)
+  #endif /* ULDECODE_USE_IBM864 */
+
+  #if ULDECODE_USE_IBM865
+static const uldecode_u16_t _uldecode_ibm865_table[] = {
+  0x00C7, 0x00FC, 0x00E9, 0x00E2, 0x00E4, 0x00E0, 0x00E5, 0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF, 0x00EE,
+  0x00EC, 0x00C4, 0x00C5, 0x00C9, 0x00E6, 0x00C6, 0x00F4, 0x00F6, 0x00F2, 0x00FB, 0x00F9, 0x00FF, 0x00D6,
+  0x00DC, 0x00F8, 0x00A3, 0x00D8, 0x20A7, 0x0192, 0x00E1, 0x00ED, 0x00F3, 0x00FA, 0x00F1, 0x00D1, 0x00AA,
+  0x00BA, 0x00BF, 0x2310, 0x00AC, 0x00BD, 0x00BC, 0x00A1, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+  0x2524, 0x2525, 0x2528, 0x2512, 0x2511, 0x252B, 0x2503, 0x2513, 0x251B, 0x251A, 0x2519, 0x2510, 0x2514,
+  0x2534, 0x252C, 0x251C, 0x2500, 0x253C, 0x251D, 0x2520, 0x2517, 0x250F, 0x253B, 0x2533, 0x2523, 0x2501,
+  0x254B, 0x2537, 0x2538, 0x252F, 0x2530, 0x2516, 0x2515, 0x250D, 0x250E, 0x2542, 0x253F, 0x2518, 0x250C,
+  0x2588, 0x2584, 0x258C, 0x2590, 0x2580, 0x03B1, 0x03B2, 0x0393, 0x03C0, 0x03A3, 0x03C3, 0x03BC, 0x03C4,
+  0x03A6, 0x0398, 0x03A9, 0x03B4, 0x221E, 0x2205, 0x03B5, 0x2229, 0x2261, 0x00B1, 0x2265, 0x2264, 0x2320,
+  0x2321, 0x00F7, 0x2248, 0x2218, 0x00B7, 0x2219, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_ibm865_name[] = "IBM865";
+uldecode_each_api int uldecode_ibm865(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_ibm865_table);
+}
+uldecode_each_api int ulencode_ibm865(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_ibm865_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm865_labels[] = { "cp865", "csIBM865", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm865)
+  #endif /* ULDECODE_USE_IBM865 */
+
+  #if ULDECODE_USE_IBM869
+static const uldecode_u16_t _uldecode_ibm869_table[] = {
+  0,      0,      0,      0,      0,      0,      0x0386, 0,      0x00B7, 0x00AC, 0x00A6, 0x201B, 0x2019,
+  0x0388, 0x2014, 0x0389, 0x038A, 0x03AA, 0x038C, 0,      0,      0x038E, 0x03AB, 0x00A9, 0x038F, 0x00B2,
+  0x00B3, 0x03AC, 0x00A3, 0x03AD, 0x03AE, 0x03AF, 0x03CA, 0x0390, 0x03CC, 0x03CD, 0x0391, 0x0392, 0x0393,
+  0x0394, 0x0395, 0x0396, 0x0397, 0x00BD, 0x0398, 0x0399, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+  0x2524, 0x039A, 0x039B, 0x039C, 0x039D, 0x252B, 0x2503, 0x2513, 0x251B, 0x039E, 0x039F, 0x2510, 0x2514,
+  0x2534, 0x252C, 0x251C, 0x2500, 0x253C, 0x03A0, 0x03A1, 0x2517, 0x250F, 0x253B, 0x2533, 0x2523, 0x2501,
+  0x254B, 0x03A3, 0x03A4, 0x03A5, 0x03A6, 0x03A7, 0x03A8, 0x03A9, 0x03B1, 0x03B2, 0x03B3, 0x2518, 0x250C,
+  0x2588, 0x2584, 0x03B4, 0x03B5, 0x2580, 0x03B6, 0x03B7, 0x03B8, 0x03B9, 0x03BA, 0x03BB, 0x03BC, 0x03BD,
+  0x03BE, 0x03BF, 0x03C0, 0x03C1, 0x03C3, 0x03C2, 0x03C4, 0x00B4, 0x00AD, 0x00B1, 0x03C5, 0x03C6, 0x03C7,
+  0x00A7, 0x03C8, 0x03F4, 0x00B0, 0x00A8, 0x03C9, 0x03CB, 0x03B0, 0x03CE, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_ibm869_name[] = "IBM869";
+uldecode_each_api int uldecode_ibm869(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_ibm869_table);
+}
+uldecode_each_api int ulencode_ibm869(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_ibm869_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm869_labels[] = { "cp869", "869", "cp-gr", "csIBM869", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm869)
+  #endif /* ULDECODE_USE_IBM869 */
+
+  #if ULDECODE_USE_IBM870
+static const uldecode_u16_t _uldecode_ibm870_table[] = {
+  0x0020, 0x00A0, 0,      0x00E4, 0,      0x00E1, 0x0103, 0x010D, 0x00E7, 0x0107, 0x005B, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0,      0x00EB, 0x016F, 0x00ED, 0,      0x013E, 0x013A, 0x00DF, 0x005D, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0,      0x00C4, 0x02DD, 0x00C1, 0,      0x010C, 0x00C7, 0x0106,
+  0x007C, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x02C7, 0x00C9, 0,      0x00CB, 0x016E, 0x00CD, 0,      0x013D,
+  0x0139, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0x02D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x015B, 0x0148, 0x0111, 0x00FD, 0x0159, 0,      0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x0142, 0x0144, 0x0161, 0x00B8, 0x02DB, 0x00A4, 0x0105, 0x007E,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x015A, 0x0147, 0x0110, 0x00DD, 0x0158, 0,
+  0x00B7, 0x0104, 0x017C, 0,      0x017B, 0x00A7, 0x00B6, 0x017E, 0x017A, 0x017D, 0x0179, 0x0143, 0x0160, 0x00A8,
+  0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x0155, 0x00F3, 0x0151, 0x007D, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x011A, 0x0171, 0x00FC, 0x0165, 0x00FA, 0x011B, 0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x010F, 0x00D4, 0x00D6, 0x0154, 0x00D3, 0x0150, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x010E, 0x0170, 0x00DC, 0x0164, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm870_name[] = "IBM870";
+uldecode_each_api int uldecode_ibm870(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm870_table);
+}
+uldecode_each_api int ulencode_ibm870(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm870_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm870_labels[] = { "CP870", "ebcdic-cp-roece", "ebcdic-cp-yu", "csIBM870", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm870)
+  #endif /* ULDECODE_USE_IBM870 */
+
+  #if ULDECODE_USE_IBM1026
+static const uldecode_u16_t _uldecode_ibm1026_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1, 0x00E3, 0x00E5, 0x007B, 0x00F1, 0x00C7, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x011E, 0x0130,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x005B, 0x00D1,
+  0x015F, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0131, 0x003A, 0x00D6, 0x015E, 0x0027, 0x003D, 0x00DC, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x007D, 0x0060, 0x00A6, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x02DB, 0x00C6, 0x00A4, 0x00B5, 0x00F6,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x005D, 0x0024, 0x0040, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x2014, 0x00A8,
+  0x00B4, 0x00D7, 0x00E7, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x007E, 0x00F2, 0x00F3, 0x00F5, 0x011F, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x005C, 0x00F9, 0x00FA, 0x00FF, 0x00FC, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x0023, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x0022, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm1026_name[] = "IBM1026";
+uldecode_each_api int uldecode_ibm1026(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm1026_table);
+}
+uldecode_each_api int ulencode_ibm1026(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm1026_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm1026_labels[] = { "CP1026", "csIBM1026", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm1026)
+  #endif /* ULDECODE_USE_IBM1026 */
+
+  #if ULDECODE_USE_IBM01140
+static const uldecode_u16_t _uldecode_ibm01140_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00A2, 0x002E, 0x003C, 0x0028, 0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x0021, 0x0024, 0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x007E, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x005E, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005B, 0x005D, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01140_name[] = "IBM01140";
+uldecode_each_api int uldecode_ibm01140(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01140_table);
+}
+uldecode_each_api int ulencode_ibm01140(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01140_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01140_labels[] = { "CCSID01140", "CP01140", "ebcdic-us-37+euro", "csIBM01140", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01140)
+  #endif /* ULDECODE_USE_IBM01140 */
+
+  #if ULDECODE_USE_IBM01141
+static const uldecode_u16_t _uldecode_ibm01141_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x007B, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00C4, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x007E, 0x00DC, 0x0024, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x005B, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00F6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x0023, 0x00A7, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x00DF, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x0040,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x00E4, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00A6, 0x00F2, 0x00F3, 0x00F5, 0x00FC, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x007D, 0x00F9, 0x00FA, 0x00FF,
+  0x00D6, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x005C, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x005D, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01141_name[] = "IBM01141";
+uldecode_each_api int uldecode_ibm01141(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01141_table);
+}
+uldecode_each_api int ulencode_ibm01141(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01141_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01141_labels[] = { "CCSID01141", "CP01141", "ebcdic-de-273+euro", "csIBM01141", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01141)
+  #endif /* ULDECODE_USE_IBM01141 */
+
+  #if ULDECODE_USE_IBM01142
+static const uldecode_u16_t _uldecode_ibm01142_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x007D, 0x00E7, 0x00F1, 0x0023, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x20AC, 0x00C5, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x0024, 0x00C7, 0x00D1, 0x00F8, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00A6, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x00C6, 0x00D8, 0x0027,
+  0x003D, 0x0022, 0x0040, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x007B, 0x00B8, 0x005B, 0x005D, 0x00B5, 0x00FC, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x00E6, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x00E5, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x007E, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01142_name[] = "IBM01142";
+uldecode_each_api int uldecode_ibm01142(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01142_table);
+}
+uldecode_each_api int ulencode_ibm01142(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01142_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01142_labels[] = { "CCSID01142",         "CP01142",    "ebcdic-dk-277+euro",
+                                                  "ebcdic-no-277+euro", "csIBM01142", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01142)
+  #endif /* ULDECODE_USE_IBM01142 */
+
+  #if ULDECODE_USE_IBM01143
+static const uldecode_u16_t _uldecode_ibm01143_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x007B, 0x00E0, 0x00E1,
+  0x00E3, 0x007D, 0x00E7, 0x00F1, 0x00A7, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x0060, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x20AC, 0x00C5, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x0023, 0x00C0, 0x00C1, 0x00C3, 0x0024, 0x00C7, 0x00D1, 0x00F6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x005C, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x00E9, 0x003A, 0x00C4, 0x00D6, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x005D, 0x00B5, 0x00FC, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x005B,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x00E4, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00A6, 0x00F2, 0x00F3, 0x00F5, 0x00E5, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x007E, 0x00F9, 0x00FA, 0x00FF,
+  0x00C9, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x0040, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01143_name[] = "IBM01143";
+uldecode_each_api int uldecode_ibm01143(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01143_table);
+}
+uldecode_each_api int ulencode_ibm01143(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01143_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01143_labels[] = { "CCSID01143",         "CP01143",    "ebcdic-fi-278+euro",
+                                                  "ebcdic-se-278+euro", "csIBM01143", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01143)
+  #endif /* ULDECODE_USE_IBM01143 */
+
+  #if ULDECODE_USE_IBM01144
+static const uldecode_u16_t _uldecode_ibm01144_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x007B, 0x00E1,
+  0x00E3, 0x00E5, 0x005C, 0x00F1, 0x00B0, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x005D, 0x00EA, 0x00EB,
+  0x007D, 0x00ED, 0x00EE, 0x00EF, 0x007E, 0x00DF, 0x00E9, 0x0024, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00F2, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x00F9, 0x003A, 0x00A3, 0x00A7, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x005B, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x00EC, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x0023, 0x00A5, 0x00B7, 0x00A9, 0x0040,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x00E0, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00A6, 0x00F3, 0x00F5, 0x00E8, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x0060, 0x00FA, 0x00FF,
+  0x00E7, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01144_name[] = "IBM01144";
+uldecode_each_api int uldecode_ibm01144(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01144_table);
+}
+uldecode_each_api int ulencode_ibm01144(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01144_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01144_labels[] = { "CCSID01144", "CP01144", "ebcdic-it-280+euro", "csIBM01144", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01144)
+  #endif /* ULDECODE_USE_IBM01144 */
+
+  #if ULDECODE_USE_IBM01145
+static const uldecode_u16_t _uldecode_ibm01145_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00A6, 0x005B, 0x002E, 0x003C, 0x0028, 0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x005D, 0x0024, 0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x0023, 0x00F1, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x00D1, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x00A8, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005E, 0x0021, 0x00AF, 0x007E, 0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01145_name[] = "IBM01145";
+uldecode_each_api int uldecode_ibm01145(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01145_table);
+}
+uldecode_each_api int ulencode_ibm01145(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01145_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01145_labels[] = { "CCSID01145", "CP01145", "ebcdic-es-284+euro", "csIBM01145", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01145)
+  #endif /* ULDECODE_USE_IBM01145 */
+
+  #if ULDECODE_USE_IBM01146
+static const uldecode_u16_t _uldecode_ibm01146_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x0024, 0x002E, 0x003C, 0x0028, 0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x0021, 0x00A3, 0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x00AF, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x005B, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005E, 0x005D, 0x007E, 0x00A8, 0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01146_name[] = "IBM01146";
+uldecode_each_api int uldecode_ibm01146(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01146_table);
+}
+uldecode_each_api int ulencode_ibm01146(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01146_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01146_labels[] = { "CCSID01146", "CP01146", "ebcdic-gb-285+euro", "csIBM01146", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01146)
+  #endif /* ULDECODE_USE_IBM01146 */
+
+  #if ULDECODE_USE_IBM01147
+static const uldecode_u16_t _uldecode_ibm01147_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x0040, 0x00E1,
+  0x00E3, 0x00E5, 0x005C, 0x00F1, 0x00B0, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x007B, 0x00EA, 0x00EB,
+  0x007D, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00A7, 0x0024, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00F9, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x00B5, 0x003A, 0x00A3, 0x00E0, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x005B, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x0060, 0x00A8, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x0023, 0x00A5, 0x00B7, 0x00A9, 0x005D,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x007E, 0x00B4, 0x00D7, 0x00E9, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x00E8, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00A6, 0x00FA, 0x00FF,
+  0x00E7, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01147_name[] = "IBM01147";
+uldecode_each_api int uldecode_ibm01147(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01147_table);
+}
+uldecode_each_api int ulencode_ibm01147(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01147_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01147_labels[] = { "CCSID01147", "CP01147", "ebcdic-fr-297+euro", "csIBM01147", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01147)
+  #endif /* ULDECODE_USE_IBM01147 */
+
+  #if ULDECODE_USE_IBM01148
+static const uldecode_u16_t _uldecode_ibm01148_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x005B, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x005D, 0x0024, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x20AC, 0x00B5, 0x007E, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01148_name[] = "IBM01148";
+uldecode_each_api int uldecode_ibm01148(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01148_table);
+}
+uldecode_each_api int ulencode_ibm01148(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01148_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01148_labels[] = { "CCSID01148", "CP01148", "ebcdic-international-500+euro",
+                                                  "csIBM01148", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01148)
+  #endif /* ULDECODE_USE_IBM01148 */
+
+  #if ULDECODE_USE_IBM01149
+static const uldecode_u16_t _uldecode_ibm01149_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00DE, 0x002E, 0x003C, 0x0028, 0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00C6, 0x0024, 0x002A, 0x0029, 0x003B, 0x00D6, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x00F0, 0x003A, 0x0023, 0x00D0, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x0060, 0x00FD, 0x007B, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x007D, 0x00B8, 0x005D, 0x20AC, 0x00B5, 0x00F6, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x0040, 0x00DD, 0x005B, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8, 0x005C, 0x00D7, 0x00FE, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x007E, 0x00F2, 0x00F3, 0x00F5, 0x00E6, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x00B4, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x005E, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm01149_name[] = "IBM01149";
+uldecode_each_api int uldecode_ibm01149(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm01149_table);
+}
+uldecode_each_api int ulencode_ibm01149(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm01149_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm01149_labels[] = { "CCSID01149", "CP01149", "ebcdic-is-871+euro", "csIBM01149", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm01149)
+  #endif /* ULDECODE_USE_IBM01149 */
+
+  #if ULDECODE_USE_IBM273
+static const uldecode_u16_t _uldecode_ibm273_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x007B, 0x00E0, 0x00E1, 0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00C4, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x007E, 0x00DC, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x005B, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1,
+  0x00F6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0060, 0x003A, 0x0023, 0x00A7, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x00A4, 0x00B5, 0x00DF,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x0040, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x00E4, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00A6, 0x00F2, 0x00F3, 0x00F5, 0x00FC, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x007D, 0x00F9, 0x00FA, 0x00FF, 0x00D6, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x005C, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x005D, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm273_name[] = "IBM273";
+uldecode_each_api int uldecode_ibm273(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm273_table);
+}
+uldecode_each_api int ulencode_ibm273(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm273_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm273_labels[] = { "CP273", "csIBM273", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm273)
+  #endif /* ULDECODE_USE_IBM273 */
+
+  #if ULDECODE_USE_IBM277
+static const uldecode_u16_t _uldecode_ibm277_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1, 0x00E3, 0x007D, 0x00E7, 0x00F1, 0x0023, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00A4, 0x00C5,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x0024, 0x00C7, 0x00D1,
+  0x00F8, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00A6, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0060, 0x003A, 0x00C6, 0x00D8, 0x0027, 0x003D, 0x0022, 0x0040, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x007B, 0x00B8, 0x005B, 0x005D, 0x00B5, 0x00FC,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x00E6, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x00E5, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x007E, 0x00F9, 0x00FA, 0x00FF, 0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm277_name[] = "IBM277";
+uldecode_each_api int uldecode_ibm277(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm277_table);
+}
+uldecode_each_api int ulencode_ibm277(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm277_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm277_labels[] = { "EBCDIC-CP-DK", "EBCDIC-CP-NO", "csIBM277", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm277)
+  #endif /* ULDECODE_USE_IBM277 */
+
+  #if ULDECODE_USE_IBM278
+static const uldecode_u16_t _uldecode_ibm278_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x007B, 0x00E0, 0x00E1, 0x00E3, 0x007D, 0x00E7, 0x00F1, 0x00A7, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x0060, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00A4, 0x00C5,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x0023, 0x00C0, 0x00C1, 0x00C3, 0x0024, 0x00C7, 0x00D1,
+  0x00F6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x00E9, 0x003A, 0x00C4, 0x00D6, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x005D, 0x00B5, 0x00FC,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x005B, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x00E4, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00A6, 0x00F2, 0x00F3, 0x00F5, 0x00E5, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x007E, 0x00F9, 0x00FA, 0x00FF, 0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x0040, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm278_name[] = "IBM278";
+uldecode_each_api int uldecode_ibm278(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm278_table);
+}
+uldecode_each_api int ulencode_ibm278(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm278_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm278_labels[] = { "ebcdic-cp-fi", "ebcdic-cp-se", "csIBM278", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm278)
+  #endif /* ULDECODE_USE_IBM278 */
+
+  #if ULDECODE_USE_IBM280
+static const uldecode_u16_t _uldecode_ibm280_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x007B, 0x00E1, 0x00E3, 0x00E5, 0x005C, 0x00F1, 0x00B0, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x005D, 0x00EA, 0x00EB, 0x007D, 0x00ED, 0x00EE, 0x00EF, 0x007E, 0x00DF, 0x00E9, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1,
+  0x00F2, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x00F9, 0x003A, 0x00A3, 0x00A7, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x005B, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x00A4, 0x00B5, 0x00EC,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x0023, 0x00A5, 0x00B7, 0x00A9, 0x0040, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x00E0, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x00A6, 0x00F3, 0x00F5, 0x00E8, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x00FC, 0x0060, 0x00FA, 0x00FF, 0x00E7, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm280_name[] = "IBM280";
+uldecode_each_api int uldecode_ibm280(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm280_table);
+}
+uldecode_each_api int ulencode_ibm280(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm280_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm280_labels[] = { "CP280", "ebcdic-cp-it", "csIBM280", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm280)
+  #endif /* ULDECODE_USE_IBM280 */
+
+  #if ULDECODE_USE_IBM284
+static const uldecode_u16_t _uldecode_ibm284_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1, 0x00E3, 0x00E5, 0x00E7, 0x00A6, 0x005B, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x005D, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x0023,
+  0x00F1, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0060, 0x003A, 0x00D1, 0x0040, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x00A4, 0x00B5, 0x00A8,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005E, 0x0021, 0x00AF, 0x007E,
+  0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF, 0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm284_name[] = "IBM284";
+uldecode_each_api int uldecode_ibm284(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm284_table);
+}
+uldecode_each_api int ulencode_ibm284(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm284_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm284_labels[] = { "CP284", "ebcdic-cp-es", "csIBM284", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm284)
+  #endif /* ULDECODE_USE_IBM284 */
+
+  #if ULDECODE_USE_IBM285
+static const uldecode_u16_t _uldecode_ibm285_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1, 0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x0024, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x0021, 0x00A3,
+  0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x00A4, 0x00B5, 0x007E,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x005B, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005E, 0x005D, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF, 0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm285_name[] = "IBM285";
+uldecode_each_api int uldecode_ibm285(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm285_table);
+}
+uldecode_each_api int ulencode_ibm285(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm285_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm285_labels[] = { "CP285", "ebcdic-cp-gb", "csIBM285", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm285)
+  #endif /* ULDECODE_USE_IBM285 */
+
+  #if ULDECODE_USE_IBM290
+static const uldecode_u16_t _uldecode_ibm290_table[] = {
+  0x0020, 0x3002, 0x300C, 0x300D, 0x3001, 0x30FB, 0x30F2, 0x30A1, 0x30A3, 0x30A5, 0x00A3, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x007C, 0x0026, 0x30A7, 0x30A9, 0x30E3, 0x30E5, 0x30E7, 0x30C3, 0,      0x30FC, 0,      0x0021, 0x00A5,
+  0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F, 0,      0,      0,      0,      0,      0,      0,      0,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0,      0,      0,      0,      0,      0,      0,      0,
+  0,      0x0060, 0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0,      0x30A2, 0x30A4, 0x30A6, 0x30A8, 0x30AA,
+  0x30AB, 0x30AD, 0x30AF, 0x30B1, 0x30B3, 0,      0x30B5, 0x30B7, 0x30B9, 0x30BB, 0x30BD, 0x30BF, 0x30C1, 0x30C4,
+  0x30C6, 0x30C8, 0x30CA, 0x30CB, 0x30CC, 0x30CD, 0x30CE, 0,      0,      0x30CF, 0x30D2, 0x30D5, 0,      0x00AF,
+  0x30D8, 0x30DB, 0x30DE, 0x30DF, 0x30E0, 0x30E1, 0x30E2, 0x30E4, 0x30E6, 0,      0x30E8, 0x30E9, 0x30EA, 0x30EB,
+  0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0x30EC, 0x30ED, 0x30EF, 0x30F3,
+  0x309B, 0x309C, 0,      0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0,      0,
+  0,      0,      0,      0,      0,      0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0,      0,      0,      0,      0,      0,      0x0024, 0,      0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0,      0,      0,      0,      0,      0,      0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0,      0,      0,      0,      0,      0x007F,
+};
+
+static const char uldecode_ibm290_name[] = "IBM290";
+uldecode_each_api int uldecode_ibm290(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm290_table);
+}
+uldecode_each_api int ulencode_ibm290(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm290_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm290_labels[] = { "CP290", "EBCDIC-JP-kana", "csIBM290", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm290)
+  #endif /* ULDECODE_USE_IBM290 */
+
+  #if ULDECODE_USE_IBM297
+static const uldecode_u16_t _uldecode_ibm297_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x0040, 0x00E1, 0x00E3, 0x00E5, 0x005C, 0x00F1, 0x00B0, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x007B, 0x00EA, 0x00EB, 0x007D, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00A7, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1,
+  0x00F9, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x00B5, 0x003A, 0x00A3, 0x00E0, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x005B, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x00E6, 0x00B8, 0x00C6, 0x00A4, 0x0060, 0x00A8,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x00DD, 0x00DE, 0x00AE,
+  0x00A2, 0x0023, 0x00A5, 0x00B7, 0x00A9, 0x005D, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x007E,
+  0x00B4, 0x00D7, 0x00E9, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x00E8, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x00FC, 0x00A6, 0x00FA, 0x00FF, 0x00E7, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm297_name[] = "IBM297";
+uldecode_each_api int uldecode_ibm297(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm297_table);
+}
+uldecode_each_api int ulencode_ibm297(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm297_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm297_labels[] = { "CP297", "ebcdic-cp-fr", "csIBM297", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm297)
+  #endif /* ULDECODE_USE_IBM297 */
+
+  #if ULDECODE_USE_IBM420
+static const uldecode_u16_t _uldecode_ibm420_table[] = {
+  0x0020, 0x00A0, 0x0651, 0xFE7D, 0x0640, 0,      0x0621, 0x0622, 0xFE82, 0x0623, 0x00A2, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x007C, 0x0026, 0xFE84, 0x0624, 0,      0,      0x0626, 0x0627, 0xFE8E, 0x0628, 0xFE90, 0x0021, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F, 0x0629, 0x062A, 0xFE96, 0x062B, 0xFE9A, 0x062C, 0xFE9E, 0x062D,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0xFEA2, 0x062E, 0xFEA6, 0x062F, 0x0630, 0x0631, 0x0632, 0x0633,
+  0xFEB2, 0x060C, 0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0x0634, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0xFEB6, 0x0635, 0xFEBA, 0x0636, 0xFEBE, 0x0637, 0x0638, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x0639, 0xFECC, 0xFECA, 0xFECB, 0x063A, 0xFED0, 0xFECE, 0x00F7,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0xFECF, 0x0641, 0xFED2, 0x0642, 0xFED6, 0x0643,
+  0xFEDA, 0x0644, 0xFEF5, 0xFEF6, 0xFEF7, 0xFEF8, 0,      0,      0xFEFB, 0xFEFC, 0xFEDE, 0x0645, 0xFEE2, 0x0646,
+  0xFEE6, 0x0647, 0x061B, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0xFEEA,
+  0,      0xFEEB, 0,      0x0648, 0x061F, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x0649, 0xFEF0, 0x064A, 0xFEF4, 0xFEF2, 0x06F0, 0x00D7, 0,      0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x06F1, 0x06F2, 0,      0x06F3, 0x06F4, 0x06F5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0,      0x06F6, 0x06F7, 0x06F8, 0x06F9, 0x007F,
+};
+
+static const char uldecode_ibm420_name[] = "IBM420";
+uldecode_each_api int uldecode_ibm420(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm420_table);
+}
+uldecode_each_api int ulencode_ibm420(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm420_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm420_labels[] = { "CP420", "ebcdic-cp-ar1", "csIBM420", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm420)
+  #endif /* ULDECODE_USE_IBM420 */
+
+  #if ULDECODE_USE_IBM423
+static const uldecode_u16_t _uldecode_ibm423_table[] = {
+  0x0020, 0x0391, 0x0392, 0x0393, 0x0394, 0x0395, 0x0396, 0x0397, 0x0398, 0x0399, 0x005B, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x039A, 0x039B, 0x039C, 0x039D, 0x039E, 0x039F, 0x03A0, 0x03A1, 0x03A3, 0x005D, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x03A4, 0x03A5, 0x03A6, 0x03A7, 0x03A8, 0x03A9, 0,      0,
+  0,      0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0,      0x0386, 0x0388, 0x0389, 0,      0x038A, 0x038C, 0x038E,
+  0x038F, 0x0060, 0x003A, 0x00A3, 0x00A7, 0x0027, 0x003D, 0x0022, 0x00C4, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x03B1, 0x03B2, 0x03B3, 0x03B4, 0x03B5, 0x03B6, 0x00D6, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x03B7, 0x03B8, 0x03B9, 0x03BA, 0x03BB, 0x03BC, 0x00DC, 0x00A8,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x03BD, 0x03BE, 0x03BF, 0x03C0, 0x03C1, 0x03C2,
+  0,      0x03AC, 0x03AD, 0x03AE, 0x03CA, 0x03AF, 0x03CC, 0x03CD, 0x03CB, 0x03CE, 0x03C3, 0x03C4, 0x03C5, 0x03C6,
+  0x03C7, 0x03C8, 0x044C, 0x044B, 0x0437, 0x0448, 0x044D, 0x0449, 0x0447, 0x044A, 0x042E, 0x0410, 0x0411, 0x0426,
+  0x0414, 0x0415, 0x0424, 0x0413, 0x00B8, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049,
+  0,      0x03C9, 0x00C2, 0x00E0, 0x00E4, 0x00EA, 0x00B4, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050,
+  0x0051, 0x0052, 0x00B1, 0x00E9, 0x00E8, 0x00EB, 0x00EE, 0x00EF, 0x00B0, 0,      0x0053, 0x0054, 0x0055, 0x0056,
+  0x0057, 0x0058, 0x0059, 0x005A, 0x00BD, 0x00F6, 0x00F4, 0x00FB, 0x00F9, 0x00FC,
+};
+
+static const char uldecode_ibm423_name[] = "IBM423";
+uldecode_each_api int uldecode_ibm423(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm423_table);
+}
+uldecode_each_api int ulencode_ibm423(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm423_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm423_labels[] = { "CP423", "ebcdic-cp-gr", "csIBM423", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm423)
+  #endif /* ULDECODE_USE_IBM423 */
+
+  #if ULDECODE_USE_IBM424
+static const uldecode_u16_t _uldecode_ibm424_table[] = {
+  0x0020, 0x05D0, 0x05D1, 0x05D2, 0x05D3, 0x05D4, 0x05D5, 0x05D6, 0x05D7, 0x05D8, 0x00A2, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x007C, 0x0026, 0x05D9, 0x05DA, 0x05DB, 0x05DC, 0x05DD, 0x05DE, 0x05DF, 0x05E0, 0x05E1, 0x0021, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F, 0x05E2, 0x05E3, 0x05E4, 0x05E5, 0x05E6, 0x05E7, 0x05E8, 0x05E9,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0,      0x05EA, 0,      0,      0x00A0, 0,      0,      0,
+  0x21D4, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0,      0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0,      0,      0,      0,      0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0,      0,      0,      0x00B8, 0,      0x00A4, 0x00B5, 0x007E,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0,      0,      0,      0,      0,      0x00AE,
+  0x005E, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x005B, 0x005D, 0x00AF, 0x00A8,
+  0x00B4, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0,
+  0,      0,      0,      0,      0x007D, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0,      0,      0,      0,      0,      0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0,      0,      0,      0,      0,      0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0,      0,      0,      0,      0x007F,
+};
+
+static const char uldecode_ibm424_name[] = "IBM424";
+uldecode_each_api int uldecode_ibm424(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm424_table);
+}
+uldecode_each_api int ulencode_ibm424(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm424_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm424_labels[] = { "CP424", "ebcdic-cp-he", "csIBM424", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm424)
+  #endif /* ULDECODE_USE_IBM424 */
+
+  #if ULDECODE_USE_IBM_THAI
+static const uldecode_u16_t _uldecode_ibm_thai_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x0E01, 0x0E02, 0x0E03, 0x0E04,
+  0x0E05, 0x0E06, 0x0E07, 0x005B, 0x00A2, 0x002E, 0x003C, 0x0028, 0x002B, 0x007C, 0x0026, 0,      0x0E08, 0x0E09,
+  0x0E0A, 0x0E0B, 0x0E0C, 0x0E0D, 0x0E0E, 0x005D, 0x0021, 0x0024, 0x002A, 0x0029, 0x003B, 0x00AC, 0x002D, 0x002F,
+  0x0E0F, 0x0E10, 0x0E11, 0x0E12, 0x0E13, 0x0E14, 0x0E15, 0x005E, 0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x0E3F, 0x0E4E, 0x0E16, 0x0E17, 0x0E18, 0x0E19, 0x0E1A, 0x0E1B, 0x0E1C, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x0E4F, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x0E1D, 0x0E1E,
+  0x0E1F, 0x0E20, 0x0E21, 0x0E22, 0x0E5A, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x0E23, 0x0E24, 0x0E25, 0x0E26, 0x0E27, 0x0E28, 0x0E5B, 0x007E, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x0E29, 0x0E2A, 0x0E2B, 0x0E2C, 0x0E2D, 0x0E2E, 0x0E50, 0x0E51, 0x0E52, 0x0E53, 0x0E54, 0x0E55,
+  0x0E56, 0x0E57, 0x0E58, 0x0E59, 0x0E2F, 0x0E30, 0x0E31, 0x0E32, 0x0E33, 0x0E34, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0,      0x0E35, 0x0E36, 0x0E37, 0x0E38, 0x0E39, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x0E3A, 0x0E40, 0x0E41, 0x0E42, 0x0E43, 0x0E44,
+  0x005C, 0,      0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x0E45, 0x0E46, 0x0E47, 0x0E48,
+  0x0E49, 0x0E4A, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x0E4B, 0x0E4C,
+  0x0E4D, 0,      0,      0x009F,
+};
+
+static const char uldecode_ibm_thai_name[] = "ibm_thai";
+uldecode_each_api int uldecode_ibm_thai(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  if(ul_unlikely(c == ULDECODE_EOF))
+    return 0;
+  if(ul_unlikely(c < 0 || c > 0xFF))
+    return -1;
+  if(c <= 0x1F) {
+    p[0] = ul_static_cast(uldecode_u32_t, c);
+    return 1;
+  }
+  return (p[0] = _uldecode_ibm_thai_table[c]) ? 1 : -1;
+}
+uldecode_each_api int ulencode_ibm_thai(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  int i;
+  (void)_state;
+  if(ul_unlikely(u == ULENCODE_EOF))
+    return 0;
+  for(i = 0; i < 0x100; ++i)
+    if(_uldecode_ibm_thai_table[i] == u) {
+      p[0] = ul_static_cast(uldecode_u8_t, i);
+      return 1;
+    }
+  return -1;
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm_thai_labels[] = { "csIBMThai", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm_thai)
+  #endif /* ULDECODE_USE_IBM_THAI */
+
+  #if ULDECODE_USE_IBM871
+static const uldecode_u16_t _uldecode_ibm871_table[] = {
+  0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1, 0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00FE, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x00C6, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x00D6, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x00F0, 0x003A, 0x0023, 0x00D0, 0x0027, 0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB, 0x0060, 0x00FD, 0x007B, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x00AA, 0x00BA, 0x007D, 0x00B8, 0x005D, 0x00A4, 0x00B5, 0x00F6,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x00A1, 0x00BF, 0x0040, 0x00DD, 0x005B, 0x00AE,
+  0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7, 0x00B6, 0x00BC, 0x00BD, 0x00BE, 0x00AC, 0x007C, 0x00AF, 0x00A8,
+  0x005C, 0x00D7, 0x00DE, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x007E, 0x00F2, 0x00F3, 0x00F5, 0x00E6, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF, 0x00B4, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x005E, 0x00D2, 0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x00DC, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm871_name[] = "IBM871";
+uldecode_each_api int uldecode_ibm871(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm871_table);
+}
+uldecode_each_api int ulencode_ibm871(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm871_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm871_labels[] = { "CP871", "ebcdic-cp-is", "csIBM871", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm871)
+  #endif /* ULDECODE_USE_IBM871 */
+
+  #if ULDECODE_USE_IBM880
+static const uldecode_u16_t _uldecode_ibm880_table[] = {
+  0x0020, 0,      0x0452, 0x0453, 0x0451, 0,      0x0455, 0x0456, 0x0457, 0x0458, 0x005B, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x0459, 0x045A, 0x045B, 0x045C, 0,      0x045F, 0x042A, 0x2116, 0x0402, 0x005D, 0x0024,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x0403, 0x0401, 0,      0x0405, 0x0406, 0x0407, 0x0408, 0x0409,
+  0x00A6, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0x040A, 0x040B, 0x040C, 0,      0,      0x040F, 0x044E, 0x0430,
+  0x0431, 0,      0x003A, 0x0023, 0x0040, 0x0027, 0x003D, 0x0022, 0x0446, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x0434, 0x0435, 0x0444, 0x0433, 0x0445, 0x0438, 0x0439, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x043A, 0x043B, 0x043C, 0x043D, 0x043E, 0x043F, 0x044F, 0,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x0440, 0x0441, 0x0442, 0x0443, 0x0436, 0x0432,
+  0x044C, 0x044B, 0x0437, 0x0448, 0x044D, 0x0449, 0x0447, 0x044A, 0x042E, 0x0410, 0x0411, 0x0426, 0x0414, 0x0415,
+  0x0424, 0x0413, 0,      0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x0425, 0x0418,
+  0x0419, 0x041A, 0x041B, 0x041C, 0,      0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x041D, 0x041E, 0x041F, 0x042F, 0x0420, 0x0421, 0x005C, 0x00A4, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x0422, 0x0423, 0x0416, 0x0412, 0x042C, 0x042B, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x0417, 0x0428, 0x042D, 0x0429, 0x0427, 0x007F,
+};
+
+static const char uldecode_ibm880_name[] = "IBM880";
+uldecode_each_api int uldecode_ibm880(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm880_table);
+}
+uldecode_each_api int ulencode_ibm880(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm880_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm880_labels[] = { "CP880", "EBCDIC-Cyrillic", "csIBM880", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm880)
+  #endif /* ULDECODE_USE_IBM880 */
+
+  #if ULDECODE_USE_IBM905
+static const uldecode_u16_t _uldecode_ibm905_table[] = {
+  0x0020, 0,      0x00E2, 0x00E4, 0x00E0, 0x00E1, 0,      0x010B, 0x007B, 0x00F1, 0x00C7, 0x002E, 0x003C, 0x0028,
+  0x002B, 0x0021, 0x0026, 0x00E9, 0x00EA, 0x00EB, 0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x011E, 0x0130,
+  0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F, 0x00C2, 0x00C4, 0x00C0, 0x00C1, 0,      0x010A, 0x005B, 0x00D1,
+  0x015F, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F, 0,      0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF,
+  0x00CC, 0x0131, 0x003A, 0x00D6, 0x015E, 0x0027, 0x003D, 0x00DC, 0x02D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065,
+  0x0066, 0x0067, 0x0068, 0x0069, 0x0127, 0x0109, 0x015D, 0x016D, 0,      0x007C, 0x00B0, 0x006A, 0x006B, 0x006C,
+  0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x0125, 0x011D, 0x0135, 0x02DB, 0,      0x00A4, 0x00B5, 0x00F6,
+  0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x0126, 0x0108, 0x015C, 0x016C, 0,      0x0040,
+  0x00B7, 0x00A3, 0x017C, 0x007D, 0x017B, 0x00A7, 0x005D, 0,      0x00BD, 0x0024, 0x0124, 0x011C, 0x0134, 0x00A8,
+  0x00B4, 0x00D7, 0x00E7, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4,
+  0x007E, 0x00F2, 0x00F3, 0x0121, 0x011F, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052,
+  0x0060, 0x00FB, 0x005C, 0x00F9, 0x00FA, 0,      0x00FC, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058,
+  0x0059, 0x005A, 0x00B2, 0x00D4, 0x0023, 0x00D2, 0x00D3, 0x0120, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035,
+  0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB, 0x0022, 0x00D9, 0x00DA, 0x007F,
+};
+
+static const char uldecode_ibm905_name[] = "IBM905";
+uldecode_each_api int uldecode_ibm905(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic2(p, c, _uldecode_ibm905_table);
+}
+uldecode_each_api int ulencode_ibm905(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic2(p, u, _uldecode_ibm905_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm905_labels[] = { "CP905", "ebcdic-cp-tr", "csIBM905", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm905)
+  #endif /* ULDECODE_USE_IBM905 */
+
+  #if ULDECODE_USE_IBM00924
+static const uldecode_u16_t _uldecode_ibm00924_table[] = {
+  0x0000, 0x0001, 0x0002, 0x0003, 0x009C, 0x0009, 0x0086, 0x007F, 0x0097, 0x008D, 0x008E, 0x000B, 0x000C, 0x000D,
+  0x000E, 0x000F, 0x0010, 0x0011, 0x0012, 0x0013, 0x009D, 0x0085, 0x0008, 0x0087, 0x0018, 0x0019, 0x0092, 0x008F,
+  0x001C, 0x001D, 0x001E, 0x001F, 0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x000A, 0x0017, 0x001B, 0x0088, 0x0089,
+  0x008A, 0x008B, 0x008C, 0x0005, 0x0006, 0x0007, 0x0090, 0x0091, 0x0016, 0x0093, 0x0094, 0x0095, 0x0096, 0x0004,
+  0x0098, 0x0099, 0x009A, 0x009B, 0x0014, 0x0015, 0x009E, 0x001A, 0x0020, 0x00A0, 0x00E2, 0x00E4, 0x00E0, 0x00E1,
+  0x00E3, 0x00E5, 0x00E7, 0x00F1, 0x00DD, 0x002E, 0x003C, 0x0028, 0x002B, 0x007C, 0x0026, 0x00E9, 0x00EA, 0x00EB,
+  0x00E8, 0x00ED, 0x00EE, 0x00EF, 0x00EC, 0x00DF, 0x0021, 0x0024, 0x002A, 0x0029, 0x003B, 0x005E, 0x002D, 0x002F,
+  0x00C2, 0x00C4, 0x00C0, 0x00C1, 0x00C3, 0x00C5, 0x00C7, 0x00D1, 0x0160, 0x002C, 0x0025, 0x005F, 0x003E, 0x003F,
+  0x00F8, 0x00C9, 0x00CA, 0x00CB, 0x00C8, 0x00CD, 0x00CE, 0x00CF, 0x00CC, 0x0060, 0x003A, 0x0023, 0x0040, 0x0027,
+  0x003D, 0x0022, 0x00D8, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x00AB, 0x00BB,
+  0x00F0, 0x00FD, 0x00FE, 0x00B1, 0x00B0, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072,
+  0x00AA, 0x00BA, 0x00E6, 0x017E, 0x00C6, 0x20AC, 0x00B5, 0x007E, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078,
+  0x0079, 0x007A, 0x00A1, 0x00BF, 0x00D0, 0x005B, 0x00DE, 0x00AE, 0x00A2, 0x00A3, 0x00A5, 0x00B7, 0x00A9, 0x00A7,
+  0x00B6, 0x0152, 0x0153, 0x0178, 0x00AC, 0x0161, 0x00AF, 0x005D, 0x017D, 0x00D7, 0x007B, 0x0041, 0x0042, 0x0043,
+  0x0044, 0x0045, 0x0046, 0x0047, 0x0048, 0x0049, 0x00AD, 0x00F4, 0x00F6, 0x00F2, 0x00F3, 0x00F5, 0x007D, 0x004A,
+  0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x00B9, 0x00FB, 0x00FC, 0x00F9, 0x00FA, 0x00FF,
+  0x005C, 0x00F7, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x00B2, 0x00D4, 0x00D6, 0x00D2,
+  0x00D3, 0x00D5, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x00B3, 0x00DB,
+  0x00DC, 0x00D9, 0x00DA, 0x009F,
+};
+
+static const char uldecode_ibm00924_name[] = "IBM00924";
+uldecode_each_api int uldecode_ibm00924(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ebcdic(p, c, _uldecode_ibm00924_table);
+}
+uldecode_each_api int ulencode_ibm00924(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ebcdic(p, u, _uldecode_ibm00924_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_ibm00924_labels[] = { "CCSID00924", "CP00924", "ebcdic-Latin9--euro", "csIBM00924", NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(ibm00924)
+  #endif /* ULDECODE_USE_IBM00924 */
+
 
 
 static const uldecode_t* const _uldecode_lists[] = {
@@ -9436,6 +10803,9 @@ static const uldecode_t* const _uldecode_lists[] = {
   #if ULDECODE_USE_UTF_32LE
   _ULDECODE_INLIST(utf_32be),
   #endif /* ULDECODE_USE_UTF_32LE */
+  #if ULDECODE_USE_ASCII
+  _ULDECODE_INLIST(ascii),
+  #endif /* ULDECODE_USE_ASCII */
 
   #ifdef ULDECODE_USE_IBM866
   _ULDECODE_INLIST(ibm866),
@@ -9577,6 +10947,105 @@ static const uldecode_t* const _uldecode_lists[] = {
   #if ULDECODE_USE_IBM861
   _ULDECODE_INLIST(ibm861),
   #endif /* ULDECODE_USE_IBM861 */
+  #if ULDECODE_USE_IBM862
+  _ULDECODE_INLIST(ibm862),
+  #endif /* ULDECODE_USE_IBM862 */
+  #if ULDECODE_USE_IBM863
+  _ULDECODE_INLIST(ibm863),
+  #endif /* ULDECODE_USE_IBM863 */
+  #if ULDECODE_USE_IBM864
+  _ULDECODE_INLIST(ibm864),
+  #endif /* ULDECODE_USE_IBM864 */
+  #if ULDECODE_USE_IBM865
+  _ULDECODE_INLIST(ibm865),
+  #endif /* ULDECODE_USE_IBM865 */
+  #if ULDECODE_USE_IBM869
+  _ULDECODE_INLIST(ibm869),
+  #endif /* ULDECODE_USE_IBM869 */
+  #if ULDECODE_USE_IBM870
+  _ULDECODE_INLIST(ibm870),
+  #endif /* ULDECODE_USE_IBM870 */
+  #if ULDECODE_USE_IBM1026
+  _ULDECODE_INLIST(ibm1026),
+  #endif /* ULDECODE_USE_IBM1026 */
+  #if ULDECODE_USE_IBM01140
+  _ULDECODE_INLIST(ibm01140),
+  #endif /* ULDECODE_USE_IBM01140 */
+  #if ULDECODE_USE_IBM01141
+  _ULDECODE_INLIST(ibm01141),
+  #endif /* ULDECODE_USE_IBM01141 */
+  #if ULDECODE_USE_IBM01142
+  _ULDECODE_INLIST(ibm01142),
+  #endif /* ULDECODE_USE_IBM01142 */
+  #if ULDECODE_USE_IBM01143
+  _ULDECODE_INLIST(ibm01143),
+  #endif /* ULDECODE_USE_IBM01143 */
+  #if ULDECODE_USE_IBM01144
+  _ULDECODE_INLIST(ibm01144),
+  #endif /* ULDECODE_USE_IBM01144 */
+  #if ULDECODE_USE_IBM01145
+  _ULDECODE_INLIST(ibm01145),
+  #endif /* ULDECODE_USE_IBM01145 */
+  #if ULDECODE_USE_IBM01146
+  _ULDECODE_INLIST(ibm01146),
+  #endif /* ULDECODE_USE_IBM01146 */
+  #if ULDECODE_USE_IBM01147
+  _ULDECODE_INLIST(ibm01147),
+  #endif /* ULDECODE_USE_IBM01147 */
+  #if ULDECODE_USE_IBM01148
+  _ULDECODE_INLIST(ibm01148),
+  #endif /* ULDECODE_USE_IBM01148 */
+  #if ULDECODE_USE_IBM01149
+  _ULDECODE_INLIST(ibm01149),
+  #endif /* ULDECODE_USE_IBM01149 */
+  #if ULDECODE_USE_IBM273
+  _ULDECODE_INLIST(ibm273),
+  #endif /* ULDECODE_USE_IBM273 */
+  #if ULDECODE_USE_IBM277
+  _ULDECODE_INLIST(ibm277),
+  #endif /* ULDECODE_USE_IBM277 */
+  #if ULDECODE_USE_IBM278
+  _ULDECODE_INLIST(ibm278),
+  #endif /* ULDECODE_USE_IBM278 */
+  #if ULDECODE_USE_IBM280
+  _ULDECODE_INLIST(ibm280),
+  #endif /* ULDECODE_USE_IBM280 */
+  #if ULDECODE_USE_IBM284
+  _ULDECODE_INLIST(ibm284),
+  #endif /* ULDECODE_USE_IBM284 */
+  #if ULDECODE_USE_IBM285
+  _ULDECODE_INLIST(ibm285),
+  #endif /* ULDECODE_USE_IBM285 */
+  #if ULDECODE_USE_IBM290
+  _ULDECODE_INLIST(ibm290),
+  #endif /* ULDECODE_USE_IBM290 */
+  #if ULDECODE_USE_IBM297
+  _ULDECODE_INLIST(ibm297),
+  #endif /* ULDECODE_USE_IBM297 */
+  #if ULDECODE_USE_IBM420
+  _ULDECODE_INLIST(ibm420),
+  #endif /* ULDECODE_USE_IBM420 */
+  #if ULDECODE_USE_IBM423
+  _ULDECODE_INLIST(ibm423),
+  #endif /* ULDECODE_USE_IBM423 */
+  #if ULDECODE_USE_IBM424
+  _ULDECODE_INLIST(ibm424),
+  #endif /* ULDECODE_USE_IBM424 */
+  #if ULDECODE_USE_IBM_THAI
+  _ULDECODE_INLIST(ibm_thai),
+  #endif /* ULDECODE_USE_IBM_THAI */
+  #if ULDECODE_USE_IBM871
+  _ULDECODE_INLIST(ibm871),
+  #endif /* ULDECODE_USE_IBM871 */
+  #if ULDECODE_USE_IBM880
+  _ULDECODE_INLIST(ibm880),
+  #endif /* ULDECODE_USE_IBM880 */
+  #if ULDECODE_USE_IBM905
+  _ULDECODE_INLIST(ibm905),
+  #endif /* ULDECODE_USE_IBM905 */
+  #if ULDECODE_USE_IBM00924
+  _ULDECODE_INLIST(ibm00924),
+  #endif /* ULDECODE_USE_IBM00924 */
 
   NULL
 };
@@ -9585,16 +11054,13 @@ uldecode_api const uldecode_t* const* uldecode_get_lists(void) {
   return _uldecode_lists;
 }
 
+  #include <ctype.h>
 static ul_inline int _uldecode_iequal(const char* ul_restrict lhs, const char* ul_restrict rhs) {
   int lc = 0, rc = 0;
   while(*lhs && *rhs) {
     lc = *lhs++;
     rc = *rhs++;
-    if(lc >= 'A' && lc <= 'Z')
-      lc += 32;
-    if(rc >= 'A' && rc <= 'Z')
-      rc += 32;
-    if(lc != rc)
+    if(tolower(lc) != tolower(rc))
       return 0;
   }
   return lc == rc;
@@ -9607,21 +11073,18 @@ uldecode_api const uldecode_t* uldecode_get(const char* name) {
   for(p = _uldecode_lists; *p != NULL; ++p)
     if(_uldecode_iequal((*p)->name, name))
       return *p;
-  #ifdef ULDECODE_DEFINE_LABELS
   for(p = _uldecode_lists; *p != NULL; ++p)
     for(label = (*p)->labels; *label != NULL; ++label)
       if(_uldecode_iequal(*label, name))
         return *p;
-  #endif
   return NULL;
 }
 
 
   #include <string.h>
-
 uldecode_api size_t ul_encode_between_spec(
-  void* ul_restrict dest, size_t dest_len, ulencode_func_t encoder, const void* ul_restrict src, size_t src_len,
-  uldecode_func_t decoder
+  void* ul_restrict dest, size_t dest_len, ulencode_func_t encoder,    /* */
+  const void* ul_restrict src, size_t src_len, uldecode_func_t decoder /* */
 ) {
   uldecode_state_t _decoder_state = ULDECODE_STATE_INIT, _encoder_state = ULDECODE_STATE_INIT;
   uldecode_u32_t _db[ULDECODE_RETURN_MAX];
@@ -9727,8 +11190,9 @@ ul_hapi void* _uldecode_alloc(void* opaque, void* ptr, size_t nn) {
 }
 
 uldecode_api void* ul_encode_between_alloc_spec(
-  uldecode_alloc_t alloc_fn, void* opaque, ulencode_func_t encoder, const void* ul_restrict src, size_t src_len,
-  uldecode_func_t decoder, size_t* pwriten
+  uldecode_alloc_t alloc_fn, void* opaque, ulencode_func_t encoder,     /* */
+  const void* ul_restrict src, size_t src_len, uldecode_func_t decoder, /* */
+  size_t* pwriten                                                       /* */
 ) {
   size_t len, writen;
   void* alloc;
@@ -9751,8 +11215,8 @@ uldecode_api void* ul_encode_between_alloc_spec(
 }
 
 uldecode_api size_t ul_encode_between(
-  void* ul_restrict dest, size_t dest_len, const char* encoder_name, const void* ul_restrict src, size_t src_len,
-  const char* decoder_name
+  void* ul_restrict dest, size_t dest_len, const char* encoder_name,    /* */
+  const void* ul_restrict src, size_t src_len, const char* decoder_name /* */
 ) {
   const uldecode_t* t;
   ulencode_func_t encoder;
@@ -9771,8 +11235,9 @@ uldecode_api size_t ul_encode_between(
   return ul_encode_between_spec(dest, dest_len, encoder, src, src_len, decoder);
 }
 uldecode_api void* ul_encode_between_alloc(
-  uldecode_alloc_t alloc_fn, void* opaque, const char* encoder_name, const void* ul_restrict src, size_t src_len,
-  const char* decoder_name, size_t* pwriten
+  uldecode_alloc_t alloc_fn, void* opaque, const char* encoder_name,     /* */
+  const void* ul_restrict src, size_t src_len, const char* decoder_name, /* */
+  size_t* pwriten                                                        /* */
 ) {
   const uldecode_t* t;
   ulencode_func_t encoder;
