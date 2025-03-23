@@ -64,6 +64,8 @@ Text decoder and encoder. (encoder is slow)
     - ULDECODE_USE_IBM037
     - ULDECODE_USE_IBM437
     - ULDECODE_USE_IBM500
+    - ULDECODE_USE_ASMO_708
+    - ULDECODE_USE_DOS_720
     - ULDECODE_USE_IBM775
     - ULDECODE_USE_IBM850
     - ULDECODE_USE_IBM852
@@ -288,6 +290,12 @@ Text decoder and encoder. (encoder is slow)
 #ifndef ULDECODE_USE_IBM500
   #define ULDECODE_USE_IBM500 _ULDECODE_EBCDIC_VALUE
 #endif /* ULDECODE_USE_IBM500 */
+#ifndef ULDECODE_USE_ASMO_708
+  #define ULDECODE_USE_ASMO_708 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_ASMO_708 */
+#ifndef ULDECODE_USE_DOS_720
+  #define ULDECODE_USE_DOS_720 _ULDECODE_OUT_JAVASCRIPT_VALUE
+#endif /* ULDECODE_USE_DOS_720 */
 #ifndef ULDECODE_USE_IBM775
   #define ULDECODE_USE_IBM775 _ULDECODE_OUT_JAVASCRIPT_VALUE
 #endif /* ULDECODE_USE_IBM775 */
@@ -1108,7 +1116,7 @@ _ULDECODE_DEF_T(ascii)
 
 
 /* 0x00-0x7F same as ASCII; other see table */
-ul_hapi int _uldecode_ascii(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _uldecode_ascii(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   if(ul_unlikely(c == ULDECODE_EOF))
     return 0;
   if(ul_unlikely(c < 0 || c > 0xFF))
@@ -1120,7 +1128,9 @@ ul_hapi int _uldecode_ascii(uldecode_u32_t* ul_restrict p, int c, const uldecode
   return (p[0] = TABLE[c & 0x7F]) ? 1 : -1;
 }
 /* 0x00-0x7F same as ASCII; other see table */
-ul_hapi int _ulencode_ascii(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _ulencode_ascii(
+  uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE
+) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF))
     return 0;
@@ -1137,7 +1147,7 @@ ul_hapi int _ulencode_ascii(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, cons
 }
 
 /* none is null; (not optimized) */
-ul_hapi int _uldecode_ebcdic(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _uldecode_ebcdic(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   if(ul_unlikely(c == ULDECODE_EOF))
     return 0;
   if(ul_unlikely(c < 0 || c > 0xFF))
@@ -1146,7 +1156,9 @@ ul_hapi int _uldecode_ebcdic(uldecode_u32_t* ul_restrict p, int c, const uldecod
   return 1;
 }
 /* none is null; (not optimized) */
-ul_hapi int _ulencode_ebcdic(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _ulencode_ebcdic(
+  uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE
+) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF))
     return 0;
@@ -1159,7 +1171,7 @@ ul_hapi int _ulencode_ebcdic(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, con
 }
 
 /* 0x00-0x1F same as ASCII; 0x20-0x3F are null; other see table */
-ul_hapi int _uldecode_ebcdic2(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _uldecode_ebcdic2(uldecode_u32_t* ul_restrict p, int c, const uldecode_u16_t* ul_restrict TABLE) {
   if(ul_unlikely(c == ULDECODE_EOF))
     return 0;
   if(ul_unlikely(c < 0 || c > 0xFF))
@@ -1173,7 +1185,9 @@ ul_hapi int _uldecode_ebcdic2(uldecode_u32_t* ul_restrict p, int c, const uldeco
   return (p[0] = TABLE[c - 0x40]) ? 1 : 0;
 }
 /* 0x00-0x1F same as ASCII; 0x20-0x3F are null; other see table */
-ul_hapi int _ulencode_ebcdic2(uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE) {
+static ul_inline int _ulencode_ebcdic2(
+  uldecode_u8_t* ul_restrict p, uldecode_u32_t u, const uldecode_u16_t* ul_restrict TABLE
+) {
   int i;
   if(ul_unlikely(u == ULENCODE_EOF))
     return 0;
@@ -9344,6 +9358,91 @@ static const char* uldecode_ibm500_labels[] = { "CP500", "ebcdic-cp-be", "ebcdic
 _ULDECODE_DEF_T(ibm500)
   #endif /* ULDECODE_USE_IBM500 */
 
+  #if ULDECODE_USE_ASMO_708
+static const uldecode_u16_t _uldecode_asmo_708_table[] = {
+  0x0000, 0x263A, 0x263B, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022, 0x25D8, 0x25CB, 0x25D9, 0x2642, 0x2640, 0x266A,
+  0x266B, 0x263C, 0x25BA, 0x25C4, 0x2195, 0x203C, 0x00B6, 0x00A7, 0x25AC, 0x21A8, 0x2191, 0x2193, 0x2192, 0x2190,
+  0x221F, 0x2194, 0x25B2, 0x25BC, 0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029,
+  0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+  0x0038, 0x0039, 0x003A, 0x003B, 0x003C, 0x003D, 0x003E, 0x003F, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045,
+  0x0046, 0x0047, 0x0048, 0x0049, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F, 0x0050, 0x0051, 0x0052, 0x0053,
+  0x0054, 0x0055, 0x0056, 0x0057, 0x0058, 0x0059, 0x005A, 0x005B, 0x005C, 0x005D, 0x005E, 0x005F, 0x0060, 0x0061,
+  0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067, 0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F,
+  0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077, 0x0078, 0x0079, 0x007A, 0x007B, 0x007C, 0x007D,
+  0x007E, 0x2302, 0x2502, 0x2524, 0x00E9, 0x00E2, 0x2561, 0x00E0, 0x2562, 0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF,
+  0x00EE, 0x2556, 0x2555, 0x2563, 0x2551, 0x2557, 0x255D, 0x00F4, 0x255C, 0x255C, 0x255B, 0x00F9, 0x2510, 0x2514,
+  0,      0,      0,      0,      0,      0,      0,      0x2534, 0x252C, 0x251C, 0x00A4, 0x2500, 0x253C, 0x255E,
+  0x255F, 0x255A, 0x2554, 0x2569, 0x060C, 0x2566, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2560, 0x2550, 0x256C,
+  0x2567, 0x2568, 0x2564, 0x2565, 0x2559, 0x061B, 0x2558, 0x2552, 0x2553, 0x061F, 0x256B, 0x0621, 0x0622, 0x0623,
+  0x0624, 0x0625, 0x0626, 0x0627, 0x0628, 0x0629, 0x062A, 0x062B, 0x062C, 0x062D, 0x062E, 0x062F, 0x0630, 0x0631,
+  0x0632, 0x0633, 0x0634, 0x0635, 0x0636, 0x0637, 0x0638, 0x0639, 0x063A, 0x2588, 0x2584, 0x258C, 0x2590, 0x2580,
+  0x0640, 0x0641, 0x0642, 0x0643, 0x0644, 0x0645, 0x0646, 0x0647, 0x0648, 0x0649, 0x064A, 0x064B, 0x064C, 0x064D,
+  0x064E, 0x064F, 0x0650, 0x0651, 0x0652, 0,      0,      0,      0,      0,      0,      0x256A, 0x2518, 0x250C,
+  0x00B5, 0x00A3, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_asmo_708_name[] = "ASMO-708";
+uldecode_each_api int uldecode_asmo_708(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  if(ul_unlikely(c == ULDECODE_EOF))
+    return 0;
+  if(ul_unlikely(c < 0 || c > 0xFF))
+    return -1;
+  if(c == 0) {
+    p[0] = 0;
+    return 1;
+  }
+  return (p[0] = _uldecode_asmo_708_table[c]) ? 1 : 0;
+}
+uldecode_each_api int ulencode_asmo_708(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  int i;
+  (void)_state;
+  if(ul_unlikely(u == ULENCODE_EOF))
+    return 0;
+  for(i = 0; i < 0x100; ++i)
+    if(_uldecode_asmo_708_table[i] == u) {
+      p[0] = ul_static_cast(uldecode_u8_t, i);
+      return 1;
+    }
+  return -1;
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_asmo_708_labels[] = { NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(asmo_708)
+  #endif /* ULDECODE_USE_ASMO_708 */
+
+  #if ULDECODE_USE_DOS_720
+static const uldecode_u16_t _uldecode_dos_720_table[] = {
+  0,      0,      0x00E9, 0x00E2, 0,      0x00E0, 0,      0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF, 0x00EE,
+  0,      0,      0,      0,      0x0651, 0x0652, 0x00F4, 0x00A4, 0x0640, 0x00FB, 0x00F9, 0x0621, 0x0622,
+  0x0623, 0x0624, 0x00A3, 0x0625, 0x0626, 0x0627, 0x0628, 0x0629, 0x062A, 0x062B, 0x062C, 0x062D, 0x062E,
+  0x062F, 0x0630, 0x0631, 0x0632, 0x0633, 0x0634, 0x0635, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+  0x2524, 0x2561, 0x2562, 0x2556, 0x2555, 0x2563, 0x2551, 0x2557, 0x255D, 0x255C, 0x255B, 0x2510, 0x2514,
+  0x2534, 0x252C, 0x251C, 0x2500, 0x253C, 0x255E, 0x255F, 0x255A, 0x2554, 0x2569, 0x2566, 0x2560, 0x2550,
+  0x256C, 0x2567, 0x2568, 0x2564, 0x2565, 0x2559, 0x2558, 0x2552, 0x2553, 0x256B, 0x256A, 0x2518, 0x250C,
+  0x2588, 0x2584, 0x258C, 0x2590, 0x2580, 0x0636, 0x0637, 0x0638, 0x0639, 0x063A, 0x0641, 0x00B5, 0x0642,
+  0x0643, 0x0644, 0x0645, 0x0646, 0x0647, 0x0648, 0x0649, 0x064A, 0x2261, 0x064B, 0x064C, 0x064D, 0x064E,
+  0x064F, 0x0650, 0x2248, 0x00B0, 0x2219, 0x00B7, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0,
+};
+
+static const char uldecode_dos_720_name[] = "DOS-720";
+uldecode_each_api int uldecode_dos_720(uldecode_u32_t* p, int c, uldecode_state_t* _state) {
+  (void)_state;
+  return _uldecode_ascii(p, c, _uldecode_dos_720_table);
+}
+uldecode_each_api int ulencode_dos_720(uldecode_u8_t* p, uldecode_u32_t u, uldecode_state_t* _state) {
+  (void)_state;
+  return _ulencode_ascii(p, u, _uldecode_dos_720_table);
+}
+
+    #ifdef ULDECODE_DEFINE_LABELS
+static const char* uldecode_dos_720_labels[] = { NULL };
+    #endif /* ULDECODE_DEFINE_LABELS */
+_ULDECODE_DEF_T(dos_720)
+  #endif /* ULDECODE_USE_DOS_720 */
+
   #if ULDECODE_USE_IBM775
 static const uldecode_u16_t _uldecode_ibm775_table[] = {
   0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D,
@@ -10923,6 +11022,12 @@ static const uldecode_t* const _uldecode_lists[] = {
   #if ULDECODE_USE_IBM500
   _ULDECODE_INLIST(ibm500),
   #endif /* ULDECODE_USE_IBM500 */
+  #if ULDECODE_USE_ASMO_708
+  _ULDECODE_INLIST(asmo_708),
+  #endif /* ULDECODE_USE_ASMO_708 */
+  #if ULDECODE_USE_DOS_720
+  _ULDECODE_INLIST(dos_720),
+  #endif /* ULDECODE_USE_DOS_720 */
   #if ULDECODE_USE_IBM775
   _ULDECODE_INLIST(ibm775),
   #endif /* ULDECODE_USE_IBM775 */
@@ -11184,7 +11289,7 @@ calc_length:
 }
 
   #include <stdlib.h>
-ul_hapi void* _uldecode_alloc(void* opaque, void* ptr, size_t nn) {
+static ul_inline void* _uldecode_alloc(void* opaque, void* ptr, size_t nn) {
   (void)opaque;
   return nn ? malloc(nn) : (free(ptr), ul_reinterpret_cast(void*, 0));
 }
