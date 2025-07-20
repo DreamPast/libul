@@ -83,7 +83,10 @@
  * @brief Hints to the compiler that the code is unreachable.
  */
 #ifndef ul_unreachable
-  #if !defined(UL_PEDANTIC) && defined(__GNUC__) || defined(__clang__)
+  #if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202302L
+    #include <utility>
+    #define ul_unreachable() ::std::unreachable()
+  #elif !defined(UL_PEDANTIC) && (defined(__GNUC__) || defined(__clang__))
     #define ul_unreachable() __builtin_unreachable()
   #elif !defined(UL_PEDANTIC) && defined(_MSC_VER) /* Visual Studio 6 */
     #define ul_unreachable() __assume(0)
@@ -772,18 +775,49 @@ static ul_inline void* _ul_aligned_alloc(size_t align, size_t size) {
   const size_t offset = align - 1 + sizeof(void*);
   void *raw, *ret;
   assert((align & (align - 1)) == 0);
-  if(ul_unlikely(!(raw = malloc(size + offset))))
-    return ul_nullptr;
+  if(ul_unlikely(!(raw = malloc(size + offset)))) return ul_nullptr;
   ret = ul_reinterpret_cast(void*, (ul_reinterpret_cast(size_t, raw) + offset) & ~(align - 1));
   ul_reinterpret_cast(void**, ret)[-1] = raw;
   return ret;
 }
 static ul_inline void _ul_aligned_free(void* p) {
-  if(ul_likely(p))
-    free(ul_reinterpret_cast(void**, p)[-1]);
+  if(ul_likely(p)) free(ul_reinterpret_cast(void**, p)[-1]);
 }
   #define ul_aligned_alloc(align, size) _ul_aligned_alloc((align), (size))
   #define ul_aligned_free(p) _ul_aligned_free(p)
 #endif /* ul_aligned_alloc + ul_aligned_free */
+
+
+
+/**
+ * @def ul_debug_break
+ * @brief Breaks into the debugger. (fallback: ignore)
+ */
+#ifndef ul_debug_break
+  #if defined(__cpp_lib_debugging) && __cpp_lib_debugging >= 202311L
+    #include <debugging>
+    #define ul_debug_break() ::std::breakpoint()
+  #elif defined(_MSC_VER) && _MSC_VER >= 1400 /* Visual Studio 2005 */
+    #include <intrin.h>
+    #define ul_debug_break() __debugbreak()
+  #endif
+  #if !defined(ul_debug_break) && !defined(UL_PEDANTIC)
+    #if defined(__has_builtin)
+      #if __has_builtin(__builtin_debugtrap)
+        #define ul_debug_break() __builtin_debugtrap()
+      #endif
+    #endif
+  #endif
+  #if !defined(ul_debug_break) && defined(_POSIX_C_SOURCE)
+    #include <signal.h>
+    #include <unistd.h>
+    #define ul_debug_break() kill(getpid(), SIGTRAP)
+  #endif
+  #if !defined(ul_debug_break)
+    #define ul_debug_break() ((void)0)
+  #endif
+#endif
+
+
 
 #endif /* ULCONF_H */

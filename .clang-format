@@ -1,5 +1,4 @@
 ---
-# Language: Cpp
 BasedOnStyle: Google
 
 SortIncludes: false
@@ -35,9 +34,9 @@ AllowShortCaseLabelsOnASingleLine: false
 # AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse 
 # AllowShortLambdasOnASingleLine: All
-AllowShortLoopsOnASingleLine: false
+# AllowShortLoopsOnASingleLine: true
 BreakBeforeBinaryOperators: NonAssignment
 
 # custom
