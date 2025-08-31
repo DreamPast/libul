@@ -329,7 +329,7 @@ typedef ulfd_int64_t ulfd_time_t;
 #define ULFD_O_EXCL      (1l << 4) /* if `ULFD_O_CREAT` is set, fails if file exists */
 #define ULFD_O_TRUNC     (1l << 5) /* truncate the file opened */
 
-#define ULFD_O_APPEND    (1l << 6) /* set file offset to the end */
+#define ULFD_O_APPEND    (1l << 6) /* POSIX: set file offset to the end */
 #define ULFD_O_TEMPORARY (1l << 7) /* when the file is closed, delete the file */
 #define ULFD_O_CLOEXEC   (1l << 8) /* enable close-on-exec(In Windows, it will prevent inherting the file) */
 #define ULFD_O_NOINHERIT ULFD_O_CLOEXEC /* prevent inherting the file(In POSIX, it will enable close-on-exec) */
@@ -347,7 +347,7 @@ typedef ulfd_int64_t ulfd_time_t;
 #define ULFD_O_SECURE    (1l << 26) /* Winodws: set secure mode (share read access but exclude write access) */
 
 ul_hapi int ulfd_open(ulfd_t* pfd, const char* path, ulfd_int32_t oflag, ulfd_mode_t mode);
-ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, ulfd_mode_t mode);
+ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* path, ulfd_int32_t oflag, ulfd_mode_t mode);
 ul_hapi int ulfd_creat(ulfd_t* pfd, const char* path, ulfd_mode_t mode);
 ul_hapi int ulfd_creat_w(ulfd_t* pfd, const wchar_t* path, ulfd_mode_t mode);
 ul_hapi int ulfd_close(ulfd_t fd);
@@ -1643,28 +1643,26 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     else _ulfd_compare_exchange(hold, stored, NULL);
     return ul_reinterpret_cast(HMODULE, stored);
   }
-
-  /* get kernel32 module */
-  /* For any function supported since Windows Vista or higher, if _WIN32_WINNT is smaller,
-    the library will dynamically load kernel32.dll to check available */
-  ul_hapi HMODULE _ulfd_kernel32(void) {
-    static HANDLE hold = NULL;
-    return _ulfd_dll(&hold, L"kernel32.dll");
-  }
-  ul_hapi HANDLE _ulfd_kernel32_function(HANDLE* hold, const char* name) {
+  ul_hapi HANDLE _ulfd_dll_func(HANDLE* hold, HMODULE modu, const char* name) {
     HANDLE stored;
-    HMODULE _kernel32;
-    _kernel32 = _ulfd_kernel32();
-    if(_kernel32 == NULL) return NULL;
+    if(modu == NULL) return NULL;
     stored = _ulfd_compare_exchange(hold, NULL, NULL);
     if(stored == INVALID_HANDLE_VALUE) return NULL;
     if(stored != NULL) return ul_reinterpret_cast(HANDLE, stored);
-    stored = ul_reinterpret_cast(HANDLE, ul_reinterpret_cast(UINT_PTR, GetProcAddress(_kernel32, name)));
+    stored = ul_reinterpret_cast(HANDLE, ul_reinterpret_cast(UINT_PTR, GetProcAddress(modu, name)));
     if(stored == NULL) _ulfd_compare_exchange(hold, INVALID_HANDLE_VALUE, NULL);
     else _ulfd_compare_exchange(hold, stored, NULL);
     return ul_reinterpret_cast(HANDLE, stored);
   }
 
+  /* get kernel32 module */
+  /* For any function supported since Windows Vista or higher, if _WIN32_WINNT is smaller,
+    the library will dynamically load kernel32.dll to check available */
+  ul_hapi HANDLE _ulfd_kernel32_function(HANDLE* hold, const char* name) {
+    static HANDLE kernel_hold = NULL;
+    return _ulfd_dll_func(hold, _ulfd_dll(&kernel_hold, L"kernel32.dll"), name);
+  }
+  
   typedef DWORD (WINAPI *_ulfd_GetFinalPathNameByHandleW_t)(
     HANDLE hFile, LPWSTR lpszFilePath, DWORD cchFilePath, DWORD dwFlags
   );
@@ -1680,7 +1678,7 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     }
   #endif
 
-  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* wpath, ulfd_int32_t oflag, int mode) {
+  ul_hapi int ulfd_open_w(ulfd_t* pfd, const wchar_t* path, ulfd_int32_t oflag, int mode) {
     DWORD access = 0;
     DWORD share;
     DWORD create;
@@ -1722,19 +1720,22 @@ ul_hapi int ulfd_copy_file_range_allowuser(
     security_attributes.lpSecurityDescriptor = NULL;
     security_attributes.bInheritHandle = (oflag & ULFD_O_CLOEXEC) == 0;
 
-    handle = CreateFileW(wpath, access, share, &security_attributes, create, flags_attr, NULL);
+    handle = CreateFileW(path, access, share, &security_attributes, create, flags_attr, NULL);
     if(handle == INVALID_HANDLE_VALUE) {
       if((access & GENERIC_WRITE) && (oflag & ULFD_O_WRONLY)) {
         access &= ~GENERIC_READ;
-        handle = CreateFileW(wpath, access, share, &security_attributes, create, flags_attr, NULL);
+        handle = CreateFileW(path, access, share, &security_attributes, create, flags_attr, NULL);
       }
     }
     if(handle == INVALID_HANDLE_VALUE) return _ul_win32_toerrno(GetLastError());
 
     if((oflag & ULFD_O_APPEND)) {
+      return EINVAL;
+      /*
       if(SetFilePointer(handle, 0, NULL, FILE_END) == INVALID_SET_FILE_POINTER) {
         CloseHandle(handle); return _ul_win32_toerrno(GetLastError());
       }
+      */
     }
 
     *pfd = handle;
