@@ -11,11 +11,11 @@
 
 /**
  * @def ul_likely
- * @brief Hints to the compiler that the condition is more likely to be true.
+ * @brief Hints to the compiler that the condition is more likely to be true (fallback: ignore).
  */
 /**
  * @def ul_unlikely
- * @brief Hints to the compiler that the condition is more likely to be false.
+ * @brief Hints to the compiler that the condition is more likely to be false (fallback: ignore).
  */
 #if defined(__has_builtin) && !defined(UL_PEDANTIC)
   #if __has_builtin(__builtin_expect)
@@ -36,7 +36,7 @@
 
 /**
  * @def ul_label_cold
- * @brief Marks a label as unlikely to be taken.
+ * @brief Marks a label as unlikely to be taken (fallback: ignore).
  * @example ```c
  *         int foo(int x) {
  *           if(x < 0) goto fallback;
@@ -58,7 +58,7 @@
 
 /**
  * @def ul_label_hot
- * @brief Marks a label as unlikely to be taken.
+ * @brief Marks a label as unlikely to be taken (fallback: ignore).
  * @example ```c
  *         int foo(int x) {
  *           if(x < 0) goto fallback;
@@ -80,10 +80,18 @@
 
 /**
  * @def ul_unreachable
- * @brief Hints to the compiler that the code is unreachable.
+ * @brief Hints to the compiler that the code is unreachable (fallback: ignore).
  */
 #ifndef ul_unreachable
-  #if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202302L
+  #if defined(__cplusplus) && __cplusplus >= 202002L
+    #include <version>
+  #elif defined(__has_include)
+    #if __has_include(<version>)
+      #include <version>
+    #endif
+  #endif
+
+  #if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
     #include <utility>
     #define ul_unreachable() ::std::unreachable()
   #elif !defined(UL_PEDANTIC) && (defined(__GNUC__) || defined(__clang__))
@@ -97,7 +105,7 @@
 
 /**
  * @def ul_assume
- * @brief Hints to the compiler that the condition is always true.
+ * @brief Hints to the compiler that the condition is always true (fallback: ignore).
  */
 #if !defined(ul_assume) & !defined(UL_PEDANTIC) && defined(_MSC_VER) /* Visual Studio 6 */
   #define ul_assume(cond) __assume(cond)
@@ -117,12 +125,22 @@
 
 /**
  * @def ul_assume_aligned
- * @brief Hints to the compiler that the pointer is aligned.
+ * @brief Hints to the compiler that the pointer is aligned (fallback: ignore).
  */
-#if !defined(ul_assume_aligned) && defined(__cplusplus) && __cplusplus >= 202002L
-  #include <memory>
-  #ifdef __cpp_lib_assume_aligned
-    #define ul_assume_aligned(exp, align) ::std::assume_aligned<align>(exp)
+#if !defined(ul_assume_aligned)
+  #if defined(__cplusplus) && __cplusplus >= 202002L
+    #include <version>
+  #elif defined(__has_include)
+    #if __has_include(<version>)
+      #include <version>
+    #endif
+  #endif
+
+  #if defined(__cpp_lib_assume_aligned) && __cpp_lib_assume_aligned >= 201811L
+    #include <memory>
+    #ifdef __cpp_lib_assume_aligned
+      #define ul_assume_aligned(exp, align) ::std::assume_aligned<align>(exp)
+    #endif
   #endif
 #endif /* ul_assume_aligned */
 #if !defined(ul_assume_aligned) && !defined(UL_PEDANTIC) && defined(__has_builtin)
@@ -136,7 +154,7 @@
 
 /**
  * @def ul_restrict
- * @brief Restrict qualifier (C99/C++ extensions). Marks pointers with same types not to overlap.
+ * @brief Restrict qualifier (C99/C++ extensions). Marks pointers with same types not to overlap (fallback: ignore).
  */
 #ifndef ul_restrict
   #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
@@ -167,7 +185,7 @@
 
 /**
  * @def ul_noexcept
- * @brief Marks a function not to throw exceptions.
+ * @brief Marks a function not to throw exceptions (fallback: ignore).
  */
 #ifndef ul_noexcept
   #ifdef __cplusplus
@@ -183,7 +201,7 @@
 
 /**
  * @def ul_constant_p
- * @brief Checks if the expression is a constant.
+ * @brief Checks if the expression is a constant (fallback: always 0).
  * @example ul_constant_p(1 + 2) -> 1
  */
 #if !defined(ul_constant_p) && !defined(UL_PEDANTIC) && defined(__has_builtin)
@@ -197,8 +215,8 @@
 
 /**
  * @def ul_prefetch
- * @brief Prefetches the data into the cache.
- * @details `rw` is the read/write type (0 = read, 1 = write, 2 = shard read), dfault is 0.
+ * @brief Prefetches the data into the cache (fallback: ignore).
+ * @details `rw` is the read/write type (0 = read, 1 = write, 2 = shard read), default is 0.
  * @details `locality` is the locality hint (0 = no locality, 1 = low locality,
  *          2 = moderate locality, 3 = high locality), default is 3.
  */
@@ -210,6 +228,23 @@
 #ifndef ul_prefetch
   #define ul_prefetch(addr, rw, locality) ((void)0)
 #endif /* ul_prefetch */
+
+
+/**
+ * @def ul_compiler_fence
+ * @brief Prevents the compiler from reordering memory operations across this point (fallback: ignore).
+ */
+#if defined(__cplusplus) && __cplusplus >= 201103L
+  #include <atomic>
+  #define ul_compiler_fence() (::std::atomic_signal_fence(::std::memory_order_seq_cst))
+#elif !defined(UL_PEDANTIC) && defined(__GNUC__)
+  #define ul_compiler_fence() asm volatile("" ::: "memory")
+#elif !defined(UL_PEDANTIC) && defined(_MSC_VER) && _MSC_VER >= 1500 /* Visual Studio 2008 */
+  #include <intrin.h>
+  #define ul_compiler_fence() _ReadWriteBarrier()
+#else
+  #define ul_compiler_fence() ((void)0)
+#endif
 
 
 
@@ -244,9 +279,9 @@
  * @example UL_JOIN(foo, bar) -> foobar
  */
 #ifndef UL_JOIN
-  #define __UL_JOIN2(X, Y) X##Y
-  #define __UL_JOIN(X, Y) __UL_JOIN2(X, Y)
-  #define UL_JOIN(X, Y) __UL_JOIN(X, Y)
+  #define ___UL_JOIN2(X, Y) X##Y
+  #define ___UL_JOIN(X, Y) ___UL_JOIN2(X, Y)
+  #define UL_JOIN(X, Y) ___UL_JOIN(X, Y)
 #endif /* UL_JOIN */
 
 /**
@@ -261,16 +296,16 @@
   #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     #define ul_static_assert(cond, msg) _Static_assert(cond, msg)
   #elif defined(__cplusplus) /* clang-format off */
-    namespace __ul_static_assert {
-      template<bool x> struct __UL_STATIC_CAST_FAILURE;
-      template<> struct __UL_STATIC_CAST_FAILURE<true> { enum { value = 1 }; };
+    namespace ___ul_static_assert {
+      template<bool x> struct ___UL_STATIC_CAST_FAILURE;
+      template<> struct ___UL_STATIC_CAST_FAILURE<true> { enum { value = 1 }; };
     }
     #define ul_static_assert(cond, msg) enum { UL_JOIN(___UL_STATIC_ASSERT_, __LINE__) = \
-        sizeof(::__ul_static_assert::__UL_STATIC_CAST_FAILURE<static_cast<bool>(cond)>::value) } /* clang-format on */
+        sizeof(::___ul_static_assert::___UL_STATIC_CAST_FAILURE<static_cast<bool>(cond)>::value) }
+    /* clang-format on */
   #else
-
     #define ul_static_assert(cond, msg) /* clang-format off */ \
-      typedef struct { int __error_if_negative: (cond) ? 1 : -1; } UL_JOIN(___UL_STATIC_ASSERT_, __LINE__)
+      typedef struct { int ___error_if_negative: (cond) ? 1 : -1; } UL_JOIN(___UL_STATIC_ASSERT_, __LINE__)
     /* clang-format on */
   #endif
 #endif /* ul_static_assert */
@@ -281,8 +316,8 @@
  * @example UL_STRINGIZE(foo) -> "foo"
  */
 #ifndef UL_STRINGIZE
-  #define __UL_STRINGIZE(X) #X
-  #define UL_STRINGIZE(X) __UL_STRINGIZE(X)
+  #define ___UL_STRINGIZE(X) #X
+  #define UL_STRINGIZE(X) ___UL_STRINGIZE(X)
 #endif /* UL_STRINGIZE */
 
 /**
@@ -304,7 +339,7 @@
 
 /**
  * @def UL_HAS_STDINT_H
- * @brief Checks if `<stdint.h>` exists.
+ * @brief Checks if `<stdint.h>` exists (fallback: not defined).
  */
 #ifndef UL_HAS_STDINT_H
   #if defined(__GLIBC__) && (__GLIBC__ * 100 + __GLIBC_MINOR__) >= 201
@@ -339,7 +374,7 @@
 
 /**
  * @def ul_pragma
- * @brief Pragma directive (useful in macros).
+ * @brief Pragma directive (useful in macros) (fallback: not defined).
  * @example ul_pragma(GCC diagnostic ignored "-Wdeprecated-declarations")
  */
 #ifndef ul_pragma
@@ -358,7 +393,7 @@
 
 /**
  * @def ul_fallthrough
- * @brief Marks a fallthrough in a switch statement (it's used to suppress warnings).
+ * @brief Marks a fallthrough in a switch statement (it's used to suppress warnings) (fallback: ignore).
  */
 #if !defined(ul_fallthrough) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L && defined(__has_c_attribute)
   #if __has_c_attribute(fallthrough)
@@ -408,7 +443,7 @@
 
 /**
  * @def UL_FUNCTION
- * @brief Current function name.
+ * @brief Current function name (fallback: "<unknown>").
  * @example ```c
  *          void foo(void) {
  *            printf("Function: %s\n", UL_FUNCTION);
@@ -449,7 +484,7 @@
 
 /**
  * @def ul_unused
- * @brief Marks a variable or function may be unused.
+ * @brief Marks a variable or function may be unused (fallback: ignore).
  */
 #if !defined(ul_unused) && defined(__has_attribute) && !defined(UL_PEDANTIC)
   #if __has_attribute(unused)
@@ -472,7 +507,7 @@
 
 /**
  * @def ul_inline
- * @brief Marks a function as inline.
+ * @brief Marks a function as inline (fallback: ignore).
  * @note When an inline function occurs more than once in the program, all those will be identical.
  */
 #ifndef ul_inline
@@ -485,7 +520,7 @@
 
 /**
  * @def ul_constexpr
- * @brief Marks a function able to be evaluated at compile time (C++11).
+ * @brief Marks a function able to be evaluated at compile time (C++11) (fallback: ignore).
  */
 #if !defined(ul_constexpr) && defined(__cplusplus)
   #if __cplusplus >= 201103L
@@ -503,7 +538,7 @@
 
 /**
  * @def ul_dl_export
- * @brief Mark a symbol to be exported in dynamic library.
+ * @brief Mark a symbol to be exported in dynamic library (fallback: ignore).
  */
 #if !defined(ul_dl_export) && !defined(UL_PEDANTIC)
   #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 4)
@@ -522,7 +557,7 @@
 
 /**
  * @def ul_dl_import
- * @brief Mark a symbol to be imported from dynamic library.
+ * @brief Mark a symbol to be imported from dynamic library (fallback: ignore).
  */
 #if !defined(ul_dl_import) && !defined(UL_PEDANTIC)
   #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
@@ -539,7 +574,7 @@
 
 /**
  * @def ul_hidden
- * @brief Mark a symbol to be hidden.
+ * @brief Mark a symbol to be hidden (fallback: ignore).
  */
 #if !defined(ul_hidden) && !defined(UL_PEDANTIC)
   #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 4)
@@ -552,7 +587,7 @@
 
 /**
  * @def ul_forceinline
- * @brief Forces a function to be inlined (however, the compiler may ignore it).
+ * @brief Forces a function to be inlined (however, the compiler may ignore it) (fallback: ignore).
  */
 #if !defined(ul_forceinline) && !defined(UL_PEDANTIC) && defined(__has_attribute)
   #if __has_attribute(__always_inline__)
@@ -572,7 +607,7 @@
 
 /**
  * @def ul_noinline
- * @brief Marks a function to not be inlined.
+ * @brief Marks a function to not be inlined (fallback: ignore).
  */
 #if !defined(ul_noinline) && !defined(UL_PEDANTIC) && defined(__has_attribute)
   #if __has_attribute(noinline)
@@ -591,7 +626,7 @@
 
 /**
  * @def ul_noreturn
- * @brief Marks a function that doesn't return.
+ * @brief Marks a function that doesn't return (fallback: ignore).
  */
 #if !defined(ul_noreturn) && (defined(__cplusplus) && __cplusplus >= 201103L && defined(__has_cpp_attribute))
   #if __has_cpp_attribute(noreturn)
@@ -623,7 +658,7 @@
 
 /**
  * @def ul_nodiscard
- * @brief Marks a function that the return value must be used.
+ * @brief Marks a function that the return value must be used (fallback: ignore).
  */
 #if !defined(ul_nodiscard) && (defined(__cplusplus) && __cplusplus >= 201103L && defined(__has_cpp_attribute))
   #if __has_cpp_attribute(nodiscard)
@@ -652,7 +687,7 @@
 
 /**
  * @def ul_deprecated
- * @brief Marks a function as deprecated.
+ * @brief Marks a function as deprecated (fallback: ignore).
  */
 #if !defined(ul_deprecated)
   #if !defined(ul_deprecated)
@@ -701,7 +736,7 @@
   #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     #define ul_alignas(x) _Alignas(x)
   #endif
-  #if !defined(UL_PEDANTIC)
+  #if !defined(UL_PEDANTIC) && !defined(ul_alignas)
     #if defined(_MSC_VER) && _MSC_VER >= 1310 /* Visual Studio 2003 */
       #define ul_alignas(x) __declspec(align(x))
     #elif defined(__has_attribute)
@@ -794,6 +829,14 @@ static ul_inline void _ul_aligned_free(void* p) {
  * @brief Breaks into the debugger. (fallback: ignore)
  */
 #ifndef ul_debug_break
+  #if defined(__cplusplus) && __cplusplus >= 202002L
+    #include <version>
+  #elif defined(__has_include)
+    #if __has_include(<version>)
+      #include <version>
+    #endif
+  #endif
+
   #if defined(__cpp_lib_debugging) && __cpp_lib_debugging >= 202311L
     #include <debugging>
     #define ul_debug_break() ::std::breakpoint()
